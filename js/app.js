@@ -1143,6 +1143,7 @@ function loadFromLocalStorage() {
         match = saved;
         if (match && match.tournamentMatchContext) {
           pendingTournamentMatch = match.tournamentMatchContext;
+          document.getElementById('btn-live-standings').style.display = '';
         }
         showScreen(SCREENS.GAME);
         renderGameScreen(match);
