@@ -227,7 +227,22 @@ function setupEventListeners() {
 
   // New match button (from stats screen)
   document.getElementById('btn-new-match').addEventListener('click', () => {
-    showScreen(SCREENS.HOME);
+    if (pendingTournamentMatch) {
+      const ptm = pendingTournamentMatch;
+      pendingTournamentMatch = null;
+      document.getElementById('btn-new-match').textContent = 'Nowy mecz';
+      const t = loadTournaments().find(t => t.id === ptm.tournamentId);
+      if (t) {
+        _activeTournament = t;
+        renderTournamentViewScreen(t);
+        showScreen(SCREENS.TOURNAMENT_VIEW);
+        document.getElementById('tv-tab-matches').click();
+      } else {
+        showScreen(SCREENS.HOME);
+      }
+    } else {
+      showScreen(SCREENS.HOME);
+    }
   });
 
   // Bust toast click to dismiss
@@ -629,6 +644,27 @@ function startTournamentMatch(tournament, matchIndex, startingPlayer) {
   renderGameScreen(match);
 }
 
+function saveTournamentMatchResult(finishedMatch, ptm) {
+  const list = loadTournaments();
+  const t    = list.find(t => t.id === ptm.tournamentId);
+  if (!t) return;
+  const m = t.matches[ptm.matchIndex];
+
+  m.winner = finishedMatch.winner;
+  m.legs   = [finishedMatch.legsWon[0], finishedMatch.legsWon[1]];
+  m.sets   = finishedMatch.totalSets > 1
+               ? [finishedMatch.setsWon[0], finishedMatch.setsWon[1]]
+               : [null, null];
+  m.avgs   = [getMatchAverage(finishedMatch.stats[0]),
+              getMatchAverage(finishedMatch.stats[1])];
+  m.stats  = [finishedMatch.stats[0], finishedMatch.stats[1]];
+
+  if (t.matches.every(mx => mx.winner !== null)) t.status = 'finished';
+
+  saveTournaments(list);
+  _activeTournament = t;
+}
+
 // --- Quick score shortcut buttons ---
 
 function submitQuickScore(val) {
@@ -947,11 +983,18 @@ function handleLegClose(dartNumber, isDartByDart) {
   const legResult = finalizeLeg(match, pIdx, pendingCheckoutScore, dartNumber, isDartByDart);
 
   if (legResult.matchOver) {
-    saveMatchToHistory(match);
+    if (pendingTournamentMatch) {
+      saveTournamentMatchResult(match, pendingTournamentMatch);
+    } else {
+      saveMatchToHistory(match);
+    }
     renderGameScreen(match);
     showLegResultDialog(names[pIdx], legNum, 'match', () => {
       renderStatsScreen(match);
       showScreen(SCREENS.STATS);
+      document.getElementById('btn-new-match').textContent =
+        pendingTournamentMatch ? 'Wróć do meczów' : 'Nowy mecz';
+      document.getElementById('btn-live-standings').style.display = 'none';
       saveToLocalStorage();
     });
   } else if (legResult.setOver) {
