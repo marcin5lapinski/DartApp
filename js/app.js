@@ -8,6 +8,8 @@ let pendingDeleteRecordId = null;
 let pendingEditPlayerId = null;
 let pendingDeletePlayerId = null;
 let pendingDeleteTournamentId = null;
+let pendingTournamentMatch = null;
+let pendingTournamentStarterData = null;
 let pendingOpenScore = null;
 let pendingOpenPlayerIndex = null;
 
@@ -196,8 +198,23 @@ function setupEventListeners() {
     closeModal('modal-exit-confirm');
     match = null;
     undoStack = [];
-    try { localStorage.removeItem('dart_match'); } catch (e) { /* ignore */ }
-    showScreen(SCREENS.HOME);
+    try { localStorage.removeItem('dart_match'); } catch(e) {}
+    document.getElementById('btn-live-standings').style.display = 'none';
+    if (pendingTournamentMatch) {
+      const ptm = pendingTournamentMatch;
+      pendingTournamentMatch = null;
+      const t = loadTournaments().find(t => t.id === ptm.tournamentId);
+      if (t) {
+        _activeTournament = t;
+        renderTournamentViewScreen(t);
+        showScreen(SCREENS.TOURNAMENT_VIEW);
+        document.getElementById('tv-tab-matches').click();
+      } else {
+        showScreen(SCREENS.HOME);
+      }
+    } else {
+      showScreen(SCREENS.HOME);
+    }
   });
 
   // Quick score buttons (always-visible shortcut row)
@@ -292,6 +309,47 @@ function setupEventListeners() {
     document.getElementById('tv-standings').style.display = 'none';
     document.getElementById('tv-matches').style.display = '';
     if (_activeTournament) renderTournamentMatchesScreen(_activeTournament);
+  });
+
+  // Tournament match card click (delegated from tv-matches)
+  document.getElementById('tv-matches').addEventListener('click', e => {
+    const card = e.target.closest('.match-card');
+    if (!card) return;
+    const idx = parseInt(card.dataset.matchIndex);
+    if (!_activeTournament) return;
+    const m = _activeTournament.matches[idx];
+    if (m.winner !== null) {
+      openTournamentMatchStats(_activeTournament, idx);
+    } else {
+      openTournamentStarterModal(_activeTournament, idx);
+    }
+  });
+
+  // Starter modal: option selection (delegated)
+  document.getElementById('starter-options').addEventListener('click', e => {
+    const btn = e.target.closest('.modal-starter-opt');
+    if (!btn) return;
+    document.querySelectorAll('.modal-starter-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('btn-starter-start').disabled = false;
+  });
+
+  // Starter modal: close (X)
+  document.getElementById('btn-starter-close').addEventListener('click', () => {
+    closeModal('modal-tournament-starter');
+    pendingTournamentStarterData = null;
+  });
+
+  // Starter modal: START
+  document.getElementById('btn-starter-start').addEventListener('click', () => {
+    const sel = document.querySelector('.modal-starter-opt.selected');
+    if (!sel || !pendingTournamentStarterData) return;
+    const val = sel.dataset.starter;
+    const sp  = val === 'random' ? (Math.random() < 0.5 ? 0 : 1) : parseInt(val);
+    closeModal('modal-tournament-starter');
+    startTournamentMatch(pendingTournamentStarterData.tournament,
+                         pendingTournamentStarterData.matchIndex, sp);
+    pendingTournamentStarterData = null;
   });
 
   // Setup screen: back to home
@@ -502,6 +560,73 @@ function startMatch() {
   renderGameScreen(match);
   document.getElementById('input-score').focus();
   saveToLocalStorage();
+}
+
+function openTournamentStarterModal(tournament, matchIndex) {
+  const m  = tournament.matches[matchIndex];
+  const mc = tournament.config.matchConfig;
+  const p1Name = tournament.players[m.p1].name;
+  const p2Name = tournament.players[m.p2].name;
+
+  document.getElementById('starter-match-title').textContent = 'Mecz #' + (matchIndex + 1);
+  const fmtLegs = mc.totalSets > 1
+    ? 'First to ' + mc.totalSets + ' sets × ' + mc.totalLegs
+    : 'First to ' + mc.totalLegs;
+  document.getElementById('starter-match-subtitle').textContent =
+    p1Name + ' vs ' + p2Name + ' · ' + mc.variant + ' · ' + fmtLegs;
+
+  const opts = document.getElementById('starter-options');
+  opts.innerHTML = '';
+  [
+    { label: '👤 ' + p1Name + ' zaczyna', starter: '0' },
+    { label: '🎲 Losuj',                   starter: 'random' },
+    { label: '👤 ' + p2Name + ' zaczyna', starter: '1' },
+  ].forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'modal-starter-opt';
+    btn.dataset.starter = o.starter;
+    btn.textContent = o.label;
+    opts.appendChild(btn);
+  });
+
+  document.getElementById('btn-starter-start').disabled = true;
+  pendingTournamentStarterData = { tournament, matchIndex };
+  openModal('modal-tournament-starter');
+}
+
+function startTournamentMatch(tournament, matchIndex, startingPlayer) {
+  const m  = tournament.matches[matchIndex];
+  const mc = tournament.config.matchConfig;
+  const p1 = tournament.players[m.p1];
+  const p2 = tournament.players[m.p2];
+
+  pendingTournamentMatch = {
+    tournamentId: tournament.id,
+    matchIndex,
+    p1Idx: m.p1,
+    p2Idx: m.p2,
+  };
+
+  match = createMatch({
+    variant:      mc.variant,
+    player1:      p1.name,
+    player2:      p2.name,
+    checkoutMode: mc.checkoutMode,
+    inMode:       mc.inMode,
+    totalLegs:    mc.totalLegs,
+    totalSets:    mc.totalSets,
+    startingPlayer,
+    playerFavorites: [
+      { primary: p1.primaryDouble ?? null, secondary: p1.secondaryDouble ?? null },
+      { primary: p2.primaryDouble ?? null, secondary: p2.secondaryDouble ?? null },
+    ],
+  });
+  undoStack = [];
+  updateUndoButton();
+
+  document.getElementById('btn-live-standings').style.display = '';
+  showScreen(SCREENS.GAME);
+  renderGameScreen(match);
 }
 
 // --- Quick score shortcut buttons ---
