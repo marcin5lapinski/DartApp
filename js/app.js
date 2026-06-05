@@ -334,7 +334,7 @@ function setupEventListeners() {
     if (!_activeTournament) return;
     const m = _activeTournament.matches[idx];
     if (m.winner !== null) {
-      if (typeof openTournamentMatchStats === 'function') openTournamentMatchStats(_activeTournament, idx);
+      openTournamentMatchStats(_activeTournament, idx);
     } else {
       openTournamentStarterModal(_activeTournament, idx);
     }
@@ -663,6 +663,39 @@ function saveTournamentMatchResult(finishedMatch, ptm) {
 
   saveTournaments(list);
   _activeTournament = t;
+}
+
+function openTournamentMatchStats(tournament, matchIndex) {
+  const m  = tournament.matches[matchIndex];
+  if (!m.stats || m.stats[0] === null) return;
+  const mc = tournament.config.matchConfig;
+
+  const pseudo = {
+    player1:      tournament.players[m.p1].name,
+    player2:      tournament.players[m.p2].name,
+    winner:       m.winner,
+    stats:        m.stats,
+    legsWon:      m.legs,
+    setsWon:      m.sets?.[0] !== null ? m.sets : [0, 0],
+    totalSets:    mc.totalSets,
+    totalLegs:    mc.totalLegs,
+    variant:      mc.variant,
+    inMode:       mc.inMode,
+    checkoutMode: mc.checkoutMode,
+    matchOver:    true,
+  };
+
+  pendingTournamentMatch = {
+    tournamentId: tournament.id,
+    matchIndex,
+    p1Idx: m.p1,
+    p2Idx: m.p2,
+  };
+
+  renderStatsScreen(pseudo);
+  document.getElementById('btn-new-match').textContent = 'Wróć do meczów';
+  document.getElementById('btn-live-standings').style.display = 'none';
+  showScreen(SCREENS.STATS);
 }
 
 // --- Quick score shortcut buttons ---
