@@ -367,6 +367,14 @@ function setupEventListeners() {
     pendingTournamentStarterData = null;
   });
 
+  // Live standings button
+  document.getElementById('btn-live-standings').addEventListener('click', renderLiveStandingsModal);
+
+  // Live standings modal: close (X)
+  document.getElementById('btn-live-close').addEventListener('click', () => {
+    closeModal('modal-live-standings');
+  });
+
   // Setup screen: back to home
   document.getElementById('btn-back-from-setup').addEventListener('click', () => {
     showScreen(SCREENS.HOME);
@@ -696,6 +704,70 @@ function openTournamentMatchStats(tournament, matchIndex) {
   document.getElementById('btn-new-match').textContent = 'Wróć do meczów';
   document.getElementById('btn-live-standings').style.display = 'none';
   showScreen(SCREENS.STATS);
+}
+
+function renderLiveStandingsModal() {
+  if (!pendingTournamentMatch) return;
+  const ptm = pendingTournamentMatch;
+
+  const t = loadTournaments().find(t => t.id === ptm.tournamentId);
+  if (!t) return;
+
+  const liveData = {
+    p1Idx:   ptm.p1Idx,
+    p2Idx:   ptm.p2Idx,
+    legsWon: [match.legsWon[0], match.legsWon[1]],
+    setsWon: [match.setsWon[0], match.setsWon[1]],
+  };
+  const rows = computeLiveStandings(t, liveData);
+
+  document.getElementById('live-modal-subtitle').textContent = t.name;
+
+  const container = document.getElementById('live-standings-container');
+  container.innerHTML = '';
+
+  const table = document.createElement('table');
+  table.className = 'standings-table';
+  table.innerHTML = `<thead><tr>
+    <th>#</th><th class="left">Gracz</th>
+    <th>M</th><th>W</th><th>L</th>
+    <th>Legi</th><th>Avg</th><th>Pkt</th>
+  </tr></thead>`;
+
+  const tbody = document.createElement('tbody');
+  rows.forEach((row, i) => {
+    const rank      = i + 1;
+    const isLeader  = rank === 1 && (row.W > 0 || row._live);
+    const legDiff   = row.legsWon - row.legsLost;
+    const avg       = row.avgCount ? (row.avgSum / row.avgCount).toFixed(1) : '&mdash;';
+    const legsStr   = (row.legsWon + row.legsLost) === 0 ? '&mdash;' : `${row.legsWon}–${row.legsLost}`;
+    const legsClass = legDiff > 0 ? 'legs-pos' : legDiff < 0 ? 'legs-neg' : 'legs-even';
+    const badge     = row._live ? '<span class="live-badge">LIVE</span>' : '';
+    const tr = document.createElement('tr');
+    if (row._tied) tr.classList.add('standings-tied');
+    tr.innerHTML = `
+      <td class="${isLeader ? 'pos-gold' : 'pos-num'}">${rank}</td>
+      <td class="left player-name-cell ${isLeader ? 'name-gold' : ''}">${escapeHtml(row.name)}${badge}</td>
+      <td>${row.M}</td><td>${row.W}</td><td>${row.L}</td>
+      <td class="${legsClass}">${legsStr}</td>
+      <td class="avg-cell">${avg}</td>
+      <td class="pts-cell">${row.pts}</td>`;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  container.appendChild(table);
+
+  const useSets = t.config.matchConfig.totalSets > 1;
+  const s0 = useSets ? match.setsWon[0] : match.legsWon[0];
+  const s1 = useSets ? match.setsWon[1] : match.legsWon[1];
+  const p1n = escapeHtml(t.players[ptm.p1Idx].name);
+  const p2n = escapeHtml(t.players[ptm.p2Idx].name);
+  document.getElementById('live-standings-note').textContent =
+    s0 > s1 ? `${p1n} prowadzi — punkty przyznane tymczasowo.`
+    : s1 > s0 ? `${p2n} prowadzi — punkty przyznane tymczasowo.`
+    : 'Remis — punkty nie są jeszcze przyznane.';
+
+  openModal('modal-live-standings');
 }
 
 // --- Quick score shortcut buttons ---
