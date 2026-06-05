@@ -1884,3 +1884,194 @@ html, body {
   .standings-table    { font-size: 0.94rem; }
   .standings-table th { font-size: 0.78rem; }
 }
+
+/* ===== GAME HEADER RIGHT GROUP ===== */
+.game-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-live-standings {
+  padding: 5px 9px;
+  background: #0a2a0a;
+  border: 1px solid #1a6a1a;
+  border-radius: 6px;
+  color: #4caf50;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+}
+.btn-live-standings:active { background: #0d3a0d; }
+
+/* ===== MATCH GRID ===== */
+.tv-matches {
+  padding-bottom: 16px;
+}
+
+.tv-matches-section {
+  padding: 8px 10px 4px;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.matches-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 4px 10px 8px;
+}
+
+.match-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.match-num-above {
+  font-size: 0.65rem;
+  color: #555;
+  letter-spacing: 0.5px;
+  padding-left: 2px;
+}
+
+.match-card {
+  background: var(--surface);
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 60px;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color .15s;
+}
+.match-card:hover  { border-color: #444; }
+.match-card.played { border-color: #2a3a2a; }
+
+.match-players {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.match-player-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+}
+
+.match-player-row .mpname {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #aaa;
+}
+.match-player-row .mpscore {
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-width: 12px;
+  text-align: right;
+  color: #555;
+}
+.match-player-row .mpavg {
+  font-size: 0.68rem;
+  color: var(--accent2);
+  min-width: 32px;
+  text-align: right;
+}
+
+.match-card.played .match-player-row.winner .mpname  { color: var(--text); font-weight: 600; }
+.match-card.played .match-player-row.loser  .mpname  { color: #555; }
+.match-card.played .match-player-row.winner .mpscore { color: #4caf50; }
+.match-card.played .match-player-row.loser  .mpscore { color: #333; }
+.match-card.played .match-player-row.loser  .mpavg   { color: #7a6030; }
+
+/* ===== MODAL INNER WITH CORNER CLOSE ===== */
+.modal-inner-rel {
+  position: relative;
+  padding: 20px 16px 16px;
+}
+
+.btn-modal-corner-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+.btn-modal-corner-close:hover { color: #aaa; background: var(--surface2); }
+
+/* ===== STARTER MODAL ===== */
+.modal-starter-header {
+  margin-bottom: 14px;
+  padding-right: 24px;
+}
+.modal-starter-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.modal-starter-subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.modal-starter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.modal-starter-opt {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #ccc;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background .12s, border-color .12s;
+}
+.modal-starter-opt:hover   { background: var(--surface2); border-color: var(--border); }
+.modal-starter-opt.selected { background: #3a0a0a; border-color: var(--accent); color: var(--text); }
+
+/* ===== LIVE STANDINGS MODAL ===== */
+.modal-live-note {
+  font-size: 0.72rem;
+  color: #555;
+  font-style: italic;
+  padding-top: 8px;
+  border-top: 1px solid #222;
+  margin-top: 6px;
+}
+
+/* ===== LIVE BADGE ===== */
+.live-badge {
+  display: inline-block;
+  background: #1a3a1a;
+  border: 1px solid #2a5a2a;
+  color: #4caf50;
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-left: 4px;
+  letter-spacing: 0.5px;
+}
