@@ -133,7 +133,10 @@
   <div class="game-header">
     <button id="btn-exit-match" class="btn-exit-match">✕ Menu</button>
     <span id="leg-indicator">Leg 1 / 3</span>
-    <button id="btn-undo-visit" class="btn-undo-visit" disabled>↩ Cofnij turę</button>
+    <div class="game-header-right">
+      <button id="btn-undo-visit" class="btn-undo-visit" disabled>↩ Cofnij turę</button>
+      <button id="btn-live-standings" class="btn-live-standings" style="display:none">📊 Tabela live</button>
+    </div>
   </div>
 
   <!-- Player score cards -->
@@ -503,6 +506,34 @@
   </div>
 </div>
 
+<!-- Tournament match starter -->
+<div class="modal" id="modal-tournament-starter">
+  <div class="modal-inner-rel">
+    <button id="btn-starter-close" class="btn-modal-corner-close">✕</button>
+    <div class="modal-starter-header">
+      <div id="starter-match-title" class="modal-starter-title"></div>
+      <div id="starter-match-subtitle" class="modal-starter-subtitle"></div>
+    </div>
+    <div id="starter-options" class="modal-starter-options"></div>
+    <div class="modal-starter-footer">
+      <button id="btn-starter-start" class="btn btn-primary" disabled>START</button>
+    </div>
+  </div>
+</div>
+
+<!-- Live standings -->
+<div class="modal" id="modal-live-standings">
+  <div class="modal-inner-rel">
+    <button id="btn-live-close" class="btn-modal-corner-close">✕</button>
+    <div class="modal-starter-header">
+      <div class="modal-starter-title">Tabela live</div>
+      <div id="live-modal-subtitle" class="modal-starter-subtitle"></div>
+    </div>
+    <div id="live-standings-container"></div>
+    <div id="live-standings-note" class="modal-live-note"></div>
+  </div>
+</div>
+
 <!-- ===== TOURNAMENT LIST SCREEN ===== -->
 <section id="screen-tournament-list" class="screen">
   <div class="secondary-header">
@@ -529,6 +560,7 @@
   </div>
   <div id="tv-info-bar" class="tv-info-bar"></div>
   <div id="tv-standings" class="tv-standings"></div>
+  <div id="tv-matches" class="tv-matches" style="display:none"></div>
 </section>
 
 <!-- ===== TOURNAMENT SCREEN ===== -->
