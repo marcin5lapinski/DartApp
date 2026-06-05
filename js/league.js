@@ -165,6 +165,10 @@ function renderTournamentViewScreen(tournament) {
   _activeTournament = tournament;
   document.getElementById('tv-title').textContent = tournament.name;
   document.getElementById('tv-tab-matches').classList.remove('tv-tab-disabled');
+  document.getElementById('tv-tab-table').classList.add('active');
+  document.getElementById('tv-tab-matches').classList.remove('active');
+  document.getElementById('tv-standings').style.display = '';
+  document.getElementById('tv-matches').style.display = 'none';
 
   const mc = tournament.config.matchConfig;
   const roundsLabel = tournament.config.leagueRounds === 'double' ? 'Dwie rundy' : 'Jedna runda';
