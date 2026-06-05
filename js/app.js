@@ -278,6 +278,22 @@ function setupEventListeners() {
     showScreen(SCREENS.TOURNAMENT_LIST);
   });
 
+  // Tournament view: tab switching
+  document.getElementById('tv-tab-table').addEventListener('click', () => {
+    document.getElementById('tv-tab-table').classList.add('active');
+    document.getElementById('tv-tab-matches').classList.remove('active');
+    document.getElementById('tv-standings').style.display = '';
+    document.getElementById('tv-matches').style.display = 'none';
+  });
+
+  document.getElementById('tv-tab-matches').addEventListener('click', () => {
+    document.getElementById('tv-tab-matches').classList.add('active');
+    document.getElementById('tv-tab-table').classList.remove('active');
+    document.getElementById('tv-standings').style.display = 'none';
+    document.getElementById('tv-matches').style.display = '';
+    if (_activeTournament) renderTournamentMatchesScreen(_activeTournament);
+  });
+
   // Setup screen: back to home
   document.getElementById('btn-back-from-setup').addEventListener('click', () => {
     showScreen(SCREENS.HOME);

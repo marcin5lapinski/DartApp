@@ -164,6 +164,7 @@ function buildTournamentCard(t) {
 function renderTournamentViewScreen(tournament) {
   _activeTournament = tournament;
   document.getElementById('tv-title').textContent = tournament.name;
+  document.getElementById('tv-tab-matches').classList.remove('tv-tab-disabled');
 
   const mc = tournament.config.matchConfig;
   const roundsLabel = tournament.config.leagueRounds === 'double' ? 'Dwie rundy' : 'Jedna runda';
@@ -214,4 +215,111 @@ function renderTournamentViewScreen(tournament) {
 
   table.appendChild(tbody);
   container.appendChild(table);
+}
+
+function renderTournamentMatchesScreen(tournament) {
+  const container = document.getElementById('tv-matches');
+  container.innerHTML = '';
+
+  const { matches, players } = tournament;
+
+  const lastPlayedAt = new Array(players.length).fill(-1);
+  matches.forEach((m, idx) => {
+    if (m.winner !== null) {
+      lastPlayedAt[m.p1] = idx;
+      lastPlayedAt[m.p2] = idx;
+    }
+  });
+
+  const unplayed = matches
+    .map((m, idx) => ({ m, idx }))
+    .filter(({ m }) => m.winner === null)
+    .sort((a, b) =>
+      Math.max(lastPlayedAt[a.m.p1], lastPlayedAt[a.m.p2]) -
+      Math.max(lastPlayedAt[b.m.p1], lastPlayedAt[b.m.p2])
+    );
+
+  const played = matches
+    .map((m, idx) => ({ m, idx }))
+    .filter(({ m }) => m.winner !== null);
+
+  if (unplayed.length > 0) {
+    container.insertAdjacentHTML('beforeend', '<div class="tv-matches-section">Do rozegrania</div>');
+    const grid = document.createElement('div');
+    grid.className = 'matches-grid';
+    unplayed.forEach(({ m, idx }) => grid.appendChild(_buildMatchCell(m, idx, players)));
+    container.appendChild(grid);
+  }
+
+  if (played.length > 0) {
+    container.insertAdjacentHTML('beforeend', '<div class="tv-matches-section">Rozegrane</div>');
+    const grid = document.createElement('div');
+    grid.className = 'matches-grid';
+    played.forEach(({ m, idx }) => grid.appendChild(_buildMatchCell(m, idx, players)));
+    container.appendChild(grid);
+  }
+}
+
+function _buildMatchCell(m, idx, players) {
+  const cell = document.createElement('div');
+  cell.className = 'match-cell';
+
+  const numDiv = document.createElement('div');
+  numDiv.className = 'match-num-above';
+  numDiv.textContent = '#' + (idx + 1);
+  cell.appendChild(numDiv);
+
+  const card = document.createElement('div');
+  card.className = 'match-card' + (m.winner !== null ? ' played' : ' unplayed');
+  card.dataset.matchIndex = idx;
+
+  const playersDiv = document.createElement('div');
+  playersDiv.className = 'match-players';
+
+  if (m.winner !== null) {
+    const useSetScore = m.sets && m.sets[0] !== null;
+    const w = m.winner === 0 ? 0 : 1;
+    const l = 1 - w;
+    const wPIdx = w === 0 ? m.p1 : m.p2;
+    const lPIdx = l === 0 ? m.p1 : m.p2;
+    const wScore = useSetScore ? m.sets[w] : m.legs[w];
+    const lScore = useSetScore ? m.sets[l] : m.legs[l];
+    const wAvg   = m.avgs[w] !== null ? m.avgs[w].toFixed(1) : null;
+    const lAvg   = m.avgs[l] !== null ? m.avgs[l].toFixed(1) : null;
+    playersDiv.appendChild(_buildMatchPlayerRow(escapeHtml(players[wPIdx].name), wScore, wAvg, 'winner'));
+    playersDiv.appendChild(_buildMatchPlayerRow(escapeHtml(players[lPIdx].name), lScore, lAvg, 'loser'));
+  } else {
+    playersDiv.appendChild(_buildMatchPlayerRow(escapeHtml(players[m.p1].name), null, null, ''));
+    playersDiv.appendChild(_buildMatchPlayerRow(escapeHtml(players[m.p2].name), null, null, ''));
+  }
+
+  card.appendChild(playersDiv);
+  cell.appendChild(card);
+  return cell;
+}
+
+function _buildMatchPlayerRow(name, score, avg, rowClass) {
+  const row = document.createElement('div');
+  row.className = 'match-player-row' + (rowClass ? ' ' + rowClass : '');
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'mpname';
+  nameSpan.textContent = name;
+  row.appendChild(nameSpan);
+
+  if (score !== null && score !== undefined) {
+    const scoreSpan = document.createElement('span');
+    scoreSpan.className = 'mpscore';
+    scoreSpan.textContent = score;
+    row.appendChild(scoreSpan);
+  }
+
+  if (avg !== null && avg !== undefined) {
+    const avgSpan = document.createElement('span');
+    avgSpan.className = 'mpavg';
+    avgSpan.textContent = avg;
+    row.appendChild(avgSpan);
+  }
+
+  return row;
 }
