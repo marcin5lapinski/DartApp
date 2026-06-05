@@ -644,6 +644,12 @@ function startTournamentMatch(tournament, matchIndex, startingPlayer) {
       { primary: p2.primaryDouble ?? null, secondary: p2.secondaryDouble ?? null },
     ],
   });
+  match.tournamentMatchContext = {
+    tournamentId: pendingTournamentMatch.tournamentId,
+    matchIndex:   pendingTournamentMatch.matchIndex,
+    p1Idx:        pendingTournamentMatch.p1Idx,
+    p2Idx:        pendingTournamentMatch.p2Idx,
+  };
   undoStack = [];
   updateUndoButton();
 
@@ -760,8 +766,8 @@ function renderLiveStandingsModal() {
   const useSets = t.config.matchConfig.totalSets > 1;
   const s0 = useSets ? match.setsWon[0] : match.legsWon[0];
   const s1 = useSets ? match.setsWon[1] : match.legsWon[1];
-  const p1n = escapeHtml(t.players[ptm.p1Idx].name);
-  const p2n = escapeHtml(t.players[ptm.p2Idx].name);
+  const p1n = t.players[ptm.p1Idx].name;
+  const p2n = t.players[ptm.p2Idx].name;
   document.getElementById('live-standings-note').textContent =
     s0 > s1 ? `${p1n} prowadzi — punkty przyznane tymczasowo.`
     : s1 > s0 ? `${p2n} prowadzi — punkty przyznane tymczasowo.`
@@ -1135,6 +1141,9 @@ function loadFromLocalStorage() {
     if (saved && !saved.matchOver) {
       if (confirm('Znaleziono niedokończony mecz. Kontynuować?')) {
         match = saved;
+        if (match && match.tournamentMatchContext) {
+          pendingTournamentMatch = match.tournamentMatchContext;
+        }
         showScreen(SCREENS.GAME);
         renderGameScreen(match);
       }

@@ -352,11 +352,11 @@ function _buildMatchCell(m, idx, players) {
     const lScore = useSetScore ? m.sets[l] : m.legs[l];
     const wAvg   = m.avgs[w] !== null ? m.avgs[w].toFixed(1) : null;
     const lAvg   = m.avgs[l] !== null ? m.avgs[l].toFixed(1) : null;
-    playersDiv.appendChild(_buildMatchPlayerRow(escapeHtml(players[wPIdx].name), wScore, wAvg, 'winner'));
-    playersDiv.appendChild(_buildMatchPlayerRow(escapeHtml(players[lPIdx].name), lScore, lAvg, 'loser'));
+    playersDiv.appendChild(_buildMatchPlayerRow(players[wPIdx].name, wScore, wAvg, 'winner'));
+    playersDiv.appendChild(_buildMatchPlayerRow(players[lPIdx].name, lScore, lAvg, 'loser'));
   } else {
-    playersDiv.appendChild(_buildMatchPlayerRow(escapeHtml(players[m.p1].name), null, null, ''));
-    playersDiv.appendChild(_buildMatchPlayerRow(escapeHtml(players[m.p2].name), null, null, ''));
+    playersDiv.appendChild(_buildMatchPlayerRow(players[m.p1].name, null, null, ''));
+    playersDiv.appendChild(_buildMatchPlayerRow(players[m.p2].name, null, null, ''));
   }
 
   card.appendChild(playersDiv);
