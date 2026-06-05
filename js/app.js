@@ -319,7 +319,7 @@ function setupEventListeners() {
     if (!_activeTournament) return;
     const m = _activeTournament.matches[idx];
     if (m.winner !== null) {
-      openTournamentMatchStats(_activeTournament, idx);
+      if (typeof openTournamentMatchStats === 'function') openTournamentMatchStats(_activeTournament, idx);
     } else {
       openTournamentStarterModal(_activeTournament, idx);
     }
