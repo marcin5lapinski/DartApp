@@ -24,9 +24,9 @@ function generateSchedule(numPlayers, leagueRounds) {
   const matches = [];
   for (let i = 0; i < numPlayers; i++) {
     for (let j = i + 1; j < numPlayers; j++) {
-      matches.push({ p1: i, p2: j, winner: null, legs: [null, null], avgs: [null, null] });
+      matches.push({ p1: i, p2: j, winner: null, legs: [null, null], sets: [null, null], avgs: [null, null], stats: [null, null] });
       if (leagueRounds === 'double') {
-        matches.push({ p1: j, p2: i, winner: null, legs: [null, null], avgs: [null, null] });
+        matches.push({ p1: j, p2: i, winner: null, legs: [null, null], sets: [null, null], avgs: [null, null], stats: [null, null] });
       }
     }
   }
