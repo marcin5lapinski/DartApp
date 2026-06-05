@@ -104,6 +104,68 @@ function computeStandings(tournament) {
   return rows;
 }
 
+function computeLiveStandings(tournament, liveData) {
+  const { players, matches, config } = tournament;
+  const rows = players.map((p, i) => ({
+    index: i, name: p.name,
+    M: 0, W: 0, L: 0,
+    legsWon: 0, legsLost: 0,
+    avgSum: 0, avgCount: 0,
+    pts: 0,
+  }));
+
+  for (const m of matches) {
+    if (m.winner === null) continue;
+    const [w, l] = m.winner === 0 ? [m.p1, m.p2] : [m.p2, m.p1];
+    rows[w].M++; rows[w].W++; rows[w].pts += config.winPoints;
+    rows[l].M++; rows[l].L++; rows[l].pts += config.lossPoints;
+    rows[m.p1].legsWon  += (m.legs[0] || 0);
+    rows[m.p1].legsLost += (m.legs[1] || 0);
+    rows[m.p2].legsWon  += (m.legs[1] || 0);
+    rows[m.p2].legsLost += (m.legs[0] || 0);
+    if (m.avgs[0] !== null) { rows[m.p1].avgSum += m.avgs[0]; rows[m.p1].avgCount++; }
+    if (m.avgs[1] !== null) { rows[m.p2].avgSum += m.avgs[1]; rows[m.p2].avgCount++; }
+  }
+
+  const { p1Idx, p2Idx, legsWon, setsWon } = liveData;
+  const useSets = config.matchConfig.totalSets > 1;
+  const score0  = useSets ? setsWon[0] : legsWon[0];
+  const score1  = useSets ? setsWon[1] : legsWon[1];
+
+  rows[p1Idx].legsWon  += legsWon[0];
+  rows[p1Idx].legsLost += legsWon[1];
+  rows[p2Idx].legsWon  += legsWon[1];
+  rows[p2Idx].legsLost += legsWon[0];
+
+  if (score0 > score1) {
+    rows[p1Idx].pts += config.winPoints;
+    rows[p2Idx].pts += config.lossPoints;
+  } else if (score1 > score0) {
+    rows[p2Idx].pts += config.winPoints;
+    rows[p1Idx].pts += config.lossPoints;
+  }
+
+  rows.sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    const aDiff = a.legsWon - a.legsLost, bDiff = b.legsWon - b.legsLost;
+    if (bDiff !== aDiff) return bDiff - aDiff;
+    const aAvg = a.avgCount ? a.avgSum / a.avgCount : 0;
+    const bAvg = b.avgCount ? b.avgSum / b.avgCount : 0;
+    if (bAvg !== aAvg) return bAvg - aAvg;
+    return a.index - b.index;
+  });
+
+  rows.forEach((row, i) => {
+    const diff = row.legsWon - row.legsLost;
+    const prev = rows[i - 1], next = rows[i + 1];
+    row._tied = (prev && prev.pts === row.pts && (prev.legsWon - prev.legsLost) === diff) ||
+                (next && next.pts === row.pts && (next.legsWon - next.legsLost) === diff);
+    row._live = row.index === p1Idx || row.index === p2Idx;
+  });
+
+  return rows;
+}
+
 function renderTournamentListScreen() {
   const all      = loadTournaments();
   const active   = all.filter(t => t.status === 'active').sort((a, b) => b.createdAt - a.createdAt);
