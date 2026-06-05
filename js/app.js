@@ -735,7 +735,7 @@ function renderLiveStandingsModal() {
   const table = document.createElement('table');
   table.className = 'standings-table';
   table.innerHTML = `<thead><tr>
-    <th>#</th><th class="left">Gracz</th>
+    <th>#</th><th class="left">Gracz</th><th class="live-col"></th>
     <th>M</th><th>W</th><th>L</th>
     <th>Legi</th><th>Avg</th><th>Pkt</th>
   </tr></thead>`;
@@ -753,7 +753,8 @@ function renderLiveStandingsModal() {
     if (row._tied) tr.classList.add('standings-tied');
     tr.innerHTML = `
       <td class="${isLeader ? 'pos-gold' : 'pos-num'}">${rank}</td>
-      <td class="left player-name-cell ${isLeader ? 'name-gold' : ''}">${escapeHtml(row.name)}${badge}</td>
+      <td class="left player-name-cell ${isLeader ? 'name-gold' : ''}">${escapeHtml(row.name)}</td>
+      <td class="live-col">${badge}</td>
       <td>${row.M}</td><td>${row.W}</td><td>${row.L}</td>
       <td class="${legsClass}">${legsStr}</td>
       <td class="avg-cell">${avg}</td>
