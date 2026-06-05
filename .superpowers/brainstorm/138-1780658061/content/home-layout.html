@@ -1,0 +1,154 @@
+<h2>Ekran główny — układ przycisków</h2>
+<p class="subtitle">Wybierz układ, który najbardziej Ci odpowiada</p>
+
+<style>
+  .dart-mock {
+    background: #0d0d0d;
+    border-radius: 12px;
+    padding: 20px 16px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-height: 220px;
+    justify-content: center;
+  }
+  .dart-mock .app-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #e63946;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  /* Option A: 2x2 grid */
+  .grid-2x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .tile {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 14px 8px;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .tile.primary { background: #e63946; border-color: #e63946; color: #fff; font-size: 0.85rem; }
+  .tile.disabled { color: #555; border-color: #2a2a2a; background: #141414; }
+  .tile.secondary { color: #aaa; font-size: 0.75rem; }
+  .tile .tile-icon { font-size: 1.4rem; margin-bottom: 4px; }
+
+  /* Option B: Hierarchy */
+  .btn-big {
+    width: 100%;
+    padding: 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  .btn-big.primary { background: #e63946; color: #fff; }
+  .btn-big.disabled { background: #141414; color: #444; border: 1px solid #2a2a2a; }
+  .btn-row { display: flex; gap: 8px; width: 100%; }
+  .btn-small {
+    flex: 1;
+    padding: 11px 8px;
+    border-radius: 10px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #aaa;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  /* Option C: vertical list */
+  .btn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  .btn-list-item {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn-list-item.primary { background: #e63946; color: #fff; }
+  .btn-list-item.plain { background: #1a1a1a; border: 1px solid #333; color: #ccc; }
+  .btn-list-item.disabled { background: #141414; border: 1px solid #222; color: #444; }
+</style>
+
+<div class="cards">
+
+  <!-- Option A: 2×2 grid -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="dart-mock">
+        <div class="app-title">🎯 DartApp</div>
+        <div class="grid-2x2">
+          <div class="tile primary"><div class="tile-icon">🏆</div>MECZ</div>
+          <div class="tile disabled"><div class="tile-icon">🎪</div>TURNIEJ</div>
+          <div class="tile secondary"><div class="tile-icon">👤</div>GRACZE</div>
+          <div class="tile secondary"><div class="tile-icon">📋</div>HISTORIA</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Siatka 2×2</h3>
+      <p>Cztery równe kafle. Symetrycznie, gotowe na rozbudowę (np. o statystyki).</p>
+    </div>
+  </div>
+
+  <!-- Option B: Hierarchy -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="dart-mock">
+        <div class="app-title">🎯 DartApp</div>
+        <div class="btn-big primary">🏆 &nbsp;MECZ</div>
+        <div class="btn-big disabled">🎪 &nbsp;TURNIEJ &nbsp;<span style="font-size:0.7rem">(wkrótce)</span></div>
+        <div class="btn-row">
+          <div class="btn-small">👤 Gracze</div>
+          <div class="btn-small">📋 Historia</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Hierarchia</h3>
+      <p>Mecz i Turniej wyeksponowane, Gracze i Historia jako mniejsze przyciski pomocnicze poniżej.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Vertical list -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="dart-mock">
+        <div class="app-title">🎯 DartApp</div>
+        <div class="btn-list">
+          <div class="btn-list-item primary">🏆 &nbsp;Mecz</div>
+          <div class="btn-list-item disabled">🎪 &nbsp;Turniej &nbsp;<span style="font-size:0.72rem;opacity:.6">(wkrótce)</span></div>
+          <div class="btn-list-item plain">👤 &nbsp;Gracze</div>
+          <div class="btn-list-item plain">📋 &nbsp;Historia meczów</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Lista pionowa</h3>
+      <p>Prosto i czytelnie. Pełna szerokość, jasna kolejność priorytetów.</p>
+    </div>
+  </div>
+
+</div>

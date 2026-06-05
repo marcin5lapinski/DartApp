@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup — Tabela Live v2</title>
+<style>
+  body { background: #0d0d0d; color: #e0e0e0; font-family: system-ui, sans-serif; margin: 0; padding: 16px; }
+  h2 { color: #fff; text-align: center; margin: 0 0 4px; font-size: 1.05rem; letter-spacing: 1px; text-transform: uppercase; }
+  .subtitle { color: #888; text-align: center; margin: 0 0 20px; font-size: 0.82rem; }
+
+  .game-header { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: #111; border: 1px solid #222; border-radius: 8px; max-width: 480px; margin: 0 auto; }
+  .btn-exit { background: #2a0a0a; border: 1px solid #8b0000; color: #e55; font-size: 0.75rem; padding: 6px 9px; border-radius: 5px; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+  .leg-indicator { flex: 1; text-align: center; font-size: 0.8rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .btn-undo { background: #0a1a2a; border: 1px solid #1a4a7a; color: #5af; font-size: 0.75rem; padding: 6px 9px; border-radius: 5px; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+  .btn-live { background: #0a2a0a; border: 1px solid #1a6a1a; color: #4c4; font-size: 0.75rem; padding: 6px 9px; border-radius: 5px; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal-box { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; width: 90%; max-width: 360px; position: relative; overflow: hidden; }
+  .modal-close { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #555; font-size: 1.1rem; cursor: pointer; padding: 4px 6px; border-radius: 4px; z-index: 1; line-height: 1; }
+  .modal-close:hover { color: #aaa; background: #2a2a2a; }
+  .modal-header { padding: 14px 40px 10px 16px; border-bottom: 1px solid #262626; }
+  .modal-title { font-size: 0.95rem; font-weight: 700; color: #fff; }
+  .modal-subtitle { font-size: 0.75rem; color: #666; margin-top: 2px; }
+
+  .standings-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .standings-table thead th { padding: 6px 8px; color: #666; font-weight: 400; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #262626; text-align: center; }
+  .standings-table thead th.left { text-align: left; }
+  .standings-table tbody td { padding: 7px 8px; text-align: center; border-bottom: 1px solid #1e1e1e; }
+  .standings-table tbody td.left { text-align: left; }
+  .standings-table tbody tr:last-child td { border-bottom: none; }
+
+  .pos-gold { color: #f5c218; font-weight: 700; }
+  .pos-num  { color: #555; }
+  .name-gold { color: #f5c218; font-weight: 600; }
+  .legs-pos  { color: #4caf50; }
+  .legs-neg  { color: #e55; }
+  .legs-even { color: #888; }
+  .avg-cell  { color: #f5a623; }
+  .pts-cell  { color: #e55; font-weight: 700; }
+
+  .live-badge { display: inline-block; background: #1a3a1a; border: 1px solid #2a5a2a; color: #4c4; font-size: 0.6rem; padding: 1px 4px; border-radius: 3px; vertical-align: middle; margin-left: 4px; letter-spacing: 0.5px; }
+
+  .modal-note { padding: 8px 14px 12px; font-size: 0.7rem; color: #555; border-top: 1px solid #1e1e1e; font-style: italic; }
+
+  /* Scenario tabs */
+  .scenario-tabs { display: flex; gap: 8px; justify-content: center; margin: 20px 0 8px; }
+  .sc-btn { background: #1a1a1a; border: 1px solid #333; color: #888; padding: 6px 14px; border-radius: 20px; font-size: 0.78rem; cursor: pointer; }
+  .sc-btn.active { background: #0a2a0a; border-color: #2a6a2a; color: #4c4; }
+
+  .demo-label { color: #888; font-size: 0.8rem; text-align: center; margin: 16px 0 8px; }
+</style>
+</head>
+<body>
+
+<h2>Tabela Live — v2</h2>
+<p class="subtitle">Punkty przyznawane tymczasowo prowadzącemu · remis = brak punktów</p>
+
+<div class="demo-label">Nagłówek gry</div>
+<div class="game-header">
+  <button class="btn-exit">✕ Menu</button>
+  <div class="leg-indicator">Leg 2 (First to 3)</div>
+  <button class="btn-undo">↩ Cofnij turę</button>
+  <button class="btn-live" onclick="document.getElementById('modal-overlay').style.display='flex'">📊 Tabela live</button>
+</div>
+
+<div class="scenario-tabs">
+  <button class="sc-btn active" id="sc1" onclick="showScenario(1)">Marcin prowadzi 1:0</button>
+  <button class="sc-btn" id="sc2" onclick="showScenario(2)">Remis 1:1 (brak pkt)</button>
+</div>
+<div class="demo-label" style="margin-top:0">Kliknij "Tabela live" żeby otworzyć modal (zmień scenariusz żeby zobaczyć różnicę)</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('modal-overlay').style.display='none'">✕</button>
+    <div class="modal-header">
+      <div class="modal-title">Tabela live</div>
+      <div id="modal-sub" class="modal-subtitle">Liga Czwartkowa · Marcin vs Adam · 1:0 w legach</div>
+    </div>
+
+    <!-- SCENARIO 1: Marcin leads 1:0 — gets provisional points -->
+    <div id="scenario-1">
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>#</th><th class="left">Gracz</th>
+            <th>M</th><th>W</th><th>L</th>
+            <th>Legi</th><th>Avg</th><th>Pkt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="pos-gold">1</td>
+            <td class="left name-gold">Marcin <span class="live-badge">LIVE</span></td>
+            <td>1</td><td>1</td><td>0</td>
+            <td class="legs-pos">5–1</td>
+            <td class="avg-cell">72.4</td>
+            <td class="pts-cell">4</td>
+          </tr>
+          <tr>
+            <td class="pos-num">2</td>
+            <td class="left">Adam <span class="live-badge">LIVE</span></td>
+            <td>1</td><td>1</td><td>0</td>
+            <td class="legs-pos">3–3</td>
+            <td class="avg-cell">69.8</td>
+            <td class="pts-cell">2</td>
+          </tr>
+          <tr>
+            <td class="pos-num">3</td>
+            <td class="left">Tomek</td>
+            <td>1</td><td>0</td><td>1</td>
+            <td class="legs-neg">2–3</td>
+            <td class="avg-cell">61.3</td>
+            <td class="pts-cell" style="color:#555">0</td>
+          </tr>
+          <tr>
+            <td class="pos-num">4</td>
+            <td class="left">Bartek</td>
+            <td>1</td><td>0</td><td>1</td>
+            <td class="legs-neg">1–3</td>
+            <td class="avg-cell">58.2</td>
+            <td class="pts-cell" style="color:#555">0</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="modal-note">Marcin prowadzi 1:0 — punkty przyznane tymczasowo. Tabela zmieni się po zakończeniu meczu.</div>
+    </div>
+
+    <!-- SCENARIO 2: Tied 1:1 — no points -->
+    <div id="scenario-2" style="display:none">
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>#</th><th class="left">Gracz</th>
+            <th>M</th><th>W</th><th>L</th>
+            <th>Legi</th><th>Avg</th><th>Pkt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="pos-gold">1</td>
+            <td class="left name-gold">Marcin <span class="live-badge">LIVE</span></td>
+            <td>1</td><td>1</td><td>0</td>
+            <td class="legs-pos">5–2</td>
+            <td class="avg-cell">72.4</td>
+            <td class="pts-cell">2</td>
+          </tr>
+          <tr>
+            <td class="pos-num">2</td>
+            <td class="left">Adam <span class="live-badge">LIVE</span></td>
+            <td>1</td><td>1</td><td>0</td>
+            <td class="legs-pos">4–3</td>
+            <td class="avg-cell">69.8</td>
+            <td class="pts-cell">2</td>
+          </tr>
+          <tr>
+            <td class="pos-num">3</td>
+            <td class="left">Tomek</td>
+            <td>1</td><td>0</td><td>1</td>
+            <td class="legs-neg">2–3</td>
+            <td class="avg-cell">61.3</td>
+            <td class="pts-cell" style="color:#555">0</td>
+          </tr>
+          <tr>
+            <td class="pos-num">4</td>
+            <td class="left">Bartek</td>
+            <td>1</td><td>0</td><td>1</td>
+            <td class="legs-neg">1–3</td>
+            <td class="avg-cell">58.2</td>
+            <td class="pts-cell" style="color:#555">0</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="modal-note">Remis 1:1 w legach — punkty nie są przyznane. Legi uwzględnione w bilansie.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let currentScenario = 1;
+function showScenario(n) {
+  currentScenario = n;
+  document.getElementById('scenario-1').style.display = n === 1 ? 'block' : 'none';
+  document.getElementById('scenario-2').style.display = n === 2 ? 'block' : 'none';
+  document.getElementById('sc1').className = 'sc-btn' + (n === 1 ? ' active' : '');
+  document.getElementById('sc2').className = 'sc-btn' + (n === 2 ? ' active' : '');
+  document.getElementById('modal-sub').textContent =
+    n === 1 ? 'Liga Czwartkowa · Marcin vs Adam · 1:0 w legach'
+            : 'Liga Czwartkowa · Marcin vs Adam · 1:1 w legach';
+}
+</script>
+
+</body>
+</html>

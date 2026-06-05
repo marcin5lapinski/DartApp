@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d0d0d">
+  <title>DartApp 🎯</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== HOME SCREEN ===== -->
+<section id="screen-home" class="screen">
+  <div class="home-card">
+    <h1>🎯 DartApp</h1>
+    <button id="btn-home-match" class="btn btn-primary">MECZ</button>
+    <button id="btn-home-tournament" class="btn btn-home-tournament">TURNIEJ</button>
+    <div class="home-nav">
+      <button id="btn-home-players" class="btn-nav">👤 Gracze</button>
+      <button id="btn-home-history" class="btn-nav">📋 Historia meczów</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SETUP SCREEN ===== -->
+<section id="screen-setup" class="screen">
+  <div class="setup-card">
+    <div class="setup-header">
+      <button id="btn-back-from-setup" class="btn-back">&#8592; Powrót</button>
+      <h1>🎯 DartApp</h1>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="sel-variant">Wariant</label>
+        <select id="sel-variant">
+          <option value="101">101</option>
+          <option value="201">201</option>
+          <option value="301" selected>301</option>
+          <option value="401">401</option>
+          <option value="501">501</option>
+          <option value="601">601</option>
+          <option value="701">701</option>
+          <option value="801">801</option>
+          <option value="901">901</option>
+          <option value="1001">1001</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="sel-sets">Liczba setów</label>
+        <select id="sel-sets">
+          <option value="1" selected>1 set</option>
+          <option value="2">2 sety</option>
+          <option value="3">3 sety</option>
+          <option value="4">4 sety</option>
+          <option value="5">5 setów</option>
+          <option value="6">6 setów</option>
+          <option value="7">7 setów</option>
+          <option value="8">8 setów</option>
+          <option value="9">9 setów</option>
+          <option value="10">10 setów</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="sel-legs" id="lbl-legs">Liczba legów</label>
+      <select id="sel-legs">
+          <option value="1">First to 1</option>
+          <option value="2" selected>First to 2</option>
+          <option value="3">First to 3</option>
+          <option value="4">First to 4</option>
+          <option value="5">First to 5</option>
+          <option value="6">First to 6</option>
+          <option value="7">First to 7</option>
+          <option value="8">First to 8</option>
+          <option value="9">First to 9</option>
+          <option value="10">First to 10</option>
+          <option value="11">First to 11</option>
+          <option value="12">First to 12</option>
+          <option value="13">First to 13</option>
+          <option value="14">First to 14</option>
+          <option value="15">First to 15</option>
+          <option value="16">First to 16</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="sel-in-mode">Tryb wejścia</label>
+      <select id="sel-in-mode">
+        <option value="straight" selected>Straight-in (domyślny)</option>
+        <option value="double">Double-in</option>
+        <option value="master">Master-in</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="sel-checkout">Tryb wyjścia</label>
+      <select id="sel-checkout">
+        <option value="double">Double-out (domyślny)</option>
+        <option value="master">Master-out</option>
+        <option value="straight">Straight-out</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="input-p1">Gracz 1</label>
+      <input id="input-p1" type="text" list="players-datalist" placeholder="Gracz 1" maxlength="20" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+      <label for="input-p2">Gracz 2</label>
+      <input id="input-p2" type="text" list="players-datalist" placeholder="Gracz 2" maxlength="20" autocomplete="off">
+    </div>
+
+    <datalist id="players-datalist"></datalist>
+
+    <div class="form-group">
+      <label>Kto zaczyna?</label>
+      <div class="btn-group" id="starter-group">
+        <button class="btn-seg active" data-starter="0">Gracz 1</button>
+        <button class="btn-seg" data-starter="random">Losuj</button>
+        <button class="btn-seg" data-starter="1">Gracz 2</button>
+      </div>
+    </div>
+
+    <button id="btn-start-match" class="btn btn-primary">ROZPOCZNIJ MECZ</button>
+  </div>
+</section>
+
+<!-- ===== GAME SCREEN ===== -->
+<section id="screen-game" class="screen">
+
+  <div class="game-header">
+    <button id="btn-exit-match" class="btn-exit-match">✕ Menu</button>
+    <span id="leg-indicator">Leg 1 / 3</span>
+    <button id="btn-undo-visit" class="btn-undo-visit" disabled>↩ Cofnij turę</button>
+  </div>
+
+  <!-- Player score cards -->
+  <div class="players-row">
+    <div class="player-card active" id="player-card-0">
+      <div class="player-name">Gracz 1</div>
+      <div class="player-score">301</div>
+      <div class="player-darts"></div>
+      <div class="player-avg"></div>
+      <div class="player-last"></div>
+    </div>
+    <div class="score-center">
+      <span id="ms-result">0 : 0</span>
+    </div>
+    <div class="player-card inactive" id="player-card-1">
+      <div class="player-name">Gracz 2</div>
+      <div class="player-score">301</div>
+      <div class="player-darts"></div>
+      <div class="player-avg"></div>
+      <div class="player-last"></div>
+    </div>
+  </div>
+
+  <!-- Checkout row: left buttons | hint | right buttons -->
+  <div id="checkout-row">
+    <div class="quick-scores">
+      <button class="quick-score-btn" data-val="41">41</button>
+      <button class="quick-score-btn" data-val="45">45</button>
+      <button class="quick-score-btn" data-val="60">60</button>
+      <button class="quick-score-btn" data-val="100">100</button>
+      <button class="quick-score-btn" data-val="140">140</button>
+      <button class="quick-score-btn" data-val="180">180</button>
+    </div>
+    <div id="checkout-hint"><span id="checkout-hint-text"></span></div>
+    <div class="quick-scores">
+      <button class="quick-score-btn qs-highlight" data-val="26">26</button>
+      <button class="quick-score-btn" data-val="55">55</button>
+      <button class="quick-score-btn" data-val="57">57</button>
+      <button class="quick-score-btn" data-val="85">85</button>
+      <button class="quick-score-btn" data-val="95">95</button>
+      <button class="quick-score-btn" data-val="133">133</button>
+    </div>
+  </div>
+
+  <!-- Mode switcher -->
+  <div class="mode-switcher">
+    <button class="mode-btn active" data-mode="summary">Suma</button>
+    <button class="mode-btn" data-mode="dartbydart">Lotka po lotce</button>
+    <button class="mode-btn" data-mode="board">Tarcza</button>
+  </div>
+
+  <!-- Summary input area -->
+  <div class="input-area" id="summary-area" style="display:flex">
+    <div class="score-input-row">
+      <input id="input-score" type="tel" inputmode="numeric" pattern="[0-9]*"
+             placeholder="0" maxlength="3" autocomplete="off">
+      <button class="btn btn-submit" id="btn-submit-score">OK</button>
+    </div>
+  </div>
+
+  <!-- Dart-by-dart input area -->
+  <div class="dart-panel" id="dart-by-dart-area" style="display:none">
+
+    <!-- Multiplier selector -->
+    <div class="multiplier-group" id="multiplier-group">
+      <button class="mult-btn active" data-mult="1">Single</button>
+      <button class="mult-btn" data-mult="2">Double</button>
+      <button class="mult-btn" data-mult="3">Triple</button>
+    </div>
+
+    <!-- Number grid 1-20, Bull, Miss -->
+    <div class="dart-grid" id="dart-grid">
+      <button class="dart-val-btn" data-base="1">1</button>
+      <button class="dart-val-btn" data-base="2">2</button>
+      <button class="dart-val-btn" data-base="3">3</button>
+      <button class="dart-val-btn" data-base="4">4</button>
+      <button class="dart-val-btn" data-base="5">5</button>
+      <button class="dart-val-btn" data-base="6">6</button>
+      <button class="dart-val-btn" data-base="7">7</button>
+      <button class="dart-val-btn" data-base="8">8</button>
+      <button class="dart-val-btn" data-base="9">9</button>
+      <button class="dart-val-btn" data-base="10">10</button>
+      <button class="dart-val-btn" data-base="11">11</button>
+      <button class="dart-val-btn" data-base="12">12</button>
+      <button class="dart-val-btn" data-base="13">13</button>
+      <button class="dart-val-btn" data-base="14">14</button>
+      <button class="dart-val-btn" data-base="15">15</button>
+      <button class="dart-val-btn" data-base="16">16</button>
+      <button class="dart-val-btn" data-base="17">17</button>
+      <button class="dart-val-btn" data-base="18">18</button>
+      <button class="dart-val-btn" data-base="19">19</button>
+      <button class="dart-val-btn" data-base="20">20</button>
+      <button class="dart-val-btn bull" data-base="25">Bull</button>
+      <button class="dart-val-btn miss" data-base="0">Miss</button>
+    </div>
+
+  </div>
+
+  <!-- Interactive board (Mode C) -->
+  <div class="board-area" id="board-area" style="display:none">
+    <canvas id="board-canvas"></canvas>
+  </div>
+
+  <!-- Dart buffer (shared: dart-by-dart + board modes) -->
+  <div class="dart-buffer-row" id="dart-buffer-row" style="display:none">
+    <div class="dart-slot" id="dart-slot-0">-</div>
+    <div class="dart-slot" id="dart-slot-1">-</div>
+    <div class="dart-slot" id="dart-slot-2">-</div>
+    <button class="btn-undo-dart" id="btn-undo-dart">↩ Cofnij</button>
+  </div>
+
+  <!-- Numpad -->
+  <div class="numpad">
+    <button class="numpad-btn" data-val="7">7</button>
+    <button class="numpad-btn" data-val="8">8</button>
+    <button class="numpad-btn" data-val="9">9</button>
+    <button class="numpad-btn" data-val="4">4</button>
+    <button class="numpad-btn" data-val="5">5</button>
+    <button class="numpad-btn" data-val="6">6</button>
+    <button class="numpad-btn" data-val="1">1</button>
+    <button class="numpad-btn" data-val="2">2</button>
+    <button class="numpad-btn" data-val="3">3</button>
+    <button class="numpad-btn" data-val="DEL">⌫</button>
+    <button class="numpad-btn" data-val="0">0</button>
+    <button class="numpad-btn" data-val="OK">OK</button>
+  </div>
+
+  <!-- Turn history -->
+  <div class="history-section">
+    <h4>Historia rzutów</h4>
+    <div id="turn-history"></div>
+  </div>
+
+</section>
+
+<!-- ===== STATS SCREEN ===== -->
+<section id="screen-stats" class="screen">
+  <h2>Wyniki meczu</h2>
+  <div id="stats-container"></div>
+  <button id="btn-new-match" class="btn btn-primary" style="margin-top:8px">
+    Nowy mecz
+  </button>
+</section>
+
+<!-- ===== PLAYERS SCREEN ===== -->
+<section id="screen-players" class="screen">
+  <div class="secondary-header">
+    <button id="btn-back-from-players" class="btn-back">← Wróć</button>
+    <h2>Gracze</h2>
+    <span></span>
+  </div>
+  <div class="secondary-body">
+    <div class="add-player-row">
+      <input id="input-new-player" type="text" placeholder="Nowy gracz…" maxlength="20" autocomplete="off">
+      <span class="add-player-sep">ulubione<br>podwójne</span>
+      <select id="sel-primary-double" title="Ulubiona podwójna (1.)">
+        <option value="">1°</option>
+        <option value="2">D1</option>
+        <option value="4">D2</option>
+        <option value="6">D3</option>
+        <option value="8">D4</option>
+        <option value="10">D5</option>
+        <option value="12">D6</option>
+        <option value="14">D7</option>
+        <option value="16">D8</option>
+        <option value="18">D9</option>
+        <option value="20">D10</option>
+        <option value="22">D11</option>
+        <option value="24">D12</option>
+        <option value="26">D13</option>
+        <option value="28">D14</option>
+        <option value="30">D15</option>
+        <option value="32">D16</option>
+        <option value="34">D17</option>
+        <option value="36">D18</option>
+        <option value="38">D19</option>
+        <option value="40">D20</option>
+        <option value="50">Bull</option>
+      </select>
+      <select id="sel-secondary-double" title="Ulubiona podwójna (2.)">
+        <option value="">2°</option>
+        <option value="2">D1</option>
+        <option value="4">D2</option>
+        <option value="6">D3</option>
+        <option value="8">D4</option>
+        <option value="10">D5</option>
+        <option value="12">D6</option>
+        <option value="14">D7</option>
+        <option value="16">D8</option>
+        <option value="18">D9</option>
+        <option value="20">D10</option>
+        <option value="22">D11</option>
+        <option value="24">D12</option>
+        <option value="26">D13</option>
+        <option value="28">D14</option>
+        <option value="30">D15</option>
+        <option value="32">D16</option>
+        <option value="34">D17</option>
+        <option value="36">D18</option>
+        <option value="38">D19</option>
+        <option value="40">D20</option>
+        <option value="50">Bull</option>
+      </select>
+      <button id="btn-add-player" class="btn-add">Dodaj</button>
+    </div>
+    <div id="players-list"></div>
+  </div>
+</section>
+
+<!-- ===== HISTORY SCREEN ===== -->
+<section id="screen-history" class="screen">
+  <div class="secondary-header">
+    <button id="btn-back-from-history" class="btn-back">← Wróć</button>
+    <h2>Historia meczów</h2>
+    <button id="btn-clear-history" class="btn-ghost-sm">Usuń wszystkie</button>
+  </div>
+  <div id="history-list" class="history-list-container"></div>
+</section>
+
+<!-- ===== HISTORY DETAIL SCREEN ===== -->
+<section id="screen-history-detail" class="screen">
+  <div class="secondary-header">
+    <button id="btn-back-from-history-detail" class="btn-back">← Historia</button>
+    <h2 id="history-detail-title"></h2>
+    <span></span>
+  </div>
+  <div id="history-detail-container" class="history-detail-body"></div>
+</section>
+
+<!-- ===== MODALS ===== -->
+<div id="modal-overlay"></div>
+
+<!-- Delete single record confirmation -->
+<div class="modal" id="modal-delete-record">
+  <h3>Usunąć ten mecz?</h3>
+  <p class="exit-confirm-msg">Ten mecz zostanie trwale usunięty z historii.</p>
+  <div class="exit-confirm-buttons">
+    <button class="btn btn-secondary" id="btn-delete-record-cancel">Anuluj</button>
+    <button class="btn btn-danger" id="btn-delete-record-confirm">Usuń</button>
+  </div>
+</div>
+
+<!-- Delete tournament confirmation -->
+<div class="modal" id="modal-delete-tournament">
+  <h3>Usunąć turniej?</h3>
+  <p class="exit-confirm-msg">Turniej zostanie trwale usunięty wraz ze wszystkimi wynikami.</p>
+  <div class="exit-confirm-buttons">
+    <button class="btn btn-secondary" id="btn-delete-tournament-cancel">Anuluj</button>
+    <button class="btn btn-danger" id="btn-delete-tournament-confirm">Usuń</button>
+  </div>
+</div>
+
+<!-- Clear history confirmation -->
+<div class="modal" id="modal-clear-history">
+  <h3>Usunąć całą historię?</h3>
+  <p class="exit-confirm-msg">Wszystkie zapisane mecze zostaną trwale usunięte.</p>
+  <div class="exit-confirm-buttons">
+    <button class="btn btn-secondary" id="btn-clear-history-cancel">Anuluj</button>
+    <button class="btn btn-danger" id="btn-clear-history-confirm">Usuń</button>
+  </div>
+</div>
+
+<!-- Exit match confirmation -->
+<div class="modal" id="modal-exit-confirm">
+  <h3>Przerwać mecz?</h3>
+  <p class="exit-confirm-msg">Postęp meczu zostanie utracony.</p>
+  <div class="exit-confirm-buttons">
+    <button class="btn btn-secondary" id="btn-exit-cancel">Anuluj</button>
+    <button class="btn btn-danger" id="btn-exit-confirm">Wyjdź</button>
+  </div>
+</div>
+
+<!-- Which dart opened the leg? -->
+<div class="modal" id="modal-which-open-dart">
+  <h3>Którą lotką otworzyłeś lega?</h3>
+  <div class="open-dart-options"></div>
+  <button class="btn btn-ghost which-dart-cancel" id="btn-which-open-dart-cancel">Cofnij</button>
+</div>
+
+<!-- Which dart closed the leg? -->
+<div class="modal" id="modal-which-dart">
+  <h3>Którą lotką zamknąłeś lega?</h3>
+  <div class="dart-options"></div>
+  <button class="btn btn-ghost which-dart-cancel" id="btn-which-dart-cancel">Cofnij</button>
+</div>
+
+<!-- Leg result -->
+<div class="modal" id="modal-leg-result">
+  <div class="leg-result-text"></div>
+  <button class="btn btn-primary" id="btn-next-leg">Dalej</button>
+</div>
+
+<!-- Bust notification -->
+<div id="bust-toast">BUST!</div>
+
+<!-- Edit player -->
+<div class="modal" id="modal-edit-player">
+  <h3>Edytuj gracza</h3>
+  <div class="edit-player-form">
+    <input id="input-edit-player-name" type="text" maxlength="20" autocomplete="off" placeholder="Imię gracza">
+    <div class="edit-player-doubles-row">
+      <span class="add-player-sep">ulubione<br>podwójne</span>
+      <select id="sel-edit-primary-double" title="Ulubiona podwójna (1.)">
+        <option value="">1°</option>
+        <option value="2">D1</option>
+        <option value="4">D2</option>
+        <option value="6">D3</option>
+        <option value="8">D4</option>
+        <option value="10">D5</option>
+        <option value="12">D6</option>
+        <option value="14">D7</option>
+        <option value="16">D8</option>
+        <option value="18">D9</option>
+        <option value="20">D10</option>
+        <option value="22">D11</option>
+        <option value="24">D12</option>
+        <option value="26">D13</option>
+        <option value="28">D14</option>
+        <option value="30">D15</option>
+        <option value="32">D16</option>
+        <option value="34">D17</option>
+        <option value="36">D18</option>
+        <option value="38">D19</option>
+        <option value="40">D20</option>
+        <option value="50">Bull</option>
+      </select>
+      <select id="sel-edit-secondary-double" title="Ulubiona podwójna (2.)">
+        <option value="">2°</option>
+        <option value="2">D1</option>
+        <option value="4">D2</option>
+        <option value="6">D3</option>
+        <option value="8">D4</option>
+        <option value="10">D5</option>
+        <option value="12">D6</option>
+        <option value="14">D7</option>
+        <option value="16">D8</option>
+        <option value="18">D9</option>
+        <option value="20">D10</option>
+        <option value="22">D11</option>
+        <option value="24">D12</option>
+        <option value="26">D13</option>
+        <option value="28">D14</option>
+        <option value="30">D15</option>
+        <option value="32">D16</option>
+        <option value="34">D17</option>
+        <option value="36">D18</option>
+        <option value="38">D19</option>
+        <option value="40">D20</option>
+        <option value="50">Bull</option>
+      </select>
+    </div>
+    <p id="edit-player-error" class="edit-player-error"></p>
+  </div>
+  <div class="exit-confirm-buttons">
+    <button class="btn btn-secondary" id="btn-edit-player-cancel">Anuluj</button>
+    <button class="btn btn-primary" id="btn-edit-player-save">Zapisz</button>
+  </div>
+</div>
+
+<!-- Delete player confirmation -->
+<div class="modal" id="modal-delete-player">
+  <h3>Usunąć gracza?</h3>
+  <p class="exit-confirm-msg" id="delete-player-msg"></p>
+  <div class="exit-confirm-buttons">
+    <button class="btn btn-secondary" id="btn-delete-player-cancel">Anuluj</button>
+    <button class="btn btn-danger" id="btn-delete-player-confirm">Usuń</button>
+  </div>
+</div>
+
+<!-- ===== TOURNAMENT LIST SCREEN ===== -->
+<section id="screen-tournament-list" class="screen">
+  <div class="secondary-header">
+    <button id="btn-back-from-tournament-list" class="btn-back">&#8592; Powrót</button>
+    <h2>Turnieje</h2>
+    <span></span>
+  </div>
+  <div class="tournament-list-top">
+    <button id="btn-new-tournament" class="btn btn-primary">+ Nowy turniej</button>
+  </div>
+  <div id="tournament-list-body" class="tournament-list-body"></div>
+</section>
+
+<!-- ===== TOURNAMENT VIEW SCREEN ===== -->
+<section id="screen-tournament-view" class="screen">
+  <div class="secondary-header">
+    <button id="btn-back-from-tournament-view" class="btn-back">&#8592; Turnieje</button>
+    <h2 id="tv-title">Turniej</h2>
+    <span></span>
+  </div>
+  <div class="tv-tabs">
+    <button class="tv-tab active" id="tv-tab-table">Tabela</button>
+    <button class="tv-tab tv-tab-disabled" id="tv-tab-matches">Mecze</button>
+  </div>
+  <div id="tv-info-bar" class="tv-info-bar"></div>
+  <div id="tv-standings" class="tv-standings"></div>
+</section>
+
+<!-- ===== TOURNAMENT SCREEN ===== -->
+<section id="screen-tournament" class="screen">
+  <div class="tournament-card">
+
+    <div class="wizard-dots">
+      <span class="wdot" data-step="1"></span>
+      <span class="wdot" data-step="2"></span>
+      <span class="wdot" data-step="3"></span>
+      <span class="wdot" data-step="4"></span>
+    </div>
+
+    <!-- ── Step 1: Number of players ── -->
+    <div class="wizard-step" id="wstep-1">
+      <div class="wizard-title">🎯 Nowy turniej</div>
+      <div class="step-indicator">Krok 1 z 4</div>
+      <label class="wlabel" for="t-name">Nazwa turnieju</label>
+      <input id="t-name" type="text" class="player-name-input" maxlength="40"
+             placeholder="np. Liga czwartkowa" autocomplete="off">
+      <label class="wlabel" for="t-num-players">Liczba graczy</label>
+      <p class="step-hint">Minimum: 3 &nbsp;·&nbsp; Maksimum: 6</p>
+      <input id="t-num-players" type="number" class="t-input-center" min="3" max="6" placeholder="np. 4">
+      <span id="t-step1-error" class="t-error" hidden></span>
+      <div class="wizard-nav">
+        <button id="t-back-1" class="btn-wizard-back">&#8592; Powrót</button>
+        <button id="t-next-1" class="btn-wizard-next">DALEJ &#8594;</button>
+      </div>
+    </div>
+
+    <!-- ── Step 2: Format ── -->
+    <div class="wizard-step" id="wstep-2">
+      <div class="wizard-title">🎯 Nowy turniej</div>
+      <div class="step-indicator">Krok 2 z 4</div>
+      <label class="wlabel">Format turnieju</label>
+      <div class="format-tile active" id="t-format-league" data-format="league">
+        Liga (Round-Robin)
+        <span class="format-tile-sub">każdy z każdym</span>
+      </div>
+      <div class="format-tile disabled" data-format="groups">
+        Grupy + Drabinka
+        <span class="format-tile-sub">wkrótce</span>
+      </div>
+      <div class="format-tile disabled" data-format="bracket">
+        Drabinka
+        <span class="format-tile-sub">wkrótce</span>
+      </div>
+
+      <div id="league-settings">
+        <label class="wlabel" style="margin-top:4px">Rundy</label>
+        <div class="btn-group" id="t-rounds-group">
+          <button class="btn-seg active" data-rounds="single">Jedna runda</button>
+          <button class="btn-seg" data-rounds="double">Dwie rundy</button>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <div class="form-group">
+            <label for="t-win-pts">Pkt za wygraną</label>
+            <input id="t-win-pts" type="number" min="0" value="2">
+          </div>
+          <div class="form-group">
+            <label for="t-loss-pts">Pkt za przegraną</label>
+            <input id="t-loss-pts" type="number" min="0" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <button id="t-back-2" class="btn-wizard-back">&#8592; Wstecz</button>
+        <button id="t-next-2" class="btn-wizard-next">DALEJ &#8594;</button>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Match settings ── -->
+    <div class="wizard-step" id="wstep-3">
+      <div class="wizard-title">🎯 Nowy turniej</div>
+      <div class="step-indicator">Krok 3 z 4</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="t-variant">Wariant</label>
+          <select id="t-variant">
+            <option value="101">101</option>
+            <option value="201">201</option>
+            <option value="301">301</option>
+            <option value="401">401</option>
+            <option value="501" selected>501</option>
+            <option value="601">601</option>
+            <option value="701">701</option>
+            <option value="801">801</option>
+            <option value="901">901</option>
+            <option value="1001">1001</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="t-sets">Liczba setów</label>
+          <select id="t-sets">
+            <option value="1" selected>1 set</option>
+            <option value="2">2 sety</option>
+            <option value="3">3 sety</option>
+            <option value="4">4 sety</option>
+            <option value="5">5 setów</option>
+            <option value="6">6 setów</option>
+            <option value="7">7 setów</option>
+            <option value="8">8 setów</option>
+            <option value="9">9 setów</option>
+            <option value="10">10 setów</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="t-legs" id="t-lbl-legs">Liczba legów</label>
+        <select id="t-legs">
+          <option value="1">First to 1</option>
+          <option value="2">First to 2</option>
+          <option value="3" selected>First to 3</option>
+          <option value="4">First to 4</option>
+          <option value="5">First to 5</option>
+          <option value="6">First to 6</option>
+          <option value="7">First to 7</option>
+          <option value="8">First to 8</option>
+          <option value="9">First to 9</option>
+          <option value="10">First to 10</option>
+          <option value="11">First to 11</option>
+          <option value="12">First to 12</option>
+          <option value="13">First to 13</option>
+          <option value="14">First to 14</option>
+          <option value="15">First to 15</option>
+          <option value="16">First to 16</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="t-in-mode">Tryb wejścia</label>
+        <select id="t-in-mode">
+          <option value="straight" selected>Straight-in (domyślny)</option>
+          <option value="double">Double-in</option>
+          <option value="master">Master-in</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="t-checkout">Tryb wyjścia</label>
+        <select id="t-checkout">
+          <option value="double" selected>Double-out (domyślny)</option>
+          <option value="master">Master-out</option>
+          <option value="straight">Straight-out</option>
+        </select>
+      </div>
+
+      <div class="wizard-nav">
+        <button id="t-back-3" class="btn-wizard-back">&#8592; Wstecz</button>
+        <button id="t-next-3" class="btn-wizard-next">DALEJ &#8594;</button>
+      </div>
+    </div>
+
+    <!-- ── Step 4: Players & seeding ── -->
+    <div class="wizard-step" id="wstep-4">
+      <div class="wizard-title">🎯 Nowy turniej</div>
+      <div class="step-indicator">Krok 4 z 4</div>
+      <label class="wlabel" id="t-players-label">Gracze</label>
+      <div id="t-players-list"></div>
+      <label class="wlabel" style="margin-top:12px">Rozstawienie</label>
+      <div class="btn-group" id="t-seeding-group">
+        <button class="btn-seg active" data-seeding="random">🎲 Losuj rozstawienie</button>
+        <button class="btn-seg" data-seeding="ordered">↓ Użyj kolejności</button>
+      </div>
+      <button id="btn-create-tournament" class="btn-create-tournament" disabled>UTWÓRZ TURNIEJ</button>
+      <div class="wizard-nav" style="margin-top:8px">
+        <button id="t-back-4" class="btn-wizard-back">&#8592; Wstecz</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Scripts (order matters) -->
+<script src="js/checkouts.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/game.js"></script>
+<script src="js/players.js"></script>
+<script src="js/history.js"></script>
+<script src="js/board.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/league.js"></script>
+<script src="js/tournament.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

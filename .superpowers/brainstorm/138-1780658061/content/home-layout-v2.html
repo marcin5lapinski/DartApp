@@ -1,0 +1,77 @@
+<h2>Ekran główny — opcja C (poprawka)</h2>
+<p class="subtitle">Czy tak wygląda dobrze?</p>
+
+<style>
+  .dart-mock {
+    background: #0d0d0d;
+    border-radius: 12px;
+    padding: 24px 20px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+  .app-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #e63946;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .btn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  .btn-list-item {
+    width: 100%;
+    padding: 15px 18px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn-list-item.primary { background: #e63946; color: #fff; justify-content: center; }
+  .btn-list-item.disabled { background: #141414; border: 1px solid #222; color: #444; justify-content: center; }
+  .btn-list-item.plain { background: #1a1a1a; border: 1px solid #333; color: #ccc; }
+</style>
+
+<div class="mockup">
+  <div class="mockup-header">Podgląd ekranu głównego</div>
+  <div class="mockup-body">
+    <div class="dart-mock">
+      <div class="app-title">🎯 DartApp</div>
+      <div class="btn-list">
+        <div class="btn-list-item primary">MECZ</div>
+        <div class="btn-list-item disabled">TURNIEJ &nbsp;<span style="font-size:0.72rem;opacity:.6">(wkrótce)</span></div>
+        <div class="btn-list-item plain">👤 &nbsp;Gracze</div>
+        <div class="btn-list-item plain">📋 &nbsp;Historia meczów</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top: 24px">
+  <div class="option" data-choice="ok" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Wygląda dobrze</h3>
+      <p>Implementujemy ten układ</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)">
+    <div class="letter">↩</div>
+    <div class="content">
+      <h3>Chcę coś zmienić</h3>
+      <p>Powiem co jeszcze poprawić</p>
+    </div>
+  </div>
+</div>
