@@ -381,9 +381,9 @@ function renderBracketScreen(tournament) {
       const isLastVisible = (ri === end - 1);
       const hasMoreRight  = (ri < numRounds - 1);
       if (!isLastVisible) {
-        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, SVG_W, false));
+        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, bodyH, SVG_W, false));
       } else if (hasMoreRight) {
-        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, Math.floor(SVG_W / 2), true));
+        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, bodyH, Math.floor(SVG_W / 2), true));
       }
     }
 
@@ -693,8 +693,7 @@ function buildBracketRound(roundMatches, roundIdx, numRounds, players, matchIdxO
   return col;
 }
 
-function buildBracketConnectorSvg(numLeft, round, CARD_H, GAP, LABEL_H, SVG_W, isDashed) {
-  const bodyH  = numLeft * CARD_H + (numLeft - 1) * GAP;
+function buildBracketConnectorSvg(numLeft, round, CARD_H, GAP, LABEL_H, bodyH, SVG_W, isDashed) {
   const totalH = LABEL_H + bodyH;
   const HOOK   = Math.floor(SVG_W / 2);
   const STROKE = '#2d2d2d';
