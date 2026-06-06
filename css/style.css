@@ -2276,3 +2276,19 @@ html, body {
   color: #333 !important;
   font-size: 0.58rem !important;
 }
+
+@media (min-width: 600px) {
+  .tv-bracket {
+    display: flex;
+    justify-content: center;
+    padding: 16px 16px 32px;
+  }
+  .bk-nav-wrap {
+    zoom: 1.25;
+    flex-shrink: 0;
+  }
+  .bk-viewport {
+    flex: none;
+    width: 370px; /* 3 × 110px col + 2 × 20px SVG connector */
+  }
+}
