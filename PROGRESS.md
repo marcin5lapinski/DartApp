@@ -221,6 +221,132 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+---
+
+## Faza 3 — widok meczów i rozgrywka turniejowa (2026-06-05)
+
+### Nowe funkcje
+- **Zakładka Mecze** w widoku turnieju: siatka 3-kolumnowa z kartami meczów; sekcje "Do rozegrania" i "Rozegrane"; sortowanie wg najdłużej czekającej pary
+- **Modal startera** przed każdym meczem: wybór gracza zaczynającego (Gracz 1 / Losuj / Gracz 2) + START; rewanż automatycznie przypisuje starter drugiego gracza z info-boxem zamiast wyboru
+- **Rozgrywanie meczów turniejowych**: mecz uruchamia się przez istniejący silnik gry; wynik zapisywany do turnieju (nie do `dart_history`); turniej oznaczany jako `finished` gdy wszystkie mecze rozegrane
+- **Statystyki po meczu turniejowym**: ekran statystyk z przyciskiem "Wróć do meczów"; kliknięcie ukończonego meczu w zakładce Mecze otwiera te same statystyki
+- **Tabela live** (`📊 Tabela live`): przycisk widoczny podczas meczu turniejowego; modal z bieżącą klasyfikacją uwzględniającą tymczasowe punkty i aktualną średnią turnieju (wliczając mecz w toku); znacznik LIVE obok graczy; na mobile — zielona kropka 4×4px zamiast tekstu
+- **Kolory medalowe w tabeli**: po ukończeniu wszystkich meczów — złoty (#f5c218) dla 1. miejsca, srebrny (#a8a9ad) dla 2., brązowy (#cd7f32) dla 3.
+- **Podświetlenie wyższej średniej w kartach meczów**: pomarańczowy kolor dla gracza z lepszą średnią (niezależnie od wyniku meczu)
+- **Drag & drop w kroku 4 wizarda**: bloki graczy można przeciągać uchwytem ⠿ — zmiana kolejności przebudowuje bloki zachowując wpisane wartości; uchwyt grab/grabbing, wizualne podświetlenie celu
+- **Historia rzutów w meczu**: bust zawsze wyświetla `0 BUST` (nie wartość rzuconych lotek)
+- **Ograniczenie szerokości widoków**: historia meczów, szczegóły historii, statystyki po meczu (`max-width: 972px`), widok meczów turnieju (`max-width: 600px`) — wszystkie wyśrodkowane na szerokich ekranach
+
+### Naprawione błędy (Faza 3 — mecze)
+- Kolory medalowe nie działały — `.standings-table td` (`0,1,1`) nadpisywało `.pos-gold` (`0,1,0`); naprawione przez podniesienie specyficzności do `.standings-table td.pos-gold` (`0,2,1`)
+- `turniej.status !== 'finished'` dla starszych turniejów — dodano fallback `tournament.matches.every(m => m.winner !== null)`
+- Impossible opening scores w trybie double-in: `getValidOpeningDarts` używało `score - d <= 120` zamiast weryfikować osiągalność 2 rzutami; nowa funkcja `_achievable2Darts()` eliminuje fałszywie-pozytywne wyniki dla 162, 165, 168, 171–180 i innych (np. 159)
+- Fallback `[1,2,3]` w `getValidOpeningDarts` maskował niemożliwe wartości (np. 180 w double-in); usunięty — puste `[]` + guard w `submitSummaryScore` blokuje wynik
+- `escapeHtml()` na nazwach graczy przed `textContent` powodowało double-encoding (`&amp;`); usunięte z `_buildMatchCell` i `renderLiveStandingsModal`
+- Tab state reset przy powrocie do widoku turnieju — otwieranie turnieju B po zakładce Mecze turnieju A zostawiało złamany widok
+
+### Zmiany w plikach (Faza 3 — mecze)
+- `js/league.js` — `generateSchedule()` dodaje `sets/stats: [null,null]`; `renderTournamentMatchesScreen()`; `_buildMatchCell()`, `_buildMatchPlayerRow(name, score, avg, rowClass, avgBest)`; `computeLiveStandings(tournament, liveData)`; kolory medalowe w `renderTournamentViewScreen()`; podświetlenie wyższej średniej
+- `js/app.js` — `pendingTournamentMatch`, `pendingTournamentStarterData`; `openTournamentStarterModal()` z detekcją rewanżu; `startTournamentMatch()` z zapisem `starter`; `saveTournamentMatchResult()` z `m.starter`; `openTournamentMatchStats()`; `renderLiveStandingsModal()` z turniej-avg; obsługa `btn-new-match` i `btn-exit-confirm` dla kontekstu turniejowego; `loadFromLocalStorage()` przywraca kontekst po przeładowaniu
+- `js/tournament.js` — `renderStep4Players(savedValues)` z uchwytem drag; `_getStep4Values()`; `_initStep4DragDrop()`
+- `js/game.js` — `_achievable2Darts()`; poprawiony `getValidOpeningDarts()` (dart 1 check); usunięty fallback
+- `js/ui.js` — bust w historii rzutów zawsze `0 BUST`
+- `index.html` — `#tv-matches`, `#modal-tournament-starter`, `#modal-live-standings`, `#btn-live-standings`, `.game-header-right`
+- `css/style.css` — `.matches-grid`, `.match-card`, `.match-player-row`, `.mpavg.avg-best`; `.modal-inner-rel`, `.btn-modal-corner-close`; `.modal-starter-opt`, `.modal-starter-info`; `.live-badge`, `.live-col`; `.drag-handle`, `.player-block-top`, `.player-block.dragging/.drag-over`; `.pos-silver/bronze`, `.name-silver/bronze`; `max-width` na history/stats/matches
+
+---
+
+## Poprawki UI i wizard — lista turniejów / wizard krok 4 (2026-06-06)
+
+### Nowe funkcje
+- **Licznik przy sekcjach listy turniejów**: etykiety „W toku" i „Zakończone" zawierają teraz licznik `X / 5` i `X / 40` wyrównany do prawej; gdy limit osiągnięty — licznik zmienia kolor na czerwony (`--accent`)
+- **Przycisk „Nowy turniej" przy limicie**: zamiast domyślnego `opacity` przeglądarka, disabled przyjmuje styl `btn-secondary` z muted tekstem — wyraźnie komunikuje blokadę bez wyglądania jak awaria
+- **Maksymalna liczba graczy w turnieju: 10** (poprzednio 6) — zmiana w HTML (hint + `max`), walidacja JS
+- **Walidacja duplikatów w kroku 4 wizarda**: `validateStep4()` wykrywa zduplikowane nazwy (case-insensitive) zarówno dla graczy z listy jak i niestandardowych; zduplikowane pola dostają czerwoną ramkę i ciemne tło; nad przyciskiem pojawia się komunikat `Zduplikowane nazwy graczy: "X"`; reakcja natychmiastowa (na każdy `input`)
+- **Filtrowanie datalistów w kroku 4**: każdy input gracza ma własny `<datalist id="t-datalist-N">`; `_updateStep4Datalists()` po każdej zmianie usuwa z sugestii pozostałych pól graczy już wybranych gdzie indziej (porównanie case-insensitive); po wyczyszczeniu pola gracz wraca do sugestii
+- **Przycisk TURNIEJ na ekranie głównym**: zielone tło `--green` (#2a9d4f) — spójne z przyciskiem „UTWÓRZ TURNIEJ" i bannerem zwycięzcy; hover ciemnieje do #238a44
+
+### Zmiany w plikach
+- `js/league.js` — `renderTournamentListScreen()`: etykiety sekcji z licznikiem i klasą `t-list-limit--full`
+- `js/tournament.js` — walidacja kroku 1: `max 10`; `renderStep4Players()`: per-input datalisty; nowa `_updateStep4Datalists()`; przepisana `validateStep4()` z detekcją duplikatów i podświetleniem pól
+- `index.html` — hint i `max="10"` w kroku 1; `<p id="t-step4-error">` w kroku 4; per-input `<datalist id="t-datalist-N">`
+- `css/style.css` — `.t-list-section-label` flex; `.t-list-limit` / `.t-list-limit--full`; `#btn-new-tournament:disabled`; `.player-name-input.inp-duplicate`; `.btn-home-tournament` → zielony
+
+---
+
+## Faza 4 — drabinka eliminacyjna (2026-06-06)
+
+### Nowe funkcje
+- **Format drabinki** (`bracket`) w wizardzie kroku 2: kafelek "Drabinka" odblokowany (usunięto `disabled`), podtytuł "pucharowa"; kliknięcie chowa ustawienia ligi i pokazuje opis `t-bracket-desc`
+- **Generowanie drabinki** (`generateBracket`): bracket size B = następna potęga 2 ≥ N; `numByes = B − N` bye-slotów w rundzie 0 (zwycięzca = gracz niżej rozstawiony, pre-ustawiony); pozostałe sloty R1 = pary seedowych graczy; rundy 2..log2(B) tworzone z p1/p2=null
+- **Propagacja zwycięzcy** (`advanceBracketWinner`): po każdym meczu winner → p1 lub p2 kolejnego slotu wg parzystości slotu; wywołanie przy zapisie wyniku meczu turniejowego
+- **Widok drabinki** (`renderBracketScreen`): kolumny rund (`bk-col`), karty meczów (`bk-card-wrap .match-card`), łączniki SVG między rundami, etykiety rund (Ćwierćfinał, Półfinał, Finał itd.)
+- **Pionowe centrowanie** (`_bracketCenterY`): rekurencja — karta R0: `slot*(CARD_H+GAP)+CARD_H/2`; karta Rk: średnia dzieci z R(k-1); łącznik SVG wyznacza ramiona na tych samych y-koordynatach
+- **Nawigacja lewo/prawo** (przyciski `bk-arrow`): widoczna tylko gdy numRounds > 3; przesuwa okno 3 widocznych kolumn; skrajne przyciski blokowane na granicy
+- **Brak zakładek** dla bracketów: `renderTournamentViewScreen` ukrywa `tv-tabs`, `tv-standings`, `tv-matches` i pokazuje `tv-bracket`; wywołuje `renderBracketScreen`
+- **Karty meczów w drabince**: typy `bye-card` (pomijane przy kliknięciu), `tbd-card` (obaj null), częściowo obsadzone (p1 znany, p2 TBD = "?"); rozegrane karty z avgami; kliknięcie uruchamia modal startera lub statystyki
+- **Karta turnieju** na liście: meta "Drabinka", postęp zliczony z wyłączeniem bye-matchów, nazwa zwycięzcy z meczu finałowego
+- **Desktopowe skalowanie**: `zoom: 1.25` na `.bk-nav-wrap`, stały viewport 370px, `justify-content: center` — drabinka wyśrodkowana na szerokich ekranach
+- **Mobilne centrowanie**: `display: flex; justify-content: center` na `.tv-bracket` — drabinka wyśrodkowana na każdej szerokości
+
+### Naprawione błędy (drabinka)
+- **Nachodzenie kart**: base `.match-card { min-height: 60px }` nadpisywało `height: 44px` → dodano `min-height: 0` i `overflow: hidden` w `.bk-card-wrap .match-card`
+- **SVG connector złe y**: łączniki używały liniowego spacing zamiast `_bracketCenterY` dla R1+ → przekazano `round` do `buildBracketConnectorSvg`
+- **SVG obcięty**: wysokość SVG obliczona dla R0 nie wystarczała dla R1+ → SVG dostaje pełną `bodyH` (R0-based)
+- **Crash po meczu bracket** (tab click): `btn-new-match`/`btn-exit-confirm` wywoływały `tv-tab-matches.click()` → guard `if (t.config.format !== 'bracket')`
+- **Live standings na bracket** przy restore z localStorage: `btn-live-standings` pokazywał się bezwarunkowo → sprawdzenie `restoredT.config.format`
+- **CARD_H / CSS coupling**: `height` w CSS i `CARD_H` w JS muszą być zsynchronizowane; przy zwiększaniu paddingu obie wartości zmieniane razem (36→44)
+
+### Zmiany w plikach (drabinka)
+- `js/league.js` — `nextPowerOf2()`, `computeRoundName()`, `_bracketCenterY()`, `advanceBracketWinner()`, `generateBracket()`; `createTournament()` — branch bracket; `_buildBracketCard()`, `buildBracketRound()`, `buildBracketConnectorSvg()`; `renderBracketScreen()`; `renderTournamentViewScreen()` — branch bracket; `buildTournamentCard()` — meta, postęp, zwycięzca dla bracket
+- `js/tournament.js` — kliknięcie kafelka formatu (liga/bracket toggle), reset wizarda
+- `js/app.js` — `#tv-bracket` click handler; `saveTournamentMatchResult()` wywołuje `advanceBracketWinner`; `startTournamentMatch()` ukrywa btn-live-standings dla bracket; guardy w `btn-new-match`/`btn-exit-confirm`; `loadFromLocalStorage()` sprawdza format przy btn-live-standings
+- `index.html` — `<div id="tv-bracket">`, kafelek bracket odblokowany, `t-bracket-desc`, max graczy 10, `id="tv-tabs"` na belce zakładek
+- `css/style.css` — pełna sekcja bracket: `.tv-bracket`, `.bk-nav-wrap`, `.bk-arrow`, `.bk-viewport`, `.bk-track`, `.bk-col`, `.bk-label`, `.bk-body`, `.bk-card-wrap .match-card` (height 44px, min-height 0, padding 6px 7px), `.bye-card`, `.tbd-card`, `.bye-slot-row`; media query desktop (zoom 1.25, stały viewport)
+
+---
+
+## Wolne losy — równomierne rozłożenie w drabince (2026-06-06)
+
+### Nowe funkcje
+- **Algorytm przeplatania** (`_computeByeSuggestion`): dla N graczy oblicza, którzy dostają wolny los tak, żeby były rozłożone równomiernie (np. N=10: gracze 3,4,5,8,9,10; N=6: gracze 3,6); formuła `floor(i * r1Slots / numReal)` wyznacza sloty realnych meczów, reszta to bye-sloty
+- **Przyciski BYE w kroku 4 wizarda**: każdy blok gracza (tylko bracket) ma przycisk-toggle `BYE` / `BYE ✓`; aktywny → czerwona ramka bloku, akcent na etykiecie; disabled przy N ∈ {4,8} (potęgi 2)
+- **Licznik wolnych losów** (`#t-bye-counter`): pasek nad listą graczy; zielony gdy `count === numByes`, czerwony w pozostałych przypadkach; ukryty dla ligi i gdy numByes=0
+- **Notatka informacyjna** (`#t-bye-note`): pod kontrolkami rozstawienia; treść `ℹ️ Wolny los = gracz zaczyna od [runda]. Sugestia rozłożona równomiernie.`; ukryta dla ligi i numByes=0
+- **Walidacja UTWÓRZ TURNIEJ**: dla bracket z numByes > 0 przycisk aktywny tylko gdy `byeCount === numByes` (plus wypełnione imiona i brak duplikatów); counter bar pełni rolę komunikatu
+- **Losuj → auto-bye**: kliknięcie `🎲 Losuj rozstawienie` w kroku 4 automatycznie losuje, którzy gracze dostają BYE, jeśli żaden nie jest jeszcze zaznaczony
+- **Przeniesienie bye przez shuffle**: handler UTWÓRZ TURNIEJ korzysta z `_getStep4Values()` — pole `bye` jest częścią obiektu gracza i podąża za nim przez Fisher-Yates
+- **Rewrite `generateBracket(players)`**: nowa sygnatura `(players)` zamiast `(numPlayers, players)`; ten sam algorytm przeplatania co `_computeByeSuggestion` wyznacza sloty realne i bye; `byePlayers` / `realPlayers` tworzone wg flagi `p.bye`; wynik zawsze równomiernie rozłożony niezależnie od tego, którzy gracze mają bye; `bye` usuwane z `tournament.players` przed zapisem do localStorage
+
+### Naprawione błędy
+- **Stary `generateBracket` kładł wszystkie bye na górze**: sloty 0..numByes-1 → wyłącznie byes w górnej połowie; nowy algorytm przeplatania zapewnia 50/50 podziału
+
+### Zmiany w plikach
+- `js/tournament.js` — `_computeByeSuggestion(numPlayers)`, `_updateByeCounter(numByes)`, `renderStep4Players()` z toggleami BYE, `_getStep4Values()` z polem `bye`, `validateStep4()` z walidacją liczby bye, handler UTWÓRZ TURNIEJ z `_getStep4Values()`, handler Losuj z auto-bye
+- `js/league.js` — `generateBracket(players)` przerobiony z nowym algorytmem; `createTournament()` usuwa `bye` przed zapisem, wywołuje `generateBracket(players)` zamiast `generateBracket(numPlayers, players)`
+- `css/style.css` — `.bye-toggle`, `.bye-toggle.active`, `.bye-toggle:disabled`, `.bye-counter`, `.bye-counter.ok`, `.bye-counter.warn`, `.player-block.has-bye`, `.player-block.has-bye .player-block-label`, `.bye-note`
+
+---
+
+## Poprawki UI wizarda i ekranu gry (2026-06-06)
+
+### Nowe funkcje
+- **Podgląd drabinki w kroku 4**: przycisk `👁 Podgląd drabinki` nad UTWÓRZ TURNIEJ (widoczny tylko w formacie bracket); otwiera modal z pełną renderowaną drabinką (te same karty, SVG łączniki, nawigacja strzałkami co w widoku turnieju); przy losowym rozstawieniu wylosowuje jedną możliwą kolejność i pokazuje żółte ostrzeżenie; puste imiona wyświetlają się jako `?`
+- **Undo w modalu wyniku lega/seta/meczu**: modal `#modal-leg-result` ma teraz dwa przyciski obok siebie — `↩ Cofnij` (po lewej) i `Dalej` (po prawej); `Cofnij` wywołuje `undoLastVisit()` — przywraca stan sprzed ostatniej wizyty, zamyka modal, rerenderuje ekran gry; disabled gdy stos undo pusty
+
+### Naprawione błędy
+- **Zmiana formatu w kroku 2 wizarda zmieniała wysokość kontenera**: `#league-settings` i `#t-bracket-desc` owinięte w `.format-details-panel` (CSS grid, `grid-area: 1/1`); przełącznik używa klasy `format-hidden` (`visibility:hidden` + `pointer-events:none`) zamiast `display:none` — kontener ma zawsze stałą wysokość = wysokość `#league-settings`
+
+### Zmiany w plikach
+- `index.html` — `.format-details-panel` wrapper w kroku 2; `#t-bracket-desc` z klasą `format-hidden` (bez inline `display:none`); `#btn-preview-bracket` w kroku 4; `#modal-bracket-preview` z nagłówkiem, notatką o losowaniu i kontenerem; `#btn-leg-result-undo` w `#modal-leg-result` obok `#btn-next-leg`
+- `js/tournament.js` — handler `btn-preview-bracket` buduje fake tournament i wywołuje `renderBracketScreen`; toggle formatu i reset wizarda używają klasy `format-hidden` zamiast `style.display`; `renderStep4Players` pokazuje/ukrywa `btn-preview-bracket`
+- `js/league.js` — `renderBracketScreen(tournament, container)` — parametr `container` opcjonalny (domyślnie `#tv-bracket`); umożliwia renderowanie do modalu podglądu
+- `js/ui.js` — `showLegResultDialog` aktualizuje disabled state `#btn-leg-result-undo` przy każdym otwarciu modalu
+- `js/app.js` — `#btn-leg-result-undo` podpięty pod `undoLastVisit`
+- `css/style.css` — `.format-details-panel`, `.format-details-panel > *` (grid-area), `.format-hidden`, `.wizard-hint`; `.btn-preview-bracket` (outline secondary); `.modal-bracket-preview`, `.bracket-preview-header`, `.modal-close-x`, `.bracket-preview-note`; `.leg-result-actions` (flex row), `.leg-result-actions .btn` (flex: 1)
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
@@ -235,20 +361,20 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
-### Faza 3 — turniej round-robin (w toku)
+### Faza 3 — turniej round-robin ✅ UKOŃCZONA
 - [x] Ekran główny (MECZ / TURNIEJ / Gracze / Historia)
 - [x] Wizard konfiguracji turnieju — 4 kroki (nazwa, liczba graczy, format+liga, ustawienia meczu, gracze+rozstawienie)
 - [x] Lista turniejów (aktywne / zakończone, usuwanie, limit 5/40)
 - [x] Tabela klasyfikacji ligi (obliczana dynamicznie, ranking pkt→legi→avg)
 - [x] Generowanie harmonogramu (wszystkie pary pre-inserowane przy tworzeniu)
-- [ ] Widok meczów (zakładka Mecze) — lista par, uruchamianie meczu
-- [ ] Dialog "kto zaczyna" przed każdym meczem turniejowym
-- [ ] Zapis wyniku meczu do turnieju po rozegraniu
-- [ ] Oznaczanie turnieju jako zakończonego
+- [x] Widok meczów (zakładka Mecze) — lista par, uruchamianie meczu
+- [x] Dialog "kto zaczyna" przed każdym meczem turniejowym
+- [x] Zapis wyniku meczu do turnieju po rozegraniu
+- [x] Oznaczanie turnieju jako zakończonego
 
-### Faza 4 — bracket turniejowy
-- [ ] Faza grupowa + drabinka pucharowa
-- [ ] Widok bracket (drzewo)
+### Faza 4 — bracket turniejowy ✅ UKOŃCZONA
+- [x] Drabinka eliminacyjna (single-elimination) dla 3–10 graczy
+- [x] Widok bracket (drzewo) — pionowe centrowanie, łączniki SVG, nawigacja lewo/prawo
 
 ### Faza 5 — PWA i eksport
 - [ ] manifest.json + Service Worker (tryb offline)
