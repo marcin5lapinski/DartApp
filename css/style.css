@@ -2184,7 +2184,7 @@ html, body {
 
 /* ===== BRACKET VIEW ===== */
 
-.tv-bracket { padding: 0 8px 20px; }
+.tv-bracket { padding: 0 8px 20px; display: flex; justify-content: center; }
 
 .bk-nav-wrap {
   display: flex;
