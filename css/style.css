@@ -1736,6 +1736,60 @@ html, body {
 }
 .btn-create-tournament:not([disabled]):active { transform: scale(0.97); }
 
+/* Step 4: BYE toggle button */
+.bye-toggle {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  padding: 3px 9px;
+  border: 1px solid #444;
+  background: #111;
+  color: #666;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+.bye-toggle.active {
+  border-color: var(--accent);
+  background: #2a0a0d;
+  color: var(--accent);
+}
+.bye-toggle:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Step 4: bye counter bar */
+.bye-counter {
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.bye-counter.ok   { background: #0e1f12; border: 1px solid var(--green); color: var(--green); }
+.bye-counter.warn { background: #1f0a0c; border: 1px solid var(--accent); color: var(--accent); }
+
+/* Step 4: player block with active bye */
+.player-block.has-bye {
+  border-color: var(--accent);
+  background: #1a0a0c;
+}
+.player-block.has-bye .player-block-label { color: var(--accent); }
+
+/* Step 4: bye info note */
+.bye-note {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 6px 0 4px;
+  padding: 5px 10px;
+  border-left: 2px solid #333;
+  line-height: 1.5;
+}
+
 /* Step 4: overflow scroll on small screens */
 @media (max-height: 700px) {
   #screen-tournament { align-items: flex-start; }
