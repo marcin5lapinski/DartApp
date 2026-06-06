@@ -187,7 +187,7 @@ function _computeByeSuggestion(numPlayers) {
   return flags; // length === numPlayers
 }
 
-function _updateByeCounter(n, numByes) {
+function _updateByeCounter(numByes) {
   const counterEl = document.getElementById('t-bye-counter');
   if (!counterEl) return;
   const count = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
@@ -286,18 +286,16 @@ function renderStep4Players(savedValues) {
   if (isBracket && numByes > 0) {
     list.querySelectorAll('.bye-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.idx);
         const block = btn.closest('.player-block');
         const nowActive = !btn.classList.contains('active');
         btn.classList.toggle('active', nowActive);
         btn.textContent = nowActive ? 'BYE ✓' : 'BYE';
         block.classList.toggle('has-bye', nowActive);
-        block.querySelector('.player-block-label').style.color = nowActive ? 'var(--accent)' : '';
-        _updateByeCounter(n, numByes);
+        _updateByeCounter(numByes);
         validateStep4();
       });
     });
-    _updateByeCounter(n, numByes);
+    _updateByeCounter(numByes);
   }
 
   // ── Info note (bracket only) ──
