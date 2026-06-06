@@ -341,6 +341,9 @@ function renderStep4Players(savedValues) {
   _initStep4DragDrop(list);
   _updateStep4Datalists();
   validateStep4();
+
+  const previewBtn = document.getElementById('btn-preview-bracket');
+  if (previewBtn) previewBtn.style.display = isBracket ? '' : 'none';
 }
 
 function _updateStep4Datalists() {
@@ -510,4 +513,42 @@ document.getElementById('btn-create-tournament').addEventListener('click', () =>
   const tournament = createTournament(tournamentConfig, players);
   renderTournamentViewScreen(tournament);
   showScreen(SCREENS.TOURNAMENT_VIEW);
+});
+
+// ── Bracket preview ──
+document.getElementById('btn-preview-bracket').addEventListener('click', () => {
+  const vals = _getStep4Values();
+  const players = vals.map(v => ({
+    name:            v.name.trim() || '?',
+    primaryDouble:   parseInt(v.d1) || null,
+    secondaryDouble: parseInt(v.d2) || null,
+    bye:             v.bye,
+  }));
+
+  if (tournamentConfig.seeding === 'random') {
+    for (let i = players.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [players[i], players[j]] = [players[j], players[i]];
+    }
+  }
+
+  const n = tournamentConfig.numPlayers;
+  const B = nextPowerOf2(n);
+  const matches = generateBracket(players);
+  const storedPlayers = players.map(({ bye, ...rest }) => rest);
+
+  const fakeTournament = {
+    players: storedPlayers,
+    matches,
+    config: { bracketSize: B, format: 'bracket', matchConfig: tournamentConfig.matchConfig },
+  };
+
+  document.getElementById('bracket-preview-note').hidden = tournamentConfig.seeding !== 'random';
+
+  renderBracketScreen(fakeTournament, document.getElementById('bracket-preview-content'));
+  openModal('modal-bracket-preview');
+});
+
+document.getElementById('btn-bracket-preview-close').addEventListener('click', () => {
+  closeModal('modal-bracket-preview');
 });

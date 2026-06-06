@@ -345,8 +345,8 @@ function buildTournamentCard(t) {
   return div;
 }
 
-function renderBracketScreen(tournament) {
-  const container = document.getElementById('tv-bracket');
+function renderBracketScreen(tournament, container) {
+  if (!container) container = document.getElementById('tv-bracket');
   container.innerHTML = '';
 
   const { matches, players, config } = tournament;

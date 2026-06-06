@@ -1749,6 +1749,62 @@ html, body {
 }
 .btn-create-tournament:not([disabled]):active { transform: scale(0.97); }
 
+.btn-preview-bracket {
+  width: 100%;
+  padding: 11px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: border-color .15s, color .15s;
+}
+.btn-preview-bracket:hover { border-color: #555; color: var(--text); }
+.btn-preview-bracket:active { transform: scale(0.97); }
+
+/* Bracket preview modal */
+.modal-bracket-preview {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  padding: 20px 16px 16px;
+}
+.bracket-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.bracket-preview-header > span {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.modal-close-x {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 2px 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.modal-close-x:hover { color: var(--text); background: #2a2a2a; }
+.bracket-preview-note {
+  font-size: 0.80rem;
+  color: #b8922a;
+  background: #1c1408;
+  border: 1px solid #4a3a12;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
 /* Step 4: BYE toggle button */
 .bye-toggle {
   font-size: 0.65rem;

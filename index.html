@@ -732,6 +732,7 @@
         <button class="btn-seg" data-seeding="ordered">↓ Użyj kolejności</button>
       </div>
       <p id="t-step4-error" class="t-error" hidden></p>
+      <button id="btn-preview-bracket" class="btn-preview-bracket">👁 Podgląd drabinki</button>
       <button id="btn-create-tournament" class="btn-create-tournament" disabled>UTWÓRZ TURNIEJ</button>
       <div class="wizard-nav" style="margin-top:8px">
         <button id="t-back-4" class="btn-wizard-back">&#8592; Wstecz</button>
@@ -740,6 +741,18 @@
 
   </div>
 </section>
+
+<!-- Bracket preview modal -->
+<div class="modal modal-bracket-preview" id="modal-bracket-preview">
+  <div class="bracket-preview-header">
+    <span>Podgląd drabinki</span>
+    <button class="modal-close-x" id="btn-bracket-preview-close">✕</button>
+  </div>
+  <p id="bracket-preview-note" class="bracket-preview-note" hidden>
+    🎲 Przy losowym rozstawieniu kolejność graczy w drabince może się różnić od tej w podglądzie.
+  </p>
+  <div id="bracket-preview-content"></div>
+</div>
 
 <!-- Scripts (order matters) -->
 <script src="js/checkouts.js"></script>
