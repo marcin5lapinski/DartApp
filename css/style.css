@@ -2247,10 +2247,14 @@ html, body {
 
 .bk-card-wrap .match-card {
   height: 36px;
+  min-height: 0;
   padding: 3px 7px;
   box-sizing: border-box;
   cursor: pointer;
+  overflow: hidden;
 }
+.bk-card-wrap .match-players { gap: 2px; }
+.bk-card-wrap .match-player-row { font-size: 0.7rem; }
 
 .bk-card-wrap .match-card.bye-card {
   background: #131318;
