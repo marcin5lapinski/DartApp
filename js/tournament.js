@@ -187,20 +187,65 @@ function _computeByeSuggestion(numPlayers) {
   return flags; // length === numPlayers
 }
 
+function _updateByeCounter(n, numByes) {
+  const counterEl = document.getElementById('t-bye-counter');
+  if (!counterEl) return;
+  const count = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
+  if (count === numByes) {
+    counterEl.className = 'bye-counter ok';
+    counterEl.textContent = `Wolne losy: ${count} / ${numByes} ✓`;
+  } else {
+    counterEl.className = 'bye-counter warn';
+    counterEl.textContent = `Wolne losy: ${count} / ${numByes} — zaznacz dokładnie ${numByes}`;
+  }
+}
+
 function renderStep4Players(savedValues) {
   const n = tournamentConfig.numPlayers;
+  const isBracket = tournamentConfig.format === 'bracket';
+  const B = nextPowerOf2(n);
+  const numByes = B - n;
+  const numRounds = Math.log2(B);
   document.getElementById('t-players-label').textContent = `Gracze (${n})`;
+
+  // ── Bye counter bar (bracket only, non-zero byes) ──
+  let counterEl = document.getElementById('t-bye-counter');
+  if (!counterEl) {
+    counterEl = document.createElement('div');
+    counterEl.id = 't-bye-counter';
+    document.getElementById('t-players-list').before(counterEl);
+  }
+  counterEl.style.display = (isBracket && numByes > 0) ? '' : 'none';
+
+  // ── Player blocks ──
+  const suggestedByes = savedValues
+    ? savedValues.map(v => v.bye || false)
+    : _computeByeSuggestion(n);
+
   const list = document.getElementById('t-players-list');
   list.innerHTML = '';
   const d1opts = buildDoublesOptions('1° —');
   const d2opts = buildDoublesOptions('2° —');
+
   for (let i = 1; i <= n; i++) {
+    const hasBye = isBracket && suggestedByes[i - 1];
     const block = document.createElement('div');
-    block.className = 'player-block';
+    block.className = 'player-block' + (hasBye ? ' has-bye' : '');
+
+    const byeBtn = isBracket
+      ? `<button type="button" class="bye-toggle${hasBye ? ' active' : ''}"
+              data-idx="${i - 1}"${numByes === 0 ? ' disabled' : ''}>
+           ${hasBye ? 'BYE ✓' : 'BYE'}
+         </button>`
+      : '';
+
     block.innerHTML = `
       <div class="player-block-top">
         <div class="player-block-label">Gracz ${i}</div>
-        <span class="drag-handle" title="Przeciągnij aby zmienić kolejność">⠿</span>
+        <span style="display:flex;align-items:center;gap:8px">
+          ${byeBtn}
+          <span class="drag-handle" title="Przeciągnij aby zmienić kolejność">⠿</span>
+        </span>
       </div>
       <input type="text" id="t-pname-${i}" class="player-name-input"
              placeholder="Imię gracza" maxlength="20"
@@ -236,6 +281,41 @@ function renderStep4Players(savedValues) {
       validateStep4();
     });
   }
+
+  // BYE toggle click listeners
+  if (isBracket && numByes > 0) {
+    list.querySelectorAll('.bye-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        const block = btn.closest('.player-block');
+        const nowActive = !btn.classList.contains('active');
+        btn.classList.toggle('active', nowActive);
+        btn.textContent = nowActive ? 'BYE ✓' : 'BYE';
+        block.classList.toggle('has-bye', nowActive);
+        block.querySelector('.player-block-label').style.color = nowActive ? 'var(--accent)' : '';
+        _updateByeCounter(n, numByes);
+        validateStep4();
+      });
+    });
+    _updateByeCounter(n, numByes);
+  }
+
+  // ── Info note (bracket only) ──
+  let noteEl = document.getElementById('t-bye-note');
+  if (!noteEl) {
+    noteEl = document.createElement('p');
+    noteEl.id = 't-bye-note';
+    noteEl.className = 'bye-note';
+    document.getElementById('t-seeding-group').after(noteEl);
+  }
+  if (isBracket && numByes > 0) {
+    const roundName = computeRoundName(1, numRounds);
+    noteEl.textContent = `ℹ️ Wolny los = gracz zaczyna od ${roundName}. Sugestia rozłożona równomiernie.`;
+    noteEl.style.display = '';
+  } else {
+    noteEl.style.display = 'none';
+  }
+
   _initStep4DragDrop(list);
   _updateStep4Datalists();
   validateStep4();
@@ -279,6 +359,7 @@ function _getStep4Values() {
     name: block.querySelector('.player-name-input').value,
     d1:   block.querySelector('[id^="t-pd1-"]').value,
     d2:   block.querySelector('[id^="t-pd2-"]').value,
+    bye:  block.querySelector('.bye-toggle')?.classList.contains('active') || false,
   }));
 }
 
