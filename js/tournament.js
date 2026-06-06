@@ -444,6 +444,19 @@ function validateStep4() {
     errEl.textContent = 'Zduplikowane nazwy graczy: ' + dupLabels.map(n => '"' + n + '"').join(', ');
     errEl.hidden = false;
     btn.disabled = true;
+  } else if (allFilled && tournamentConfig.format === 'bracket') {
+    const B = nextPowerOf2(tournamentConfig.numPlayers);
+    const numByes = B - tournamentConfig.numPlayers;
+    if (numByes > 0) {
+      const byeCount = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
+      if (byeCount !== numByes) {
+        errEl.hidden = true;
+        btn.disabled = true;
+        return;
+      }
+    }
+    errEl.hidden = true;
+    btn.disabled = false;
   } else {
     errEl.hidden = true;
     btn.disabled = !allFilled;
@@ -452,17 +465,15 @@ function validateStep4() {
 
 // ── Create tournament: save new players + build tournament ──
 document.getElementById('btn-create-tournament').addEventListener('click', () => {
-  const n = tournamentConfig.numPlayers;
-  const players = [];
-  for (let i = 1; i <= n; i++) {
-    const name = document.getElementById('t-pname-' + i).value.trim();
-    if (name) createPlayer(name, null, null);
-    players.push({
-      name,
-      primaryDouble:   parseInt(document.getElementById('t-pd1-' + i).value) || null,
-      secondaryDouble: parseInt(document.getElementById('t-pd2-' + i).value) || null,
-    });
-  }
+  const vals = _getStep4Values();
+  const players = vals.map(v => ({
+    name:            v.name.trim(),
+    primaryDouble:   parseInt(v.d1) || null,
+    secondaryDouble: parseInt(v.d2) || null,
+    bye:             v.bye,
+  }));
+
+  players.forEach(p => { if (p.name) createPlayer(p.name, null, null); });
   populatePlayerSuggestions();
 
   if (tournamentConfig.seeding === 'random') {
