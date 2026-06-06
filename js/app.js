@@ -183,6 +183,9 @@ function setupEventListeners() {
   // Cancel which-dart dialog — revert the visit so the score can be re-entered
   document.getElementById('btn-which-dart-cancel').addEventListener('click', undoLastVisit);
 
+  // Undo from leg/set/match result modal
+  document.getElementById('btn-leg-result-undo').addEventListener('click', undoLastVisit);
+
   document.getElementById('btn-which-open-dart-cancel').addEventListener('click', undoLastVisit);
 
   // Exit to menu button (game screen)

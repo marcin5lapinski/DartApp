@@ -78,7 +78,7 @@ function renderHistory(match) {
     recent.forEach(entry => {
       const div = document.createElement('div');
       div.className = 'history-entry' + (entry.bust ? ' bust' : '');
-      div.textContent = entry.bust ? entry.score + ' BUST' : '+' + entry.score;
+      div.textContent = entry.bust ? '0 BUST' : '+' + entry.score;
       col.appendChild(div);
     });
 
@@ -313,6 +313,8 @@ function showLegResultDialog(winnerName, num, type, callback) {
     closeModal('modal-leg-result');
     callback();
   };
+  const undoBtn = modal.querySelector('#btn-leg-result-undo');
+  if (undoBtn) undoBtn.disabled = (typeof undoStack === 'undefined' || undoStack.length === 0);
   openModal('modal-leg-result');
 }
 

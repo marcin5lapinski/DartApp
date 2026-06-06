@@ -853,6 +853,11 @@ html, body {
   margin-bottom: 20px;
   color: var(--accent2);
 }
+.leg-result-actions {
+  display: flex;
+  gap: 10px;
+}
+.leg-result-actions .btn { flex: 1; }
 
 /* ===== STATS SCREEN ===== */
 #screen-stats {
