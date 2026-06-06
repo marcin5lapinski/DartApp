@@ -340,6 +340,22 @@ function setupEventListeners() {
     }
   });
 
+  // Tournament bracket card click (delegated from tv-bracket)
+  document.getElementById('tv-bracket').addEventListener('click', e => {
+    const card = e.target.closest('.match-card');
+    if (!card) return;
+    if (card.classList.contains('bye-card') || card.classList.contains('tbd-card')) return;
+    const idx = parseInt(card.dataset.matchIndex);
+    if (!_activeTournament) return;
+    const m = _activeTournament.matches[idx];
+    if (!m || m.p1 === null || m.p2 === null) return;
+    if (m.winner !== null) {
+      openTournamentMatchStats(_activeTournament, idx);
+    } else {
+      openTournamentStarterModal(_activeTournament, idx);
+    }
+  });
+
   // Starter modal: option selection (delegated)
   document.getElementById('starter-options').addEventListener('click', e => {
     const btn = e.target.closest('.modal-starter-opt');
@@ -357,13 +373,19 @@ function setupEventListeners() {
 
   // Starter modal: START
   document.getElementById('btn-starter-start').addEventListener('click', () => {
-    const sel = document.querySelector('.modal-starter-opt.selected');
-    if (!sel || !pendingTournamentStarterData) return;
-    const val = sel.dataset.starter;
-    const sp  = val === 'random' ? (Math.random() < 0.5 ? 0 : 1) : parseInt(val);
+    if (!pendingTournamentStarterData) return;
+    const { tournament: t, matchIndex: mi, autoStarter } = pendingTournamentStarterData;
+    let sp;
+    if (autoStarter !== null) {
+      sp = autoStarter;
+    } else {
+      const sel = document.querySelector('.modal-starter-opt.selected');
+      if (!sel) return;
+      const val = sel.dataset.starter;
+      sp = val === 'random' ? (Math.random() < 0.5 ? 0 : 1) : parseInt(val);
+    }
     closeModal('modal-tournament-starter');
-    startTournamentMatch(pendingTournamentStarterData.tournament,
-                         pendingTournamentStarterData.matchIndex, sp);
+    startTournamentMatch(t, mi, sp);
     pendingTournamentStarterData = null;
   });
 
@@ -600,20 +622,38 @@ function openTournamentStarterModal(tournament, matchIndex) {
 
   const opts = document.getElementById('starter-options');
   opts.innerHTML = '';
-  [
-    { label: '👤 ' + p1Name + ' zaczyna', starter: '0' },
-    { label: '🎲 Losuj',                   starter: 'random' },
-    { label: '👤 ' + p2Name + ' zaczyna', starter: '1' },
-  ].forEach(o => {
-    const btn = document.createElement('button');
-    btn.className = 'modal-starter-opt';
-    btn.dataset.starter = o.starter;
-    btn.textContent = o.label;
-    opts.appendChild(btn);
-  });
 
-  document.getElementById('btn-starter-start').disabled = true;
-  pendingTournamentStarterData = { tournament, matchIndex };
+  // Detect rematch: find the completed first match between the same pair
+  const firstMatch = tournament.matches.find(
+    (mx, i) => i !== matchIndex && mx.winner !== null && mx.starter != null &&
+      ((mx.p1 === m.p1 && mx.p2 === m.p2) || (mx.p1 === m.p2 && mx.p2 === m.p1))
+  );
+
+  let autoStarter = null;
+  if (firstMatch) {
+    const rematchPIdx = firstMatch.starter === m.p1 ? m.p2 : m.p1;
+    autoStarter = rematchPIdx === m.p1 ? 0 : 1;
+    const info = document.createElement('div');
+    info.className = 'modal-starter-info';
+    info.textContent = 'Rewanż — ' + tournament.players[rematchPIdx].name + ' zaczyna';
+    opts.appendChild(info);
+    document.getElementById('btn-starter-start').disabled = false;
+  } else {
+    [
+      { label: '👤 ' + p1Name + ' zaczyna', starter: '0' },
+      { label: '🎲 Losuj',                   starter: 'random' },
+      { label: '👤 ' + p2Name + ' zaczyna', starter: '1' },
+    ].forEach(o => {
+      const btn = document.createElement('button');
+      btn.className = 'modal-starter-opt';
+      btn.dataset.starter = o.starter;
+      btn.textContent = o.label;
+      opts.appendChild(btn);
+    });
+    document.getElementById('btn-starter-start').disabled = true;
+  }
+
+  pendingTournamentStarterData = { tournament, matchIndex, autoStarter };
   openModal('modal-tournament-starter');
 }
 
@@ -623,11 +663,14 @@ function startTournamentMatch(tournament, matchIndex, startingPlayer) {
   const p1 = tournament.players[m.p1];
   const p2 = tournament.players[m.p2];
 
+  const starterPIdx = startingPlayer === 0 ? m.p1 : m.p2;
+
   pendingTournamentMatch = {
     tournamentId: tournament.id,
     matchIndex,
-    p1Idx: m.p1,
-    p2Idx: m.p2,
+    p1Idx:   m.p1,
+    p2Idx:   m.p2,
+    starter: starterPIdx,
   };
 
   match = createMatch({
@@ -649,11 +692,13 @@ function startTournamentMatch(tournament, matchIndex, startingPlayer) {
     matchIndex:   pendingTournamentMatch.matchIndex,
     p1Idx:        pendingTournamentMatch.p1Idx,
     p2Idx:        pendingTournamentMatch.p2Idx,
+    starter:      starterPIdx,
   };
   undoStack = [];
   updateUndoButton();
 
-  document.getElementById('btn-live-standings').style.display = '';
+  document.getElementById('btn-live-standings').style.display =
+    tournament.config.format === 'bracket' ? 'none' : '';
   showScreen(SCREENS.GAME);
   renderGameScreen(match);
 }
@@ -664,14 +709,19 @@ function saveTournamentMatchResult(finishedMatch, ptm) {
   if (!t) return;
   const m = t.matches[ptm.matchIndex];
 
-  m.winner = finishedMatch.winner;
-  m.legs   = [finishedMatch.legsWon[0], finishedMatch.legsWon[1]];
-  m.sets   = finishedMatch.totalSets > 1
-               ? [finishedMatch.setsWon[0], finishedMatch.setsWon[1]]
-               : [null, null];
-  m.avgs   = [getMatchAverage(finishedMatch.stats[0]),
-              getMatchAverage(finishedMatch.stats[1])];
-  m.stats  = [finishedMatch.stats[0], finishedMatch.stats[1]];
+  m.winner  = finishedMatch.winner;
+  m.legs    = [finishedMatch.legsWon[0], finishedMatch.legsWon[1]];
+  m.sets    = finishedMatch.totalSets > 1
+                ? [finishedMatch.setsWon[0], finishedMatch.setsWon[1]]
+                : [null, null];
+  m.avgs    = [getMatchAverage(finishedMatch.stats[0]),
+               getMatchAverage(finishedMatch.stats[1])];
+  m.stats   = [finishedMatch.stats[0], finishedMatch.stats[1]];
+  m.starter = ptm.starter;
+
+  if (t.config.format === 'bracket') {
+    advanceBracketWinner(t.matches, m);
+  }
 
   if (t.matches.every(mx => mx.winner !== null)) t.status = 'finished';
 
@@ -724,6 +774,10 @@ function renderLiveStandingsModal() {
     p2Idx:   ptm.p2Idx,
     legsWon: [match.legsWon[0], match.legsWon[1]],
     setsWon: [match.setsWon[0], match.setsWon[1]],
+    avgs: [
+      match.stats[0].totalDartsThrown > 0 ? getMatchAverage(match.stats[0]) : null,
+      match.stats[1].totalDartsThrown > 0 ? getMatchAverage(match.stats[1]) : null,
+    ],
   };
   const rows = computeLiveStandings(t, liveData);
 
@@ -918,9 +972,10 @@ function submitSummaryScore() {
       saveToLocalStorage();
     } else {
       // Non-zero: player opened the leg — ask which dart (filtered to valid options)
+      const validOpenDarts = getValidOpeningDarts(val, match.inMode);
+      if (validOpenDarts.length === 0) return; // impossible opening score for this inMode
       pendingOpenScore = val;
       pendingOpenPlayerIndex = pIdx;
-      const validOpenDarts = getValidOpeningDarts(val, match.inMode);
       const confirmOpen = () => {
         match.players[pendingOpenPlayerIndex].legOpened = true;
         applySummaryScore(pendingOpenPlayerIndex, pendingOpenScore);
