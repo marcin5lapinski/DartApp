@@ -86,6 +86,7 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
 - **Summary mode**: after checkout, dialog asks which dart (1/2/3) closed the leg; `getValidClosingDarts()` filters valid options. Same "which dart opened?" dialog for double-in/master-in.
 - **Dart-by-dart / Board mode**: buffer accumulates 3 darts, auto-submits; double-attempt detection per dart
 - **Leg start alternation**: the player who starts each leg alternates from the previous leg
+- **Leg/set/match result modal** (`#modal-leg-result`): shown by `showLegResultDialog(winnerName, num, type, callback)` in `ui.js`. Has two buttons: "↩ Cofnij" (`#btn-leg-result-undo`) and "Dalej" (`#btn-next-leg`). Cofnij calls `undoLastVisit()` — closes all modals, restores pre-visit state, re-renders game screen. Disabled when `undoStack` is empty (checked at modal open time).
 
 ## Screens
 
