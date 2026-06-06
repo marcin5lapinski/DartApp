@@ -338,7 +338,7 @@ function renderBracketScreen(tournament) {
   const { matches, players, config } = tournament;
   const B         = config.bracketSize;
   const numRounds = Math.log2(B);
-  const CARD_H = 36, GAP = 8, LABEL_H = 26, SVG_W = 20;
+  const CARD_H = 44, GAP = 8, LABEL_H = 26, SVG_W = 20;
 
   const byRound = [];
   for (let r = 0; r < numRounds; r++) {

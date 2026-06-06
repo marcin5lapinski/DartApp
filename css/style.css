@@ -2246,9 +2246,9 @@ html, body {
 }
 
 .bk-card-wrap .match-card {
-  height: 36px;
+  height: 44px;
   min-height: 0;
-  padding: 3px 7px;
+  padding: 6px 7px;
   box-sizing: border-box;
   cursor: pointer;
   overflow: hidden;
