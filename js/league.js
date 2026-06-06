@@ -33,6 +33,85 @@ function generateSchedule(numPlayers, leagueRounds) {
   return matches;
 }
 
+function nextPowerOf2(n) {
+  let p = 1;
+  while (p < n) p *= 2;
+  return p;
+}
+
+function computeRoundName(roundIdx, numRounds) {
+  const tables = {
+    2: ['Półfinał', 'Finał'],
+    3: ['Ćwierćfinał', 'Półfinał', 'Finał'],
+    4: ['1/8 Finału', 'Ćwierćfinał', 'Półfinał', 'Finał'],
+  };
+  return (tables[numRounds] || [])[roundIdx] || ('Runda ' + (roundIdx + 1));
+}
+
+function _bracketCenterY(round, slot, cardH, gap) {
+  if (round === 0) return slot * (cardH + gap) + cardH / 2;
+  return (_bracketCenterY(round - 1, slot * 2,     cardH, gap) +
+          _bracketCenterY(round - 1, slot * 2 + 1, cardH, gap)) / 2;
+}
+
+function advanceBracketWinner(matches, finishedMatch) {
+  const winnerPlayerIdx = finishedMatch.winner === 0 ? finishedMatch.p1 : finishedMatch.p2;
+  const nextRound = finishedMatch.round + 1;
+  const nextSlot  = Math.floor(finishedMatch.slot / 2);
+  const target    = matches.find(m => m.round === nextRound && m.slot === nextSlot);
+  if (!target) return; // Final has no next round
+  if (finishedMatch.slot % 2 === 0) target.p1 = winnerPlayerIdx;
+  else                               target.p2 = winnerPlayerIdx;
+}
+
+function generateBracket(numPlayers, players) {
+  const B         = nextPowerOf2(numPlayers);
+  const numByes   = B - numPlayers;
+  const numRounds = Math.log2(B);
+  const r1Slots   = B / 2;
+  const matches   = [];
+
+  // Round 0: numByes bye-slots then real matches
+  for (let slot = 0; slot < r1Slots; slot++) {
+    if (slot < numByes) {
+      matches.push({
+        round: 0, slot, isBye: true,
+        p1: slot, p2: null, winner: 0,
+        legs: [null, null], sets: [null, null],
+        avgs: [null, null], stats: [null, null], starter: null,
+      });
+    } else {
+      const ri   = slot - numByes;
+      const p1i  = numByes + ri * 2;
+      const p2i  = numByes + ri * 2 + 1;
+      matches.push({
+        round: 0, slot, isBye: false,
+        p1: p1i, p2: p2i, winner: null,
+        legs: [null, null], sets: [null, null],
+        avgs: [null, null], stats: [null, null], starter: null,
+      });
+    }
+  }
+
+  // Rounds 1..numRounds-1: all TBD
+  for (let r = 1; r < numRounds; r++) {
+    const slotsInRound = B / Math.pow(2, r + 1);
+    for (let slot = 0; slot < slotsInRound; slot++) {
+      matches.push({
+        round: r, slot, isBye: false,
+        p1: null, p2: null, winner: null,
+        legs: [null, null], sets: [null, null],
+        avgs: [null, null], stats: [null, null], starter: null,
+      });
+    }
+  }
+
+  // Pre-fill subsequent rounds for all bye matches
+  matches.filter(m => m.isBye).forEach(m => advanceBracketWinner(matches, m));
+
+  return matches;
+}
+
 function createTournament(config, players) {
   const tournament = {
     id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
@@ -127,7 +206,7 @@ function computeLiveStandings(tournament, liveData) {
     if (m.avgs[1] !== null) { rows[m.p2].avgSum += m.avgs[1]; rows[m.p2].avgCount++; }
   }
 
-  const { p1Idx, p2Idx, legsWon, setsWon } = liveData;
+  const { p1Idx, p2Idx, legsWon, setsWon, avgs } = liveData;
   const useSets = config.matchConfig.totalSets > 1;
   const score0  = useSets ? setsWon[0] : legsWon[0];
   const score1  = useSets ? setsWon[1] : legsWon[1];
@@ -136,6 +215,11 @@ function computeLiveStandings(tournament, liveData) {
   rows[p1Idx].legsLost += legsWon[1];
   rows[p2Idx].legsWon  += legsWon[1];
   rows[p2Idx].legsLost += legsWon[0];
+
+  if (avgs) {
+    if (avgs[0] !== null) { rows[p1Idx].avgSum += avgs[0]; rows[p1Idx].avgCount++; }
+    if (avgs[1] !== null) { rows[p2Idx].avgSum += avgs[1]; rows[p2Idx].avgCount++; }
+  }
 
   if (score0 > score1) {
     rows[p1Idx].pts += config.winPoints;
@@ -178,11 +262,15 @@ function renderTournamentListScreen() {
     body.innerHTML = '<p class="t-list-empty">Brak turniejów</p>';
   } else {
     if (active.length > 0) {
-      body.insertAdjacentHTML('beforeend', '<div class="t-list-section-label">W toku</div>');
+      const atLimitClass = active.length >= 5 ? ' t-list-limit--full' : '';
+      body.insertAdjacentHTML('beforeend',
+        `<div class="t-list-section-label">W toku<span class="t-list-limit${atLimitClass}">${active.length} / 5</span></div>`);
       active.forEach(t => body.appendChild(buildTournamentCard(t)));
     }
     if (finished.length > 0) {
-      body.insertAdjacentHTML('beforeend', '<div class="t-list-section-label">Zakończone</div>');
+      const atLimitClass = finished.length >= 40 ? ' t-list-limit--full' : '';
+      body.insertAdjacentHTML('beforeend',
+        `<div class="t-list-section-label">Zakończone<span class="t-list-limit${atLimitClass}">${finished.length} / 40</span></div>`);
       finished.forEach(t => body.appendChild(buildTournamentCard(t)));
     }
   }
@@ -241,6 +329,8 @@ function renderTournamentViewScreen(tournament) {
     `<span>${tournament.players.length} graczy &middot; ${roundsLabel} &middot; ${played}/${total} meczów rozegranych</span>`;
 
   const rows      = computeStandings(tournament);
+  const finished  = tournament.status === 'finished' ||
+                    tournament.matches.every(m => m.winner !== null);
   const container = document.getElementById('tv-standings');
   container.innerHTML = '';
 
@@ -255,20 +345,34 @@ function renderTournamentViewScreen(tournament) {
   </tr>`;
   table.appendChild(thead);
 
+  const MEDAL_POS  = ['pos-gold',  'pos-silver',  'pos-bronze'];
+  const MEDAL_NAME = ['name-gold', 'name-silver', 'name-bronze'];
+
   const tbody = document.createElement('tbody');
   rows.forEach((row, i) => {
-    const rank     = i + 1;
-    const isLeader = rank === 1 && row.M > 0;
-    const legDiff  = row.legsWon - row.legsLost;
-    const avg      = row.avgCount ? (row.avgSum / row.avgCount).toFixed(1) : '&mdash;';
-    const legsStr  = row.M === 0 ? '&mdash;' : `${row.legsWon}-${row.legsLost}`;
+    const rank = i + 1;
+    let posClass, nameClass;
+    if (finished && rank <= 3) {
+      posClass  = MEDAL_POS[rank - 1];
+      nameClass = MEDAL_NAME[rank - 1];
+    } else if (!finished && rank === 1 && row.M > 0) {
+      posClass  = 'pos-gold';
+      nameClass = 'name-gold';
+    } else {
+      posClass  = 'pos-num';
+      nameClass = '';
+    }
+
+    const legDiff   = row.legsWon - row.legsLost;
+    const avg       = row.avgCount ? (row.avgSum / row.avgCount).toFixed(1) : '&mdash;';
+    const legsStr   = row.M === 0 ? '&mdash;' : `${row.legsWon}-${row.legsLost}`;
     const legsClass = row.M === 0 ? '' : legDiff > 0 ? 'legs-pos' : legDiff < 0 ? 'legs-neg' : 'legs-even';
 
     const tr = document.createElement('tr');
     if (row._tied) tr.classList.add('standings-tied');
     tr.innerHTML = `
-      <td class="${isLeader ? 'pos-gold' : 'pos-num'}">${rank}</td>
-      <td class="left player-name-cell ${isLeader ? 'name-gold' : ''}">${escapeHtml(row.name)}</td>
+      <td class="${posClass}">${rank}</td>
+      <td class="left player-name-cell ${nameClass}">${escapeHtml(row.name)}</td>
       <td>${row.M}</td>
       <td>${row.W}</td>
       <td>${row.L}</td>
@@ -350,10 +454,14 @@ function _buildMatchCell(m, idx, players) {
     const lPIdx = l === 0 ? m.p1 : m.p2;
     const wScore = useSetScore ? m.sets[w] : m.legs[w];
     const lScore = useSetScore ? m.sets[l] : m.legs[l];
-    const wAvg   = m.avgs[w] !== null ? m.avgs[w].toFixed(1) : null;
-    const lAvg   = m.avgs[l] !== null ? m.avgs[l].toFixed(1) : null;
-    playersDiv.appendChild(_buildMatchPlayerRow(players[wPIdx].name, wScore, wAvg, 'winner'));
-    playersDiv.appendChild(_buildMatchPlayerRow(players[lPIdx].name, lScore, lAvg, 'loser'));
+    const wAvgF  = m.avgs[w];
+    const lAvgF  = m.avgs[l];
+    const wAvg   = wAvgF !== null ? wAvgF.toFixed(1) : null;
+    const lAvg   = lAvgF !== null ? lAvgF.toFixed(1) : null;
+    const wBest  = wAvgF !== null && lAvgF !== null && wAvgF > lAvgF;
+    const lBest  = wAvgF !== null && lAvgF !== null && lAvgF > wAvgF;
+    playersDiv.appendChild(_buildMatchPlayerRow(players[wPIdx].name, wScore, wAvg, 'winner', wBest));
+    playersDiv.appendChild(_buildMatchPlayerRow(players[lPIdx].name, lScore, lAvg, 'loser', lBest));
   } else {
     playersDiv.appendChild(_buildMatchPlayerRow(players[m.p1].name, null, null, ''));
     playersDiv.appendChild(_buildMatchPlayerRow(players[m.p2].name, null, null, ''));
@@ -364,7 +472,7 @@ function _buildMatchCell(m, idx, players) {
   return cell;
 }
 
-function _buildMatchPlayerRow(name, score, avg, rowClass) {
+function _buildMatchPlayerRow(name, score, avg, rowClass, avgBest) {
   const row = document.createElement('div');
   row.className = 'match-player-row' + (rowClass ? ' ' + rowClass : '');
 
@@ -382,7 +490,7 @@ function _buildMatchPlayerRow(name, score, avg, rowClass) {
 
   if (avg !== null && avg !== undefined) {
     const avgSpan = document.createElement('span');
-    avgSpan.className = 'mpavg';
+    avgSpan.className = 'mpavg' + (avgBest ? ' avg-best' : '');
     avgSpan.textContent = avg;
     row.appendChild(avgSpan);
   }
