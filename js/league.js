@@ -113,6 +113,7 @@ function generateBracket(numPlayers, players) {
 }
 
 function createTournament(config, players) {
+  const isBracket = config.format === 'bracket';
   const tournament = {
     id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
     name: config.name,
@@ -121,13 +122,15 @@ function createTournament(config, players) {
     config: {
       numPlayers: config.numPlayers,
       format: config.format,
-      leagueRounds: config.leagueRounds,
-      winPoints: config.winPoints,
-      lossPoints: config.lossPoints,
+      ...(isBracket
+        ? { bracketSize: nextPowerOf2(players.length) }
+        : { leagueRounds: config.leagueRounds, winPoints: config.winPoints, lossPoints: config.lossPoints }),
       matchConfig: { ...config.matchConfig },
     },
     players,
-    matches: generateSchedule(players.length, config.leagueRounds),
+    matches: isBracket
+      ? generateBracket(players.length, players)
+      : generateSchedule(players.length, config.leagueRounds),
   };
   const list = loadTournaments();
   list.push(tournament);
