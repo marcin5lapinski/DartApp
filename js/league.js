@@ -500,3 +500,127 @@ function _buildMatchPlayerRow(name, score, avg, rowClass, avgBest) {
 
   return row;
 }
+
+function _buildBracketCard(m, matchIdx, players, topPx) {
+  const wrap = document.createElement('div');
+  wrap.className = 'bk-card-wrap';
+  wrap.style.top = topPx + 'px';
+
+  const classes = ['match-card'];
+  if (m.isBye) {
+    classes.push('bye-card');
+  } else if (m.winner !== null) {
+    classes.push('played');
+  } else if (m.p1 === null && m.p2 === null) {
+    classes.push('tbd-card');
+  } else {
+    classes.push('unplayed');
+  }
+  const card = document.createElement('div');
+  card.className = classes.join(' ');
+  card.dataset.matchIndex = matchIdx;
+
+  const pd = document.createElement('div');
+  pd.className = 'match-players';
+
+  if (m.isBye) {
+    // Bye: show seeded player name + "— wolny los —" placeholder
+    pd.appendChild(_buildMatchPlayerRow(players[m.p1].name, null, null, ''));
+    const byeRow = document.createElement('div');
+    byeRow.className = 'match-player-row bye-slot-row';
+    const byeSpan = document.createElement('span');
+    byeSpan.className = 'mpname';
+    byeSpan.textContent = '— wolny los —';
+    byeRow.appendChild(byeSpan);
+    pd.appendChild(byeRow);
+  } else if (m.winner !== null) {
+    // Played: show winner/loser with scores and averages
+    const useSet = m.sets && m.sets[0] !== null;
+    const w = m.winner, l = 1 - w;
+    const wPIdx = w === 0 ? m.p1 : m.p2;
+    const lPIdx = l === 0 ? m.p1 : m.p2;
+    const wScore = useSet ? m.sets[w] : m.legs[w];
+    const lScore = useSet ? m.sets[l] : m.legs[l];
+    const wAvgF  = m.avgs[w], lAvgF = m.avgs[l];
+    const wAvg   = wAvgF !== null ? wAvgF.toFixed(1) : null;
+    const lAvg   = lAvgF !== null ? lAvgF.toFixed(1) : null;
+    const wBest  = wAvgF !== null && lAvgF !== null && wAvgF > lAvgF;
+    const lBest  = wAvgF !== null && lAvgF !== null && lAvgF > wAvgF;
+    pd.appendChild(_buildMatchPlayerRow(players[wPIdx].name, wScore, wAvg, 'winner', wBest));
+    pd.appendChild(_buildMatchPlayerRow(players[lPIdx].name, lScore, lAvg, 'loser',  lBest));
+  } else {
+    // Unplayed or partially-seeded TBD: show known names, "?" for unknown
+    const name1 = m.p1 !== null ? players[m.p1].name : '?';
+    const name2 = m.p2 !== null ? players[m.p2].name : '?';
+    pd.appendChild(_buildMatchPlayerRow(name1, null, null, ''));
+    pd.appendChild(_buildMatchPlayerRow(name2, null, null, ''));
+  }
+
+  card.appendChild(pd);
+  wrap.appendChild(card);
+  return wrap;
+}
+
+function buildBracketRound(roundMatches, roundIdx, numRounds, players, matchIdxOffset, CARD_H, GAP, bodyH) {
+  const col = document.createElement('div');
+  col.className = 'bk-col';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'bk-label' + (roundIdx === numRounds - 1 ? ' bk-label-final' : '');
+  lbl.textContent = computeRoundName(roundIdx, numRounds);
+  col.appendChild(lbl);
+
+  const body = document.createElement('div');
+  body.className = 'bk-body';
+  body.style.height = bodyH + 'px';
+  col.appendChild(body);
+
+  roundMatches.forEach((m, i) => {
+    const topPx = _bracketCenterY(m.round, m.slot, CARD_H, GAP) - CARD_H / 2;
+    body.appendChild(_buildBracketCard(m, matchIdxOffset + i, players, topPx));
+  });
+
+  return col;
+}
+
+function buildBracketConnectorSvg(numLeft, CARD_H, GAP, LABEL_H, SVG_W, isDashed) {
+  const bodyH  = numLeft * CARD_H + (numLeft - 1) * GAP;
+  const totalH = LABEL_H + bodyH;
+  const HOOK   = Math.floor(SVG_W / 2);
+  const STROKE = '#2d2d2d';
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width',  SVG_W);
+  svg.setAttribute('height', totalH);
+  svg.style.flexShrink = '0';
+  svg.style.display    = 'block';
+
+  const numPairs = Math.floor(numLeft / 2);
+  for (let pair = 0; pair < numPairs; pair++) {
+    const slot1 = pair * 2, slot2 = pair * 2 + 1;
+    const y1   = LABEL_H + slot1 * (CARD_H + GAP) + CARD_H / 2;
+    const y2   = LABEL_H + slot2 * (CARD_H + GAP) + CARD_H / 2;
+    const midY = (y1 + y2) / 2;
+
+    if (!isDashed) {
+      const arm = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      arm.setAttribute('points',       `0,${y1} ${HOOK},${y1} ${HOOK},${y2} 0,${y2}`);
+      arm.setAttribute('fill',         'none');
+      arm.setAttribute('stroke',       STROKE);
+      arm.setAttribute('stroke-width', '1');
+      svg.appendChild(arm);
+    }
+
+    const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    ln.setAttribute('x1',           isDashed ? 0 : HOOK);
+    ln.setAttribute('y1',           midY);
+    ln.setAttribute('x2',           SVG_W);
+    ln.setAttribute('y2',           midY);
+    ln.setAttribute('stroke',       STROKE);
+    ln.setAttribute('stroke-width', '1');
+    if (isDashed) ln.setAttribute('stroke-dasharray', '3,3');
+    svg.appendChild(ln);
+  }
+
+  return svg;
+}
