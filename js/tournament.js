@@ -38,6 +38,12 @@ function initTournamentWizard() {
   document.querySelectorAll('#t-seeding-group .btn-seg').forEach(b => {
     b.classList.toggle('active', b.dataset.seeding === 'random');
   });
+  // Reset step 2 format to league
+  document.querySelectorAll('#wstep-2 .format-tile').forEach(t =>
+    t.classList.toggle('active', t.dataset.format === 'league'));
+  document.getElementById('league-settings').style.display = '';
+  const bracketDesc = document.getElementById('t-bracket-desc');
+  if (bracketDesc) bracketDesc.style.display = 'none';
   showWizardStep(1);
 }
 
@@ -69,8 +75,8 @@ document.getElementById('t-next-1').addEventListener('click', () => {
     err.hidden = false;
     return;
   }
-  if (!raw || isNaN(val) || val < 3 || val > 6) {
-    err.textContent = 'Wpisz liczbę graczy od 3 do 6.';
+  if (!raw || isNaN(val) || val < 3 || val > 10) {
+    err.textContent = 'Wpisz liczbę graczy od 3 do 10.';
     err.hidden = false;
     return;
   }
@@ -98,6 +104,19 @@ document.querySelectorAll('#t-rounds-group .btn-seg').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#t-rounds-group .btn-seg').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+  });
+});
+
+// ── Step 2: format tile selection ──
+document.querySelectorAll('#wstep-2 .format-tile:not(.disabled)').forEach(tile => {
+  tile.addEventListener('click', () => {
+    document.querySelectorAll('#wstep-2 .format-tile').forEach(t => t.classList.remove('active'));
+    tile.classList.add('active');
+    tournamentConfig.format = tile.dataset.format;
+
+    const isBracket = tile.dataset.format === 'bracket';
+    document.getElementById('league-settings').style.display = isBracket ? 'none' : '';
+    document.getElementById('t-bracket-desc').style.display  = isBracket ? ''     : 'none';
   });
 });
 
@@ -146,7 +165,7 @@ function buildDoublesOptions(placeholder) {
   return o;
 }
 
-function renderStep4Players() {
+function renderStep4Players(savedValues) {
   const n = tournamentConfig.numPlayers;
   document.getElementById('t-players-label').textContent = `Gracze (${n})`;
   const list = document.getElementById('t-players-list');
@@ -157,10 +176,14 @@ function renderStep4Players() {
     const block = document.createElement('div');
     block.className = 'player-block';
     block.innerHTML = `
-      <div class="player-block-label">Gracz ${i}</div>
+      <div class="player-block-top">
+        <div class="player-block-label">Gracz ${i}</div>
+        <span class="drag-handle" title="Przeciągnij aby zmienić kolejność">⠿</span>
+      </div>
       <input type="text" id="t-pname-${i}" class="player-name-input"
              placeholder="Imię gracza" maxlength="20"
-             list="players-datalist" autocomplete="off">
+             list="t-datalist-${i}" autocomplete="off">
+      <datalist id="t-datalist-${i}"></datalist>
       <div class="doubles-row">
         <div>
           <div class="doubles-sublabel">Ulub. podwójna 1.</div>
@@ -174,24 +197,156 @@ function renderStep4Players() {
     `;
     list.appendChild(block);
 
+    if (savedValues && savedValues[i - 1]) {
+      const v = savedValues[i - 1];
+      document.getElementById('t-pname-' + i).value = v.name;
+      document.getElementById('t-pd1-' + i).value   = v.d1;
+      document.getElementById('t-pd2-' + i).value   = v.d2;
+    }
+
     document.getElementById('t-pname-' + i).addEventListener('input', function() {
       const found = loadPlayers().find(p => p.name === this.value);
       if (found) {
         document.getElementById('t-pd1-' + i).value = found.primaryDouble  || '';
         document.getElementById('t-pd2-' + i).value = found.secondaryDouble || '';
       }
+      _updateStep4Datalists();
       validateStep4();
     });
   }
+  _initStep4DragDrop(list);
+  _updateStep4Datalists();
   validateStep4();
+}
+
+function _updateStep4Datalists() {
+  const n = tournamentConfig ? tournamentConfig.numPlayers : 0;
+  if (n === 0) return;
+
+  const allPlayers = loadPlayers();
+  const savedNames = new Map(allPlayers.map(p => [p.name.toLowerCase(), p.name]));
+
+  // Names currently entered per slot (lowercase for comparison)
+  const currentLower = Array.from({ length: n }, (_, i) => {
+    const inp = document.getElementById('t-pname-' + (i + 1));
+    return inp ? inp.value.trim().toLowerCase() : '';
+  });
+
+  for (let i = 1; i <= n; i++) {
+    const datalist = document.getElementById('t-datalist-' + i);
+    if (!datalist) continue;
+
+    // Saved players used in *other* slots
+    const usedElsewhere = new Set(
+      currentLower.filter((name, idx) => idx !== i - 1 && savedNames.has(name))
+    );
+
+    datalist.innerHTML = '';
+    for (const [lower, displayName] of savedNames) {
+      if (!usedElsewhere.has(lower)) {
+        const opt = document.createElement('option');
+        opt.value = displayName;
+        datalist.appendChild(opt);
+      }
+    }
+  }
+}
+
+function _getStep4Values() {
+  return Array.from(document.querySelectorAll('#t-players-list .player-block')).map(block => ({
+    name: block.querySelector('.player-name-input').value,
+    d1:   block.querySelector('[id^="t-pd1-"]').value,
+    d2:   block.querySelector('[id^="t-pd2-"]').value,
+  }));
+}
+
+function _initStep4DragDrop(list) {
+  let dragSrc = null;
+
+  list.querySelectorAll('.player-block').forEach(b => b.setAttribute('draggable', 'true'));
+
+  list.addEventListener('dragstart', e => {
+    if (e.target.closest('input, select')) { e.preventDefault(); return; }
+    const block = e.target.closest('.player-block');
+    if (!block) return;
+    dragSrc = block;
+    e.dataTransfer.effectAllowed = 'move';
+    requestAnimationFrame(() => block.classList.add('dragging'));
+  });
+
+  list.addEventListener('dragend', () => {
+    list.querySelectorAll('.player-block').forEach(b =>
+      b.classList.remove('dragging', 'drag-over'));
+    dragSrc = null;
+  });
+
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    const block = e.target.closest('.player-block');
+    if (!block || block === dragSrc) return;
+    list.querySelectorAll('.player-block').forEach(b => b.classList.remove('drag-over'));
+    block.classList.add('drag-over');
+  });
+
+  list.addEventListener('dragleave', e => {
+    if (!list.contains(e.relatedTarget))
+      list.querySelectorAll('.player-block').forEach(b => b.classList.remove('drag-over'));
+  });
+
+  list.addEventListener('drop', e => {
+    e.preventDefault();
+    const target = e.target.closest('.player-block');
+    if (!target || target === dragSrc) return;
+    const blocks = Array.from(list.children);
+    const fromIdx = blocks.indexOf(dragSrc);
+    const toIdx   = blocks.indexOf(target);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const vals = _getStep4Values();
+    vals.splice(toIdx, 0, vals.splice(fromIdx, 1)[0]);
+    renderStep4Players(vals);
+  });
 }
 
 function validateStep4() {
   const n = tournamentConfig ? tournamentConfig.numPlayers : 0;
-  const allFilled = n > 0 && Array.from({ length: n },
-    (_, i) => (document.getElementById('t-pname-' + (i + 1))?.value.trim() || '') !== ''
-  ).every(Boolean);
-  document.getElementById('btn-create-tournament').disabled = !allFilled;
+  const errEl = document.getElementById('t-step4-error');
+  const btn   = document.getElementById('btn-create-tournament');
+
+  const inputs = Array.from({ length: n }, (_, i) => document.getElementById('t-pname-' + (i + 1)));
+  const names  = inputs.map(inp => inp?.value.trim() || '');
+  const allFilled = n > 0 && names.every(name => name !== '');
+
+  // Count occurrences (case-insensitive) to find duplicates
+  const countByLower = new Map();
+  for (const name of names) {
+    if (!name) continue;
+    const key = name.toLowerCase();
+    countByLower.set(key, (countByLower.get(key) || 0) + 1);
+  }
+  const dupLowers = new Set([...countByLower.entries()].filter(([, c]) => c > 1).map(([k]) => k));
+
+  // Highlight duplicate inputs
+  inputs.forEach(inp => {
+    if (!inp) return;
+    inp.classList.toggle('inp-duplicate', !!inp.value.trim() && dupLowers.has(inp.value.trim().toLowerCase()));
+  });
+
+  if (dupLowers.size > 0) {
+    // One representative per duplicate group (first occurrence)
+    const seen = new Set();
+    const dupLabels = names.filter(name => {
+      if (!name || !dupLowers.has(name.toLowerCase())) return false;
+      if (seen.has(name.toLowerCase())) return false;
+      seen.add(name.toLowerCase());
+      return true;
+    });
+    errEl.textContent = 'Zduplikowane nazwy graczy: ' + dupLabels.map(n => '"' + n + '"').join(', ');
+    errEl.hidden = false;
+    btn.disabled = true;
+  } else {
+    errEl.hidden = true;
+    btn.disabled = !allFilled;
+  }
 }
 
 // ── Create tournament: save new players + build tournament ──
