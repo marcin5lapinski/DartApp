@@ -1630,6 +1630,19 @@ html, body {
 .format-tile.active .format-tile-sub { color: #9a4050; }
 .format-tile.disabled .format-tile-sub { color: #2a2a2a; }
 
+.format-details-panel { display: grid; }
+.format-details-panel > * { grid-area: 1 / 1; min-width: 0; }
+.format-details-panel > .format-hidden { visibility: hidden; pointer-events: none; }
+.wizard-hint {
+  align-self: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  text-align: center;
+  padding: 8px 4px;
+  margin: 0;
+}
+
 /* Step 4: player blocks */
 .player-block {
   background: var(--surface2);

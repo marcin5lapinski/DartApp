@@ -610,27 +610,29 @@
         <span class="format-tile-sub">pucharowa</span>
       </div>
 
-      <div id="league-settings">
-        <label class="wlabel" style="margin-top:4px">Rundy</label>
-        <div class="btn-group" id="t-rounds-group">
-          <button class="btn-seg active" data-rounds="single">Jedna runda</button>
-          <button class="btn-seg" data-rounds="double">Dwie rundy</button>
-        </div>
-        <div class="form-row" style="margin-top:12px">
-          <div class="form-group">
-            <label for="t-win-pts">Pkt za wygraną</label>
-            <input id="t-win-pts" type="number" min="0" value="2">
+      <div class="format-details-panel">
+        <div id="league-settings">
+          <label class="wlabel" style="margin-top:4px">Rundy</label>
+          <div class="btn-group" id="t-rounds-group">
+            <button class="btn-seg active" data-rounds="single">Jedna runda</button>
+            <button class="btn-seg" data-rounds="double">Dwie rundy</button>
           </div>
-          <div class="form-group">
-            <label for="t-loss-pts">Pkt za przegraną</label>
-            <input id="t-loss-pts" type="number" min="0" value="0">
+          <div class="form-row" style="margin-top:12px">
+            <div class="form-group">
+              <label for="t-win-pts">Pkt za wygraną</label>
+              <input id="t-win-pts" type="number" min="0" value="2">
+            </div>
+            <div class="form-group">
+              <label for="t-loss-pts">Pkt za przegraną</label>
+              <input id="t-loss-pts" type="number" min="0" value="0">
+            </div>
           </div>
         </div>
-      </div>
 
-      <p id="t-bracket-desc" class="wizard-hint" style="display:none">
-        Puchar — każdy mecz eliminuje przegranego. Zwycięzca finału wygrywa turniej.
-      </p>
+        <p id="t-bracket-desc" class="wizard-hint format-hidden">
+          Puchar — każdy mecz eliminuje przegranego. Zwycięzca finału wygrywa turniej.
+        </p>
+      </div>
 
       <div class="wizard-nav">
         <button id="t-back-2" class="btn-wizard-back">&#8592; Wstecz</button>

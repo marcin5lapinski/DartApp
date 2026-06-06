@@ -41,9 +41,9 @@ function initTournamentWizard() {
   // Reset step 2 format to league
   document.querySelectorAll('#wstep-2 .format-tile').forEach(t =>
     t.classList.toggle('active', t.dataset.format === 'league'));
-  document.getElementById('league-settings').style.display = '';
+  document.getElementById('league-settings').classList.remove('format-hidden');
   const bracketDesc = document.getElementById('t-bracket-desc');
-  if (bracketDesc) bracketDesc.style.display = 'none';
+  if (bracketDesc) bracketDesc.classList.add('format-hidden');
   showWizardStep(1);
 }
 
@@ -115,8 +115,8 @@ document.querySelectorAll('#wstep-2 .format-tile:not(.disabled)').forEach(tile =
     tournamentConfig.format = tile.dataset.format;
 
     const isBracket = tile.dataset.format === 'bracket';
-    document.getElementById('league-settings').style.display = isBracket ? 'none' : '';
-    document.getElementById('t-bracket-desc').style.display  = isBracket ? ''     : 'none';
+    document.getElementById('league-settings').classList.toggle('format-hidden', isBracket);
+    document.getElementById('t-bracket-desc').classList.toggle('format-hidden', !isBracket);
   });
 });
 
