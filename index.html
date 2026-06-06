@@ -561,6 +561,7 @@
   <div id="tv-info-bar" class="tv-info-bar"></div>
   <div id="tv-standings" class="tv-standings"></div>
   <div id="tv-matches" class="tv-matches" style="display:none"></div>
+  <div id="tv-bracket" class="tv-bracket" style="display:none"></div>
 </section>
 
 <!-- ===== TOURNAMENT SCREEN ===== -->
@@ -582,8 +583,8 @@
       <input id="t-name" type="text" class="player-name-input" maxlength="40"
              placeholder="np. Liga czwartkowa" autocomplete="off">
       <label class="wlabel" for="t-num-players">Liczba graczy</label>
-      <p class="step-hint">Minimum: 3 &nbsp;·&nbsp; Maksimum: 6</p>
-      <input id="t-num-players" type="number" class="t-input-center" min="3" max="6" placeholder="np. 4">
+      <p class="step-hint">Minimum: 3 &nbsp;·&nbsp; Maksimum: 10</p>
+      <input id="t-num-players" type="number" class="t-input-center" min="3" max="10" placeholder="np. 4">
       <span id="t-step1-error" class="t-error" hidden></span>
       <div class="wizard-nav">
         <button id="t-back-1" class="btn-wizard-back">&#8592; Powrót</button>
@@ -604,9 +605,9 @@
         Grupy + Drabinka
         <span class="format-tile-sub">wkrótce</span>
       </div>
-      <div class="format-tile disabled" data-format="bracket">
+      <div class="format-tile" id="t-format-bracket" data-format="bracket">
         Drabinka
-        <span class="format-tile-sub">wkrótce</span>
+        <span class="format-tile-sub">pucharowa</span>
       </div>
 
       <div id="league-settings">
@@ -724,6 +725,7 @@
         <button class="btn-seg active" data-seeding="random">🎲 Losuj rozstawienie</button>
         <button class="btn-seg" data-seeding="ordered">↓ Użyj kolejności</button>
       </div>
+      <p id="t-step4-error" class="t-error" hidden></p>
       <button id="btn-create-tournament" class="btn-create-tournament" disabled>UTWÓRZ TURNIEJ</button>
       <div class="wizard-nav" style="margin-top:8px">
         <button id="t-back-4" class="btn-wizard-back">&#8592; Wstecz</button>
