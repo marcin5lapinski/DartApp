@@ -208,7 +208,9 @@ function setupEventListeners() {
         _activeTournament = t;
         renderTournamentViewScreen(t);
         showScreen(SCREENS.TOURNAMENT_VIEW);
-        document.getElementById('tv-tab-matches').click();
+        if (t.config.format !== 'bracket') {
+          document.getElementById('tv-tab-matches').click();
+        }
       } else {
         showScreen(SCREENS.HOME);
       }
@@ -236,7 +238,9 @@ function setupEventListeners() {
         _activeTournament = t;
         renderTournamentViewScreen(t);
         showScreen(SCREENS.TOURNAMENT_VIEW);
-        document.getElementById('tv-tab-matches').click();
+        if (t.config.format !== 'bracket') {
+          document.getElementById('tv-tab-matches').click();
+        }
       } else {
         showScreen(SCREENS.HOME);
       }
@@ -1199,7 +1203,9 @@ function loadFromLocalStorage() {
         match = saved;
         if (match && match.tournamentMatchContext) {
           pendingTournamentMatch = match.tournamentMatchContext;
-          document.getElementById('btn-live-standings').style.display = '';
+          const restoredT = loadTournaments().find(t => t.id === match.tournamentMatchContext.tournamentId);
+          document.getElementById('btn-live-standings').style.display =
+            (restoredT && restoredT.config.format === 'bracket') ? 'none' : '';
         }
         showScreen(SCREENS.GAME);
         renderGameScreen(match);

@@ -381,9 +381,9 @@ function renderBracketScreen(tournament) {
       const isLastVisible = (ri === end - 1);
       const hasMoreRight  = (ri < numRounds - 1);
       if (!isLastVisible) {
-        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, CARD_H, GAP, LABEL_H, SVG_W, false));
+        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, SVG_W, false));
       } else if (hasMoreRight) {
-        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, CARD_H, GAP, LABEL_H, Math.floor(SVG_W / 2), true));
+        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, Math.floor(SVG_W / 2), true));
       }
     }
 
@@ -693,7 +693,7 @@ function buildBracketRound(roundMatches, roundIdx, numRounds, players, matchIdxO
   return col;
 }
 
-function buildBracketConnectorSvg(numLeft, CARD_H, GAP, LABEL_H, SVG_W, isDashed) {
+function buildBracketConnectorSvg(numLeft, round, CARD_H, GAP, LABEL_H, SVG_W, isDashed) {
   const bodyH  = numLeft * CARD_H + (numLeft - 1) * GAP;
   const totalH = LABEL_H + bodyH;
   const HOOK   = Math.floor(SVG_W / 2);
@@ -708,8 +708,8 @@ function buildBracketConnectorSvg(numLeft, CARD_H, GAP, LABEL_H, SVG_W, isDashed
   const numPairs = Math.floor(numLeft / 2);
   for (let pair = 0; pair < numPairs; pair++) {
     const slot1 = pair * 2, slot2 = pair * 2 + 1;
-    const y1   = LABEL_H + slot1 * (CARD_H + GAP) + CARD_H / 2;
-    const y2   = LABEL_H + slot2 * (CARD_H + GAP) + CARD_H / 2;
+    const y1   = LABEL_H + _bracketCenterY(round, slot1, CARD_H, GAP);
+    const y2   = LABEL_H + _bracketCenterY(round, slot2, CARD_H, GAP);
     const midY = (y1 + y2) / 2;
 
     if (!isDashed) {
