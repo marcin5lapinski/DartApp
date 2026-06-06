@@ -165,6 +165,28 @@ function buildDoublesOptions(placeholder) {
   return o;
 }
 
+function _computeByeSuggestion(numPlayers) {
+  const B = nextPowerOf2(numPlayers);
+  const numByes = B - numPlayers;
+  if (numByes === 0) return new Array(numPlayers).fill(false);
+  const r1Slots = B / 2;
+  const numReal = numPlayers - r1Slots;
+  const realSlotSet = new Set();
+  for (let i = 0; i < numReal; i++) {
+    realSlotSet.add(Math.floor(i * r1Slots / numReal));
+  }
+  const flags = [];
+  for (let slot = 0; slot < r1Slots; slot++) {
+    if (realSlotSet.has(slot)) {
+      flags.push(false);
+      flags.push(false);
+    } else {
+      flags.push(true);
+    }
+  }
+  return flags; // length === numPlayers
+}
+
 function renderStep4Players(savedValues) {
   const n = tournamentConfig.numPlayers;
   document.getElementById('t-players-label').textContent = `Gracze (${n})`;
