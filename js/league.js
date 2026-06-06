@@ -64,36 +64,50 @@ function advanceBracketWinner(matches, finishedMatch) {
   else                               target.p2 = winnerPlayerIdx;
 }
 
-function generateBracket(numPlayers, players) {
-  const B         = nextPowerOf2(numPlayers);
-  const numByes   = B - numPlayers;
-  const numRounds = Math.log2(B);
-  const r1Slots   = B / 2;
-  const matches   = [];
+function generateBracket(players) {
+  const numPlayers = players.length;
+  const B          = nextPowerOf2(numPlayers);
+  const numRounds  = Math.log2(B);
+  const r1Slots    = B / 2;
+  const matches    = [];
 
-  // Round 0: numByes bye-slots then real matches
+  // Build realSlotSet: slots that get real matches (same formula as _computeByeSuggestion)
+  const numReal = numPlayers - r1Slots;
+  const realSlotSet = new Set();
+  for (let i = 0; i < numReal; i++) {
+    realSlotSet.add(Math.floor(i * r1Slots / numReal));
+  }
+
+  // Separate players into bye and real groups (preserve order)
+  const byePlayers  = players.map((p, i) => ({ ...p, _oi: i })).filter(p => p.bye);
+  const realPlayers = players.map((p, i) => ({ ...p, _oi: i })).filter(p => !p.bye);
+  let byePtr = 0, realPtr = 0;
+
+  // Round 0: interleave real matches and bye slots
   for (let slot = 0; slot < r1Slots; slot++) {
-    if (slot < numByes) {
-      matches.push({
-        round: 0, slot, isBye: true,
-        p1: slot, p2: null, winner: 0,
-        legs: [null, null], sets: [null, null],
-        avgs: [null, null], stats: [null, null], starter: null,
-      });
-    } else {
-      const ri   = slot - numByes;
-      const p1i  = numByes + ri * 2;
-      const p2i  = numByes + ri * 2 + 1;
+    if (realSlotSet.has(slot)) {
+      const p1i = realPlayers[realPtr]._oi;
+      const p2i = realPlayers[realPtr + 1]._oi;
+      realPtr += 2;
       matches.push({
         round: 0, slot, isBye: false,
         p1: p1i, p2: p2i, winner: null,
         legs: [null, null], sets: [null, null],
         avgs: [null, null], stats: [null, null], starter: null,
       });
+    } else {
+      const p1i = byePlayers[byePtr]._oi;
+      byePtr++;
+      matches.push({
+        round: 0, slot, isBye: true,
+        p1: p1i, p2: null, winner: 0,
+        legs: [null, null], sets: [null, null],
+        avgs: [null, null], stats: [null, null], starter: null,
+      });
     }
   }
 
-  // Rounds 1..numRounds-1: all TBD
+  // Rounds 1..numRounds-1: all TBD (unchanged)
   for (let r = 1; r < numRounds; r++) {
     const slotsInRound = B / Math.pow(2, r + 1);
     for (let slot = 0; slot < slotsInRound; slot++) {
@@ -106,7 +120,7 @@ function generateBracket(numPlayers, players) {
     }
   }
 
-  // Pre-fill subsequent rounds for all bye matches
+  // Pre-fill bye winners into subsequent rounds (unchanged)
   matches.filter(m => m.isBye).forEach(m => advanceBracketWinner(matches, m));
 
   return matches;
@@ -127,9 +141,9 @@ function createTournament(config, players) {
         : { leagueRounds: config.leagueRounds, winPoints: config.winPoints, lossPoints: config.lossPoints }),
       matchConfig: { ...config.matchConfig },
     },
-    players,
+    players: isBracket ? players.map(({ bye, ...rest }) => rest) : players,
     matches: isBracket
-      ? generateBracket(players.length, players)
+      ? generateBracket(players)
       : generateSchedule(players.length, config.leagueRounds),
   };
   const list = loadTournaments();
