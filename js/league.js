@@ -290,17 +290,34 @@ function buildTournamentCard(t) {
   div.dataset.id = t.id;
 
   const mc    = t.config.matchConfig;
-  const meta  = `Liga · ${t.players.length} graczy · ${mc.variant} · First to ${mc.totalLegs}`;
-  const played = t.matches.filter(m => m.winner !== null).length;
-  const total  = t.matches.length;
+  const isBracket = t.config.format === 'bracket';
+  const meta  = (isBracket ? 'Drabinka' : 'Liga') + ' · ' + t.players.length + ' graczy · ' + mc.variant + ' · First to ' + mc.totalLegs;
+  const played = isBracket
+    ? t.matches.filter(m => !m.isBye && m.winner !== null).length
+    : t.matches.filter(m => m.winner !== null).length;
+  const total = isBracket
+    ? t.matches.filter(m => !m.isBye).length
+    : t.matches.length;
 
   let statusHtml;
   if (t.status === 'active') {
-    statusHtml = `<span class="tc-status tc-active">&#9654; W toku &mdash; ${played}/${total} meczów</span>`;
+    statusHtml = '<span class="tc-status tc-active">&#9654; W toku &mdash; ' + played + '/' + total + ' meczów</span>';
   } else {
-    const standings = computeStandings(t);
-    const winner    = standings[0] ? escapeHtml(standings[0].name) : '&mdash;';
-    statusHtml = `<span class="tc-status tc-done">&#10003; Zakończony &middot; Wygrał: ${winner}</span>`;
+    let winner;
+    if (isBracket) {
+      const numRounds  = Math.log2(t.config.bracketSize);
+      const finalMatch = t.matches.find(m => m.round === numRounds - 1 && m.slot === 0);
+      if (finalMatch && finalMatch.winner !== null) {
+        const wIdx = finalMatch.winner === 0 ? finalMatch.p1 : finalMatch.p2;
+        winner = escapeHtml(t.players[wIdx].name);
+      } else {
+        winner = '&mdash;';
+      }
+    } else {
+      const standings = computeStandings(t);
+      winner = standings[0] ? escapeHtml(standings[0].name) : '&mdash;';
+    }
+    statusHtml = '<span class="tc-status tc-done">&#10003; Zakończony &middot; Wygrał: ' + winner + '</span>';
   }
 
   div.innerHTML = `
@@ -314,8 +331,101 @@ function buildTournamentCard(t) {
   return div;
 }
 
+function renderBracketScreen(tournament) {
+  const container = document.getElementById('tv-bracket');
+  container.innerHTML = '';
+
+  const { matches, players, config } = tournament;
+  const B         = config.bracketSize;
+  const numRounds = Math.log2(B);
+  const CARD_H = 36, GAP = 8, LABEL_H = 26, SVG_W = 20;
+
+  const byRound = [];
+  for (let r = 0; r < numRounds; r++) {
+    byRound.push(matches.filter(m => m.round === r).sort((a, b) => a.slot - b.slot));
+  }
+
+  const numR1Slots = B / 2;
+  const bodyH = numR1Slots * CARD_H + (numR1Slots - 1) * GAP;
+
+  const VISIBLE = 3;
+  let offset = 0;
+
+  function render() {
+    container.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'bk-nav-wrap';
+
+    if (numRounds > VISIBLE) {
+      const lBtn = document.createElement('button');
+      lBtn.className = 'bk-arrow';
+      lBtn.textContent = '←';
+      lBtn.disabled = (offset === 0);
+      lBtn.addEventListener('click', () => { offset--; render(); });
+      wrap.appendChild(lBtn);
+    }
+
+    const viewport = document.createElement('div');
+    viewport.className = 'bk-viewport';
+    const track = document.createElement('div');
+    track.className = 'bk-track';
+
+    const end = Math.min(offset + VISIBLE, numRounds);
+    for (let ri = offset; ri < end; ri++) {
+      const roundMatches = byRound[ri];
+      // find the absolute index in tournament.matches[] of the first match in this round
+      const firstIdx = matches.findIndex(m => m.round === ri && m.slot === 0);
+      const col = buildBracketRound(roundMatches, ri, numRounds, players, firstIdx, CARD_H, GAP, bodyH);
+      track.appendChild(col);
+
+      const isLastVisible = (ri === end - 1);
+      const hasMoreRight  = (ri < numRounds - 1);
+      if (!isLastVisible) {
+        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, CARD_H, GAP, LABEL_H, SVG_W, false));
+      } else if (hasMoreRight) {
+        track.appendChild(buildBracketConnectorSvg(byRound[ri].length, CARD_H, GAP, LABEL_H, Math.floor(SVG_W / 2), true));
+      }
+    }
+
+    viewport.appendChild(track);
+    wrap.appendChild(viewport);
+
+    if (numRounds > VISIBLE) {
+      const rBtn = document.createElement('button');
+      rBtn.className = 'bk-arrow';
+      rBtn.textContent = '→';
+      rBtn.disabled = (offset + VISIBLE >= numRounds);
+      rBtn.addEventListener('click', () => { offset++; render(); });
+      wrap.appendChild(rBtn);
+    }
+
+    container.appendChild(wrap);
+  }
+
+  render();
+}
+
 function renderTournamentViewScreen(tournament) {
   _activeTournament = tournament;
+  const isBracket = tournament.config.format === 'bracket';
+  if (isBracket) {
+    document.getElementById('tv-title').textContent = tournament.name;
+    document.getElementById('tv-tabs').style.display      = 'none';
+    document.getElementById('tv-standings').style.display = 'none';
+    document.getElementById('tv-matches').style.display   = 'none';
+    document.getElementById('tv-bracket').style.display   = '';
+    const mc      = tournament.config.matchConfig;
+    const played  = tournament.matches.filter(m => !m.isBye && m.winner !== null).length;
+    const total   = tournament.matches.filter(m => !m.isBye).length;
+    document.getElementById('tv-info-bar').innerHTML =
+      '<span>Drabinka &middot; ' + mc.variant + ' &middot; First to ' + mc.totalLegs + ' &middot; ' + (CHECKOUT_LABELS[mc.checkoutMode] || mc.checkoutMode) + '</span>' +
+      '<span>' + tournament.players.length + ' graczy &middot; ' + played + '/' + total + ' meczów rozegranych</span>';
+    renderBracketScreen(tournament);
+    return;
+  }
+  // --- league: restore tabs/standings visibility ---
+  document.getElementById('tv-tabs').style.display = '';
+  document.getElementById('tv-bracket').style.display = 'none';
   document.getElementById('tv-title').textContent = tournament.name;
   document.getElementById('tv-tab-matches').classList.remove('tv-tab-disabled');
   document.getElementById('tv-tab-table').classList.add('active');
