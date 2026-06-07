@@ -103,6 +103,22 @@
     </div>
 
     <div class="form-group">
+      <label for="sel-dart-limit">Limit rzutów w legu</label>
+      <select id="sel-dart-limit">
+        <option value="">Bez limitu</option>
+        <option value="30">30 rzutów</option>
+        <option value="33">33 rzuty</option>
+        <option value="36">36 rzutów</option>
+        <option value="39">39 rzutów</option>
+        <option value="42">42 rzuty</option>
+        <option value="45">45 rzutów</option>
+        <option value="48">48 rzutów</option>
+        <option value="51">51 rzutów</option>
+        <option value="54">54 rzuty</option>
+      </select>
+    </div>
+
+    <div class="form-group">
       <label for="input-p1">Gracz 1</label>
       <input id="input-p1" type="text" list="players-datalist" placeholder="Gracz 1" maxlength="20" autocomplete="off">
     </div>
@@ -191,7 +207,7 @@
   <!-- Summary input area -->
   <div class="input-area" id="summary-area" style="display:flex">
     <div class="score-input-row">
-      <input id="input-score" type="tel" inputmode="numeric" pattern="[0-9]*"
+      <input id="input-score" type="tel" inputmode="none" pattern="[0-9]*"
              placeholder="0" maxlength="3" autocomplete="off">
       <button class="btn btn-submit" id="btn-submit-score">OK</button>
     </div>
@@ -389,6 +405,26 @@
   </div>
 </div>
 
+<!-- Delete all active tournaments confirmation -->
+<div class="modal" id="modal-delete-all-active">
+  <h3>Usunąć wszystkie turnieje w toku?</h3>
+  <p class="exit-confirm-msg">Wszystkie aktywne turnieje zostaną trwale usunięte wraz z wynikami.</p>
+  <div class="exit-confirm-buttons">
+    <button class="btn btn-secondary" id="btn-delete-all-active-cancel">Anuluj</button>
+    <button class="btn btn-danger" id="btn-delete-all-active-confirm">Usuń wszystkie</button>
+  </div>
+</div>
+
+<!-- Delete all finished tournaments confirmation -->
+<div class="modal" id="modal-delete-all-finished">
+  <h3>Usunąć wszystkie zakończone turnieje?</h3>
+  <p class="exit-confirm-msg">Wszystkie zakończone turnieje zostaną trwale usunięte wraz z wynikami.</p>
+  <div class="exit-confirm-buttons">
+    <button class="btn btn-secondary" id="btn-delete-all-finished-cancel">Anuluj</button>
+    <button class="btn btn-danger" id="btn-delete-all-finished-confirm">Usuń wszystkie</button>
+  </div>
+</div>
+
 <!-- Clear history confirmation -->
 <div class="modal" id="modal-clear-history">
   <h3>Usunąć całą historię?</h3>
@@ -429,6 +465,17 @@
   <div class="leg-result-actions">
     <button class="btn btn-secondary" id="btn-leg-result-undo">↩ Cofnij</button>
     <button class="btn btn-primary" id="btn-next-leg">Dalej</button>
+  </div>
+</div>
+
+<!-- Dart visit limit reached -->
+<div class="modal" id="modal-dart-limit">
+  <div class="leg-result-text">⏱ Limit rzutów osiągnięty</div>
+  <p class="limit-modal-question">Kto wygrał leg?</p>
+  <div id="limit-winner-options" class="limit-winner-options"></div>
+  <div class="leg-result-actions">
+    <button class="btn btn-secondary" id="btn-limit-undo">↩ Cofnij</button>
+    <button class="btn btn-primary" id="btn-limit-dalej" disabled>Dalej →</button>
   </div>
 </div>
 
@@ -714,6 +761,22 @@
           <option value="double" selected>Double-out (domyślny)</option>
           <option value="master">Master-out</option>
           <option value="straight">Straight-out</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="t-dart-limit">Limit rzutów w legu</label>
+        <select id="t-dart-limit">
+          <option value="">Bez limitu</option>
+          <option value="30">30 rzutów</option>
+          <option value="33">33 rzuty</option>
+          <option value="36">36 rzutów</option>
+          <option value="39">39 rzutów</option>
+          <option value="42">42 rzuty</option>
+          <option value="45">45 rzutów</option>
+          <option value="48">48 rzutów</option>
+          <option value="51">51 rzutów</option>
+          <option value="54">54 rzuty</option>
         </select>
       </div>
 
