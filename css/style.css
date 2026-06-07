@@ -294,19 +294,19 @@ html, body {
 }
 
 .player-darts {
-  font-size: 0.75rem;
+  font-size: 0.86rem;
   color: var(--text-muted);
   min-height: 1em;
 }
 
 .player-avg {
-  font-size: 0.75rem;
+  font-size: 0.86rem;
   color: var(--accent2);
   min-height: 1em;
 }
 
 .player-last {
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   color: var(--text-muted);
   min-height: 1em;
   font-variant-numeric: tabular-nums;
@@ -1638,6 +1638,8 @@ html, body {
 .format-details-panel { display: grid; }
 .format-details-panel > * { grid-area: 1 / 1; min-width: 0; }
 .format-details-panel > .format-hidden { visibility: hidden; pointer-events: none; }
+.format-details-panel > .format-hidden,
+.format-details-panel > .format-hidden * { transition: none !important; }
 .wizard-hint {
   align-self: center;
   color: var(--text-muted);
@@ -1932,6 +1934,29 @@ html, body {
   color: var(--text-muted);
 }
 .t-list-limit--full { color: var(--accent); }
+
+.t-list-section-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-delete-all {
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 6px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+.btn-delete-all:hover {
+  background: var(--accent);
+  color: #fff;
+}
 
 #btn-new-tournament:disabled {
   background: var(--surface2);
@@ -2420,4 +2445,35 @@ html, body {
     flex: none;
     width: 370px; /* 3 × 110px col + 2 × 20px SVG connector */
   }
+}
+
+/* Dart limit modal */
+.limit-modal-question {
+  margin: 4px 0 8px;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.limit-winner-options {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+
+.limit-winner-btn {
+  flex: 1;
+  padding: 12px 8px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.limit-winner-btn.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
