@@ -197,6 +197,25 @@ function setupEventListeners() {
 
   document.getElementById('btn-which-open-dart-cancel').addEventListener('click', undoLastVisit);
 
+  // Limit modal
+  document.getElementById('btn-limit-undo').addEventListener('click', undoLastVisit);
+
+  document.getElementById('limit-winner-options').addEventListener('click', e => {
+    const btn = e.target.closest('.limit-winner-btn');
+    if (!btn) return;
+    document.querySelectorAll('.limit-winner-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    pendingLimitWinnerIndex = parseInt(btn.dataset.player);
+    document.getElementById('btn-limit-dalej').disabled = false;
+  });
+
+  document.getElementById('btn-limit-dalej').addEventListener('click', () => {
+    if (pendingLimitWinnerIndex === null) return;
+    closeModal('modal-dart-limit');
+    handleLimitLegClose(pendingLimitWinnerIndex);
+    pendingLimitWinnerIndex = null;
+  });
+
   // Exit to menu button (game screen)
   document.getElementById('btn-exit-match').addEventListener('click', () => {
     openModal('modal-exit-confirm');
@@ -618,6 +637,7 @@ function startMatch() {
   const player1 = document.getElementById('input-p1').value.trim() || 'Gracz 1';
   const player2 = document.getElementById('input-p2').value.trim() || 'Gracz 2';
   const checkoutMode = document.getElementById('sel-checkout').value;
+  const dartLimit = parseInt(document.getElementById('sel-dart-limit').value) || null;
   const totalLegs = parseInt(document.getElementById('sel-legs').value);
   const inMode    = document.getElementById('sel-in-mode').value;
   const totalSets = parseInt(document.getElementById('sel-sets').value);
@@ -638,7 +658,7 @@ function startMatch() {
     p2Profile ? { primary: p2Profile.primaryDouble ?? null, secondary: p2Profile.secondaryDouble ?? null } : null,
   ];
 
-  match = createMatch({ variant, player1, player2, checkoutMode, inMode, totalLegs, totalSets, startingPlayer, playerFavorites });
+  match = createMatch({ variant, player1, player2, checkoutMode, inMode, totalLegs, totalSets, startingPlayer, playerFavorites, dartLimit });
   undoStack = [];
   updateUndoButton();
 
@@ -727,6 +747,7 @@ function startTournamentMatch(tournament, matchIndex, startingPlayer) {
       { primary: p1.primaryDouble ?? null, secondary: p1.secondaryDouble ?? null },
       { primary: p2.primaryDouble ?? null, secondary: p2.secondaryDouble ?? null },
     ],
+    dartLimit: mc.dartLimit ?? null,
   });
   match.tournamentMatchContext = {
     tournamentId: pendingTournamentMatch.tournamentId,
