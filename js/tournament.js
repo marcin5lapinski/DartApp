@@ -17,6 +17,7 @@ function initTournamentWizard() {
       totalLegs: 3,
       inMode: 'straight',
       checkoutMode: 'double',
+      dartLimit: null,
     },
     players: [],
     seeding: 'random',
@@ -132,6 +133,7 @@ document.getElementById('t-next-3').addEventListener('click', () => {
     totalLegs:    parseInt(document.getElementById('t-legs').value),
     inMode:       document.getElementById('t-in-mode').value,
     checkoutMode: document.getElementById('t-checkout').value,
+    dartLimit:    parseInt(document.getElementById('t-dart-limit').value) || null,
   };
   renderStep4Players();
   showWizardStep(4);
