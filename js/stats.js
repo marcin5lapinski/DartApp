@@ -137,6 +137,32 @@ function recordLegWin(stats, startingScore, checkoutScore, dartNumber, isDartByD
   stats.legFirst9Darts = 0;
 }
 
+// Called when a leg ends because both players hit the visit limit (no checkout made).
+// Does NOT update highestCheckout or fastestLeg (no checkout occurred).
+// Pushes a leg snapshot (needed for getFirst9Average) and clears leg-first-9 state.
+function recordLegWinByLimit(stats) {
+  stats.legsWon += 1;
+
+  const first9Sum = stats.legFirst9Scores.reduce((a, b) => a + b, 0);
+  const first9Visits = stats.legFirst9Scores.length;
+  const first9Darts = stats.legFirst9Darts;
+
+  stats.legs.push({
+    dartsThrown: stats.legDarts,
+    pointsScored: stats.legPoints,
+    average: stats.legDarts > 0 ? stats.legPoints / (stats.legDarts / 3) : 0,
+    first9Sum,
+    first9Visits,
+    first9Darts,
+    checkout: null,
+    doubleAttempts: stats.legDoubleAttempts,
+    doubleHits: stats.legDoubleHits,
+  });
+
+  stats.legFirst9Scores = [];
+  stats.legFirst9Darts = 0;
+}
+
 // Track unambiguous double attempts in summary mode for non-checkout visits:
 // - bust when remaining was a double-finish score → 3 attempts, 0 hits
 // - score=0 when remaining was a double-finish score → 3 attempts, 0 hits
