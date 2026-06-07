@@ -12,6 +12,7 @@ let pendingTournamentMatch = null;
 let pendingTournamentStarterData = null;
 let pendingOpenScore = null;
 let pendingOpenPlayerIndex = null;
+let pendingLimitWinnerIndex = null;
 
 const IMPOSSIBLE_VISIT_SCORES = new Set([163, 166, 169, 172, 173, 175, 176, 178, 179]);
 
@@ -60,12 +61,19 @@ function undoLastVisit() {
   pendingWinnerIndex   = null;
   pendingOpenScore = null;
   pendingOpenPlayerIndex = null;
+  pendingLimitWinnerIndex = null;
   document.querySelectorAll('.modal.open').forEach(m => m.classList.remove('open'));
   document.getElementById('modal-overlay').classList.remove('open');
   updateUndoButton();
   renderGameScreen(match);
   renderDartBuffer(match);
+  focusSummaryInput();
   saveToLocalStorage();
+}
+
+function focusSummaryInput() {
+  if (match && match.inputMode === INPUT_MODES.SUMMARY)
+    document.getElementById('input-score').focus();
 }
 
 function updateUndoButton() {
@@ -129,6 +137,7 @@ function setupEventListeners() {
       match.inputMode = targetMode;
       renderGameScreen(match);
       renderDartBuffer(match);
+      focusSummaryInput();
     });
   });
 
@@ -227,6 +236,7 @@ function setupEventListeners() {
     btn.addEventListener('click', () => {
       if (!match) return;
       submitQuickScore(parseInt(btn.dataset.val));
+      focusSummaryInput();
     });
   });
 
@@ -287,6 +297,14 @@ function setupEventListeners() {
       openModal('modal-delete-tournament');
       return;
     }
+    if (e.target.id === 'btn-delete-all-active') {
+      openModal('modal-delete-all-active');
+      return;
+    }
+    if (e.target.id === 'btn-delete-all-finished') {
+      openModal('modal-delete-all-finished');
+      return;
+    }
     const card = e.target.closest('.tournament-card-item');
     if (card) {
       const tournament = loadTournaments().find(t => t.id === card.dataset.id);
@@ -309,6 +327,22 @@ function setupEventListeners() {
       pendingDeleteTournamentId = null;
       renderTournamentListScreen();
     }
+  });
+
+  // Modal: delete all active tournaments
+  document.getElementById('btn-delete-all-active-cancel').addEventListener('click', () => closeModal('modal-delete-all-active'));
+  document.getElementById('btn-delete-all-active-confirm').addEventListener('click', () => {
+    closeModal('modal-delete-all-active');
+    deleteAllTournamentsByStatus('active');
+    renderTournamentListScreen();
+  });
+
+  // Modal: delete all finished tournaments
+  document.getElementById('btn-delete-all-finished-cancel').addEventListener('click', () => closeModal('modal-delete-all-finished'));
+  document.getElementById('btn-delete-all-finished-confirm').addEventListener('click', () => {
+    closeModal('modal-delete-all-finished');
+    deleteAllTournamentsByStatus('finished');
+    renderTournamentListScreen();
   });
 
   // Tournament view: back to list
@@ -708,6 +742,7 @@ function startTournamentMatch(tournament, matchIndex, startingPlayer) {
     tournament.config.format === 'bracket' ? 'none' : '';
   showScreen(SCREENS.GAME);
   renderGameScreen(match);
+  focusSummaryInput();
 }
 
 function saveTournamentMatchResult(finishedMatch, ptm) {
@@ -1174,17 +1209,87 @@ function handleLegClose(dartNumber, isDartByDart) {
   } else if (legResult.setOver) {
     showLegResultDialog(names[pIdx], setNum, 'set', () => {
       renderGameScreen(match);
+      focusSummaryInput();
       saveToLocalStorage();
     });
   } else {
     showLegResultDialog(names[pIdx], legNum, 'leg', () => {
       renderGameScreen(match);
+      focusSummaryInput();
       saveToLocalStorage();
     });
   }
 
   pendingCheckoutScore = null;
   pendingWinnerIndex = null;
+}
+
+// --- Dart visit limit ---
+
+function checkLegVisitLimit() {
+  if (!match || !match.dartLimitVisits) return false;
+  const v0 = match.players[0].history.length;
+  const v1 = match.players[1].history.length;
+  if (v0 >= match.dartLimitVisits && v1 >= match.dartLimitVisits) {
+    showLimitModal();
+    return true;
+  }
+  return false;
+}
+
+function showLimitModal() {
+  const options = document.getElementById('limit-winner-options');
+  options.innerHTML = '';
+  [match.player1, match.player2].forEach((name, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn limit-winner-btn';
+    btn.dataset.player = i;
+    btn.textContent = name;
+    options.appendChild(btn);
+  });
+  pendingLimitWinnerIndex = null;
+  document.getElementById('btn-limit-dalej').disabled = true;
+  const undoBtn = document.getElementById('btn-limit-undo');
+  if (undoBtn) undoBtn.disabled = undoStack.length === 0;
+  openModal('modal-dart-limit');
+}
+
+function handleLimitLegClose(winnerIndex) {
+  const names = [match.player1, match.player2];
+  match.currentMultiplier = 1;
+
+  const legNum = match.currentLeg;
+  const setNum = match.currentSet;
+  const legResult = finalizeLimitLeg(match, winnerIndex);
+
+  if (legResult.matchOver) {
+    if (pendingTournamentMatch) {
+      saveTournamentMatchResult(match, pendingTournamentMatch);
+    } else {
+      saveMatchToHistory(match);
+    }
+    renderGameScreen(match);
+    showLegResultDialog(names[winnerIndex], legNum, 'match', () => {
+      renderStatsScreen(match);
+      showScreen(SCREENS.STATS);
+      document.getElementById('btn-new-match').textContent =
+        pendingTournamentMatch ? 'Wróć do meczów' : 'Nowy mecz';
+      document.getElementById('btn-live-standings').style.display = 'none';
+      saveToLocalStorage();
+    });
+  } else if (legResult.setOver) {
+    showLegResultDialog(names[winnerIndex], setNum, 'set', () => {
+      renderGameScreen(match);
+      focusSummaryInput();
+      saveToLocalStorage();
+    });
+  } else {
+    showLegResultDialog(names[winnerIndex], legNum, 'leg', () => {
+      renderGameScreen(match);
+      focusSummaryInput();
+      saveToLocalStorage();
+    });
+  }
 }
 
 // --- localStorage persistence ---
