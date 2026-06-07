@@ -25,7 +25,13 @@ function renderGameScreen(match) {
     card.querySelector('.player-darts').textContent = legDarts > 0 ? legDarts + ' lot.' : '';
 
     const avg = getMatchAverage(match.stats[i]);
-    card.querySelector('.player-avg').textContent = match.stats[i].totalDartsThrown > 0 ? 'Avg: ' + avg.toFixed(2) : '';
+    const s = match.stats[i];
+    let avgText = s.totalDartsThrown > 0 ? 'Avg: ' + avg.toFixed(2) : '';
+    if (match.currentLeg > 1 && s.legDarts > 0) {
+      const legAvg = s.legPoints / (s.legDarts / 3);
+      avgText += ` <span style="color:var(--green)">(${legAvg.toFixed(2)})</span>`;
+    }
+    card.querySelector('.player-avg').innerHTML = avgText;
 
     const lastEl = card.querySelector('.player-last');
     const history = match.players[i].history;
@@ -52,13 +58,15 @@ function renderGameScreen(match) {
     const legInSet = match.matchOver
       ? match.legsWonInSet[0] + match.legsWonInSet[1]
       : match.legsWonInSet[0] + match.legsWonInSet[1] + 1;
+    const limitSuffix = match.dartLimitVisits ? ' | Limit ' + (match.dartLimitVisits * 3) + ' rzutów' : '';
     document.getElementById('leg-indicator').textContent =
-      'Set ' + match.currentSet + ' | Leg ' + legInSet + ' (First to ' + match.totalLegs + ')';
+      'Set ' + match.currentSet + ' | Leg ' + legInSet + ' (First to ' + match.totalLegs + ')' + limitSuffix;
   } else {
     msResult.textContent = match.legsWon[0] + ' : ' + match.legsWon[1];
     msResult.classList.remove('ms-sets');
+    const limitSuffix = match.dartLimitVisits ? ' | Limit ' + (match.dartLimitVisits * 3) + ' rzutów' : '';
     document.getElementById('leg-indicator').textContent =
-      'Leg ' + match.currentLeg + ' (First to ' + match.totalLegs + ')';
+      'Leg ' + match.currentLeg + ' (First to ' + match.totalLegs + ')' + limitSuffix;
   }
 
   renderHistory(match);
@@ -219,7 +227,8 @@ function renderStatsScreen(match) {
       : 'First to ' + match.totalLegs,
     IN_MODE_LABELS[match.inMode]  || match.inMode,
     CHECKOUT_LABELS[match.checkoutMode] || match.checkoutMode,
-  ].forEach(text => {
+    match.dartLimitVisits ? 'Limit ' + (match.dartLimitVisits * 3) + ' rzutów' : null,
+  ].filter(Boolean).forEach(text => {
     const span = document.createElement('span');
     span.textContent = text;
     settingsEl.appendChild(span);
@@ -249,7 +258,7 @@ function renderStatsScreen(match) {
         <tr><td>Średnia pierwszych 9</td><td><strong>${first9.toFixed(2)}</strong></td></tr>
         <tr><td>Najwyższe zamknięcie</td><td><strong>${s.highestCheckout || '—'}</strong></td></tr>
         <tr><td>Najszybszy leg</td><td><strong>${fastest} lotek</strong></td></tr>
-        <tr><td>Trafione double</td><td><strong>${dblPct !== null ? dblPct.toFixed(1) + '%' : '—'} (${s.doubleHits}/${s.doubleAttempts})</strong></td></tr>
+        ${match.checkoutMode === 'double' ? `<tr><td>Trafione double</td><td><strong>${dblPct !== null ? dblPct.toFixed(1) + '%' : '—'} (${s.doubleHits}/${s.doubleAttempts})</strong></td></tr>` : ''}
       </table>
     `;
     container.appendChild(card);
