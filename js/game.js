@@ -47,6 +47,7 @@ function createMatch(config) {
     matchOver: false,
     winner: null,
     playerFavorites: config.playerFavorites || [null, null],
+    dartLimitVisits: config.dartLimit ? config.dartLimit / 3 : null,
   };
 }
 
@@ -245,10 +246,20 @@ function getValidClosingDarts(startRemaining, checkoutScore) {
 }
 
 // Which dart options (1, 2, 3) could have opened the leg in summary mode.
+// Returns true if `total` can be scored with exactly 2 darts (each a miss=0 or valid value).
+function _achievable2Darts(total) {
+  if (total === 0) return true;
+  if (VALID_DART_VALUES.has(total)) return true; // one hit, one miss
+  for (const a of VALID_DART_VALUES) {
+    if (a < total && VALID_DART_VALUES.has(total - a)) return true;
+  }
+  return false;
+}
+
 // score: total points scored in the opening visit.
 // For dart 3: opener must equal score exactly (two misses before it).
 // For dart 2: opener + one-dart remainder = score.
-// For dart 1: opener + two-dart remainder = score (max two-dart = 120).
+// For dart 1: opener + two-dart remainder = score.
 function getValidOpeningDarts(score, inMode) {
   if (inMode === IN_MODES.STRAIGHT) return [1, 2, 3];
 
@@ -260,9 +271,9 @@ function getValidOpeningDarts(score, inMode) {
 
   const valid = [];
 
-  // Dart 1: opener on dart 1, darts 2+3 score (score−opener), max two-dart total = 120
+  // Dart 1: opener on dart 1, darts 2+3 score (score−opener)
   for (const d of openers) {
-    if (d <= score && score - d <= 120) { valid.push(1); break; }
+    if (d <= score && _achievable2Darts(score - d)) { valid.push(1); break; }
   }
 
   // Dart 2: dart 1 missed (0), dart 2 = opener (d), dart 3 = score−d (0 = miss or valid dart)
@@ -275,6 +286,55 @@ function getValidOpeningDarts(score, inMode) {
   // Dart 3: darts 1+2 missed, dart 3 = opener = score exactly
   if (openers.has(score)) valid.push(3);
 
-  // Fallback — should not happen with valid input, but avoids an empty dialog
-  return valid.length > 0 ? valid.sort((a, b) => a - b) : [1, 2, 3];
+  return valid.sort((a, b) => a - b);
+}
+
+function finalizeLimitLeg(match, winnerIndex) {
+  const stats = match.stats[winnerIndex];
+  recordLegWinByLimit(stats);
+
+  match.legsWonInSet[winnerIndex] += 1;
+  match.legsWon[winnerIndex] += 1;
+  stats.legsWon = match.legsWon[winnerIndex];
+
+  const isLocked = match.inMode !== IN_MODES.STRAIGHT;
+
+  if (match.legsWonInSet[winnerIndex] >= match.totalLegs) {
+    match.setsWon[winnerIndex] += 1;
+
+    if (match.setsWon[winnerIndex] >= match.totalSets) {
+      match.matchOver = true;
+      match.winner = winnerIndex;
+      return { legOver: true, matchOver: true, setOver: true };
+    }
+
+    match.currentSet += 1;
+    match.legsWonInSet = [0, 0];
+    match.setStartingPlayer = 1 - match.setStartingPlayer;
+    match.legStartingPlayer = match.setStartingPlayer;
+    match.activePlayer = match.legStartingPlayer;
+    match.currentLeg += 1;
+    match.players[0] = createPlayerState(match.variant);
+    match.players[1] = createPlayerState(match.variant);
+    if (isLocked) {
+      match.players[0].legOpened = false;
+      match.players[1].legOpened = false;
+    }
+    resetLegStats(match.stats[0]);
+    resetLegStats(match.stats[1]);
+    return { legOver: true, matchOver: false, setOver: true };
+  }
+
+  match.currentLeg += 1;
+  match.legStartingPlayer = 1 - match.legStartingPlayer;
+  match.activePlayer = match.legStartingPlayer;
+  match.players[0] = createPlayerState(match.variant);
+  match.players[1] = createPlayerState(match.variant);
+  if (isLocked) {
+    match.players[0].legOpened = false;
+    match.players[1].legOpened = false;
+  }
+  resetLegStats(match.stats[0]);
+  resetLegStats(match.stats[1]);
+  return { legOver: true, matchOver: false, setOver: false };
 }
