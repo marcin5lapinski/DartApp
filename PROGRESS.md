@@ -347,6 +347,55 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Poprawki UI — statystyki, widok gry, lista turniejów (2026-06-07)
+
+### Nowe funkcje
+- **Średnia bieżącego lega w widoku gry**: od drugiego lega wzwyż obok ogólnej średniej wyświetlana jest średnia bieżącego lega w nawiasie, zielonym kolorem (np. `Avg: 54.33 (72.00)`); ukryta gdy gracz nie rzucił jeszcze w danym legu; obliczana z `stats.legPoints / (stats.legDarts / 3)`
+- **Przyciski "Usuń wszystkie" na liście turniejów**: dwa osobne przyciski — jeden dla sekcji "W toku", drugi dla "Zakończone"; umieszczone po prawej stronie licznika limitu (3/5, 5/40); każdy otwiera modal potwierdzenia; czerwone outline, mały font (0.65rem); nowa funkcja `deleteAllTournamentsByStatus(status)` w `league.js`
+
+### Zmiany wizualne
+- **Czcionki w widoku gry powiększone o 15%**: liczba lotek i średnia `0.75rem → 0.86rem`; wynik ostatniego podejścia `0.80rem → 0.92rem`
+- **"Trafione double" ukryte dla straight-out i master-out**: wiersz wyświetlany tylko gdy `checkoutMode === 'double'` — zarówno na ekranie statystyk po meczu (`ui.js`) jak i w historii meczów (`history.js`)
+
+### Naprawione błędy
+- **Migotanie przycisków rund przy zmianie formatu w wizardzie**: po przełączeniu ligi → drabinka przez ~1s widoczne były jeszcze przyciski wyboru rund; przyczyną była `transition: all .15s` na `.btn-seg` — przy zmianie dziedziczonej `visibility: hidden` właściwość ta animuje się, pozostając widoczna przez czas trwania przejścia; naprawione przez dodanie `transition: none !important` na `.format-details-panel > .format-hidden` i jego potomkach
+
+### Zmiany w plikach
+- `js/ui.js` — `renderGameScreen`: legAvg z `legPoints/(legDarts/3)` gdy `currentLeg > 1 && legDarts > 0`; switch na `innerHTML` dla `.player-avg`; statystyki po meczu: "Trafione double" warunkowane `match.checkoutMode === 'double'`
+- `js/history.js` — "Trafione double" warunkowane `rec.checkoutMode === 'double'`
+- `js/league.js` — nowa `deleteAllTournamentsByStatus(status)`; nagłówki sekcji listy turniejów z wrapperem `.t-list-section-right` i przyciskami `#btn-delete-all-active` / `#btn-delete-all-finished`
+- `js/app.js` — delegacja kliknięć `btn-delete-all-active` / `btn-delete-all-finished` w `tournament-list-body`; listenery modali `modal-delete-all-active` i `modal-delete-all-finished`
+- `index.html` — dwa nowe modale: `modal-delete-all-active` i `modal-delete-all-finished`
+- `css/style.css` — `.player-darts` / `.player-avg` font 0.86rem; `.player-last` font 0.92rem; `.t-list-section-right` (flex wrapper); `.btn-delete-all` (outline red small button); `.format-details-panel > .format-hidden, ... * { transition: none !important }`
+
+---
+
+## Limit rzutów w legu (2026-06-07)
+
+### Nowe funkcje
+- **Opcjonalny limit wizyt w legu**: select „Bez limitu / 30 / 33 / 36 / 39 / 42 / 45 / 48 / 51 / 54 rzutów" dostępny w ustawieniach meczu (`#sel-dart-limit`) i w wizardzie turnieju krok 3 (`#t-dart-limit`); limit wyrażony w rzutach, przechowywany wewnętrznie jako liczba wizyt (`dartLimitVisits = dartLimit / 3`)
+- **Modal kto wygrał leg** (`#modal-dart-limit`): gdy obaj gracze wyczerpią limit wizyt bez zamknięcia lega, wyświetla się modal z pytaniem „Kto wygrał leg?"; dwa przyciski z imionami graczy — kliknięcie podświetla wybranego na czerwono i odblokowuje „Dalej →"; „↩ Cofnij" cofa ostatnią wizytę (disabled gdy stos undo pusty)
+- **Statystyki dla legów zakończonych limitem**: `recordLegWinByLimit()` — inkrementuje `legsWon`, zapisuje snapshot lega (z `checkout: null`), ale nie aktualizuje `fastestLeg` ani `highestCheckout`; `doubleAttempts` liczone normalnie podczas gry
+- **Wyświetlanie limitu w nagłówku gry**: wskaźnik lega rozszerzony o sufiks `| Limit XX rzutów` (tylko gdy limit ustawiony), np. `Leg 1 (First to 3) | Limit 30 rzutów`
+- **Wyświetlanie limitu w statystykach po meczu**: blok ustawień meczu pod banerem zwycięzcy zawiera dodatkowy span `Limit XX rzutów` (tylko gdy limit ustawiony)
+- **Toast „Ostatnie podejście"**: gdy aktywny gracz (po zmianie) ma dokładnie `dartLimitVisits − 1` ukończonych wizyt, wyświetla się toast z niebieskim tłem i tekstem „Ostatnie podejście"; używa tego samego elementu co toast BUST (`#bust-toast`)
+
+### Architektura
+- Limit sprawdzany po każdej zatwierdzonej wizycie we wszystkich ścieżkach (8 call site'ów): `submitQuickScore` (bust + normal), `applySummaryScore` (bust + normal), `submitSummaryScore` (locked val=0), `submitDartValue` (locked-wasted, bust, auto-commit po 3. lotce)
+- Checkout zawsze ma priorytet — ścieżka checkout wywołuje `handleLegClose` i wraca przed sprawdzeniem limitu
+- Licznik wizyt: `match.players[i].history.length` — resetowany do `[]` przy każdym nowym legu przez `createPlayerState()`
+
+### Zmiany w plikach
+- `js/stats.js` — nowa `recordLegWinByLimit(stats)`: inkrementuje `legsWon`, pushuje snapshot z `checkout: null`, czyści `legFirst9*`; nie rusza `highestCheckout` ani `fastestLeg`
+- `js/game.js` — `createMatch()`: nowe pole `dartLimitVisits: config.dartLimit ? config.dartLimit / 3 : null`; nowa `finalizeLimitLeg(match, winnerIndex)`: wywołuje `recordLegWinByLimit`, identyczna logika leg/set/match jak `finalizeLeg`
+- `index.html` — `<select id="sel-dart-limit">` w ustawieniach meczu; `<select id="t-dart-limit">` w wizardzie krok 3; `<div id="modal-dart-limit">` z dynamicznymi przyciskami graczy, Cofnij i Dalej
+- `css/style.css` — `.limit-winner-btn`, `.limit-winner-btn.selected`, `.limit-modal-question`, `.limit-winner-options`; `#bust-toast.last-visit { background: #1565c0 }`
+- `js/app.js` — `pendingLimitWinnerIndex` global; `undoLastVisit` resetuje `pendingLimitWinnerIndex`; nowe funkcje `checkLastVisitWarning()`, `checkLegVisitLimit()`, `showLimitModal()`, `handleLimitLegClose()`; 3 listenery modalu; `startMatch()` czyta `sel-dart-limit`; `startTournamentMatch()` przekazuje `dartLimit: mc.dartLimit ?? null`; 8 call site'ów `checkLastVisitWarning()` + `checkLegVisitLimit()`
+- `js/tournament.js` — `dartLimit: null` w `initTournamentWizard` matchConfig; czytanie `t-dart-limit` w handlerze `t-next-3`
+- `js/ui.js` — `renderGameScreen`: sufiks limitu w `leg-indicator`; `renderStatsScreen`: span limitu w settings; nowa `showLastVisitToast()`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA

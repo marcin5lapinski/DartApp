@@ -29,13 +29,13 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
 | File | Responsibility |
 |---|---|
 | `js/checkouts.js` | `CHECKOUT_TABLE` (2–170), `getCheckoutHint()`, `DOUBLE_FINISHES` set, `isDoubleAttemptScore()`, `findCheckoutPath(score, targetDouble, dartsLeft)` |
-| `js/stats.js` | Per-player stat objects, `recordVisit()`, `recordDart()`, `recordLegWin()`, `getFirst9Average()` |
-| `js/game.js` | `createMatch()`, `applyVisitScore()`, `finalizeLeg()`, bust/checkout logic, `getValidClosingDarts()`, `getValidOpeningDarts()`, `_achievable2Darts()` |
+| `js/stats.js` | Per-player stat objects, `recordVisit()`, `recordDart()`, `recordLegWin()`, `recordLegWinByLimit()`, `getFirst9Average()` |
+| `js/game.js` | `createMatch()`, `applyVisitScore()`, `finalizeLeg()`, `finalizeLimitLeg()`, bust/checkout logic, `getValidClosingDarts()`, `getValidOpeningDarts()`, `_achievable2Darts()` |
 | `js/players.js` | Persistent player profiles CRUD — `loadPlayers()`, `createPlayer()`, `updatePlayer()`, `renamePlayer()`, `deletePlayer()`, `renderPlayersScreen()`, `populatePlayerSuggestions()` |
 | `js/history.js` | Match history (capped at 100) — `saveMatchToHistory()`, `deleteHistoryRecord()`, `renderHistoryScreen()`, `renderHistoryDetailScreen()` |
 | `js/board.js` | Canvas 2D dartboard (Mode C) — `initBoard()`, `_drawBoard()`, click/touch hit detection |
-| `js/ui.js` | `showScreen()`, `renderGameScreen()`, `showWhichDartDialog()`, modal helpers; defines `SCREENS` constant |
-| `js/league.js` | Tournament data layer — `loadTournaments()`, `saveTournaments()`, `generateSchedule()`, `createTournament()`, `deleteTournament()`, `computeStandings()`, `computeLiveStandings()`; bracket — `nextPowerOf2()`, `computeRoundName()`, `_bracketCenterY()`, `advanceBracketWinner()`, `generateBracket(players)`, `renderBracketScreen(tournament, container?)`, `_buildBracketCard()`, `buildBracketRound()`, `buildBracketConnectorSvg()`; rendering — `renderTournamentListScreen()`, `buildTournamentCard()`, `renderTournamentViewScreen()`, `renderTournamentMatchesScreen()` |
+| `js/ui.js` | `showScreen()`, `renderGameScreen()`, `showWhichDartDialog()`, `showBust()`, `showLastVisitToast()`, modal helpers; defines `SCREENS` constant |
+| `js/league.js` | Tournament data layer — `loadTournaments()`, `saveTournaments()`, `generateSchedule()`, `createTournament()`, `deleteTournament()`, `deleteAllTournamentsByStatus(status)`, `computeStandings()`, `computeLiveStandings()`; bracket — `nextPowerOf2()`, `computeRoundName()`, `_bracketCenterY()`, `advanceBracketWinner()`, `generateBracket(players)`, `renderBracketScreen(tournament, container?)`, `_buildBracketCard()`, `buildBracketRound()`, `buildBracketConnectorSvg()`; rendering — `renderTournamentListScreen()`, `buildTournamentCard()`, `renderTournamentViewScreen()`, `renderTournamentMatchesScreen()` |
 | `js/tournament.js` | Tournament wizard — `tournamentConfig` global, `initTournamentWizard()`, `showWizardStep()`, `_computeByeSuggestion(numPlayers)`, `_updateByeCounter(numByes)`, `renderStep4Players(savedValues)`, `_getStep4Values()`, `_initStep4DragDrop()`, `_updateStep4Datalists()`, `buildDoublesOptions()`, `validateStep4()`; all wizard step event listeners |
 | `js/app.js` | Event wiring, `startMatch()`, `submitSummaryScore()`, `submitDart()`, `localStorage` save/load; owns `undoStack` (capped at 20) |
 
@@ -46,7 +46,7 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
 - `checkouts.js`: `CHECKOUT_TABLE`, `DOUBLE_FINISHES`
 - `league.js`: `_activeTournament`, `TOURNAMENTS_KEY`, `CHECKOUT_LABELS`
 - `tournament.js`: `tournamentConfig`
-- `app.js`: `match`, `undoStack`, `IMPOSSIBLE_VISIT_SCORES`, `pendingDeleteTournamentId`, `pendingTournamentMatch`, `pendingTournamentStarterData`, `pendingOpenScore`, `pendingOpenPlayerIndex`
+- `app.js`: `match`, `undoStack`, `IMPOSSIBLE_VISIT_SCORES`, `pendingCheckoutScore`, `pendingWinnerIndex`, `pendingDeleteRecordId`, `pendingEditPlayerId`, `pendingDeletePlayerId`, `pendingDeleteTournamentId`, `pendingTournamentMatch`, `pendingTournamentStarterData`, `pendingOpenScore`, `pendingOpenPlayerIndex`, `pendingLimitWinnerIndex`
 
 ## localStorage keys
 
@@ -71,6 +71,7 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
   players: [playerState, playerState],  // { score, history, dartBuffer, legOpened }
   stats: [playerStats, playerStats],
   playerFavorites: [null|{primaryDouble,secondaryDouble}, ...],
+  dartLimitVisits: null | number,  // dartLimit/3; null = no limit
   matchOver, winner, inputMode
 }
 ```
@@ -83,10 +84,13 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
 - **Double-out**: final dart must land on D1–D20 or Bull (50) — values in `DOUBLE_FINISHES`
 - **Master-out**: final dart can be double or triple
 - **Personalized checkout hints**: `renderCheckoutHint()` in `ui.js` tries `findCheckoutPath()` to the player's `primaryDouble` (yellow), then `secondaryDouble` (blue), then falls back to `CHECKOUT_TABLE`
+- **Live leg average**: from the 2nd leg onwards, `renderGameScreen()` appends `(X.XX)` in green next to the overall average; computed as `legPoints / (legDarts / 3)`; hidden when `legDarts === 0`
+- **"Trafione double" stat**: shown only when `checkoutMode === 'double'`; hidden for straight-out and master-out in both post-match stats (`ui.js`) and match history detail (`history.js`)
 - **Summary mode**: after checkout, dialog asks which dart (1/2/3) closed the leg; `getValidClosingDarts()` filters valid options. Same "which dart opened?" dialog for double-in/master-in.
 - **Dart-by-dart / Board mode**: buffer accumulates 3 darts, auto-submits; double-attempt detection per dart
 - **Leg start alternation**: the player who starts each leg alternates from the previous leg
 - **Leg/set/match result modal** (`#modal-leg-result`): shown by `showLegResultDialog(winnerName, num, type, callback)` in `ui.js`. Has two buttons: "↩ Cofnij" (`#btn-leg-result-undo`) and "Dalej" (`#btn-next-leg`). Cofnij calls `undoLastVisit()` — closes all modals, restores pre-visit state, re-renders game screen. Disabled when `undoStack` is empty (checked at modal open time).
+- **Dart visit limit**: optional per-leg visit cap (30–54 darts, step 3) configured in setup (`#sel-dart-limit`) and tournament wizard step 3 (`#t-dart-limit`). Stored as `match.dartLimitVisits = dartLimit/3`. After every committed visit `checkLegVisitLimit()` tests if both players' `history.length >= dartLimitVisits` — if so, `#modal-dart-limit` opens asking who won. Winner awarded via `finalizeLimitLeg()` / `recordLegWinByLimit()` (no `fastestLeg` / `highestCheckout` update). Toast "Ostatnie podejście" (blue, `#bust-toast.last-visit`) shown when active player has exactly `dartLimitVisits-1` visits.
 
 ## Screens
 
@@ -100,7 +104,7 @@ The app loads with `screen-home` as the initial active screen. Navigation flows:
 home → tournament-list → [tournament-view | tournament wizard → tournament-view]
 ```
 
-**`screen-tournament-list`**: lists active (max 5) and finished (max 40) tournaments. "Nowy turniej" button disabled at limit. Delete with `modal-delete-tournament`. Rendered by `renderTournamentListScreen()` in `league.js`.
+**`screen-tournament-list`**: lists active (max 5) and finished (max 40) tournaments. "Nowy turniej" button disabled at limit. Delete single with `modal-delete-tournament`. Delete all active with `modal-delete-all-active`, delete all finished with `modal-delete-all-finished` (buttons rendered dynamically in section headers, delegated click handling). Rendered by `renderTournamentListScreen()` in `league.js`.
 
 **`screen-tournament-view`**: for liga — tab bar (Tabela + Mecze). Standings rendered by `renderTournamentViewScreen(tournament)` — sort: pts desc → legDiff desc → avg desc → seeding index asc. Tied rows get green background `#0e1a0e`. Finished tournaments show gold/silver/bronze medal colors for top 3. Matches tab rendered by `renderTournamentMatchesScreen(tournament)` — 3-col grid, unplayed sorted by longest-waiting pair, clicking unplayed opens starter modal, clicking played opens stats. For bracket — no tabs; shows `#tv-bracket` only, rendered by `renderBracketScreen(tournament)`.
 
