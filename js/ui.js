@@ -272,6 +272,16 @@ function showBust() {
   setTimeout(() => el.classList.remove('visible'), 1500);
 }
 
+function showLastVisitToast() {
+  const el = document.getElementById('bust-toast');
+  el.textContent = 'Ostatnie podejście';
+  el.classList.add('last-visit', 'visible');
+  setTimeout(() => {
+    el.classList.remove('visible', 'last-visit');
+    el.textContent = 'BUST!';
+  }, 1800);
+}
+
 // --- Which-dart dialog ---
 function showWhichDartDialog(validDarts, callback) {
   const modal = document.getElementById('modal-which-dart');

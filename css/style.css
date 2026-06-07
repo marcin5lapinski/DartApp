@@ -764,6 +764,8 @@ html, body {
   pointer-events: auto;
 }
 
+#bust-toast.last-visit { background: #1565c0; }
+
 /* ===== MODALS ===== */
 #modal-overlay {
   display: none;

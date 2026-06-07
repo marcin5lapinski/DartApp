@@ -950,6 +950,7 @@ function submitQuickScore(val) {
     saveToLocalStorage();
     switchPlayer(match);
     renderGameScreen(match);
+    checkLastVisitWarning();
     if (checkLegVisitLimit()) return;
     return;
   }
@@ -972,6 +973,7 @@ function submitQuickScore(val) {
   switchPlayer(match);
   renderGameScreen(match);
   saveToLocalStorage();
+  checkLastVisitWarning();
   if (checkLegVisitLimit()) return;
 }
 
@@ -991,6 +993,7 @@ function applySummaryScore(pIdx, val) {
     saveToLocalStorage();
     switchPlayer(match);
     renderGameScreen(match);
+    checkLastVisitWarning();
     if (checkLegVisitLimit()) return;
     return;
   }
@@ -1013,6 +1016,7 @@ function applySummaryScore(pIdx, val) {
   switchPlayer(match);
   renderGameScreen(match);
   saveToLocalStorage();
+  checkLastVisitWarning();
   if (checkLegVisitLimit()) return;
 }
 
@@ -1037,6 +1041,7 @@ function submitSummaryScore() {
       switchPlayer(match);
       renderGameScreen(match);
       saveToLocalStorage();
+      checkLastVisitWarning();
       if (checkLegVisitLimit()) return;
     } else {
       // Non-zero: player opened the leg — ask which dart (filtered to valid options)
@@ -1118,6 +1123,7 @@ function submitDartValue(base) {
         renderGameScreen(match);
         renderDartBuffer(match);
         saveToLocalStorage();
+        checkLastVisitWarning();
         if (checkLegVisitLimit()) return;
       }
       return;
@@ -1146,6 +1152,7 @@ function submitDartValue(base) {
     renderGameScreen(match);
     renderDartBuffer(match);
     saveToLocalStorage();
+    checkLastVisitWarning();
     if (checkLegVisitLimit()) return;
     return;
   }
@@ -1183,6 +1190,7 @@ function submitDartValue(base) {
     renderGameScreen(match);
     renderDartBuffer(match);
     saveToLocalStorage();
+    checkLastVisitWarning();
     if (checkLegVisitLimit()) return;
   }
 }
@@ -1254,6 +1262,13 @@ function handleLegClose(dartNumber, isDartByDart) {
 }
 
 // --- Dart visit limit ---
+
+function checkLastVisitWarning() {
+  if (!match || !match.dartLimitVisits) return;
+  if (match.players[match.activePlayer].history.length === match.dartLimitVisits - 1) {
+    showLastVisitToast();
+  }
+}
 
 function checkLegVisitLimit() {
   if (!match || !match.dartLimitVisits) return false;
