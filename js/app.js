@@ -1118,6 +1118,7 @@ function submitDartValue(base) {
         renderGameScreen(match);
         renderDartBuffer(match);
         saveToLocalStorage();
+        if (checkLegVisitLimit()) return;
       }
       return;
     }
