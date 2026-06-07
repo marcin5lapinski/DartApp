@@ -950,6 +950,7 @@ function submitQuickScore(val) {
     saveToLocalStorage();
     switchPlayer(match);
     renderGameScreen(match);
+    if (checkLegVisitLimit()) return;
     return;
   }
 
@@ -971,6 +972,7 @@ function submitQuickScore(val) {
   switchPlayer(match);
   renderGameScreen(match);
   saveToLocalStorage();
+  if (checkLegVisitLimit()) return;
 }
 
 // --- Summary mode ---
@@ -989,6 +991,7 @@ function applySummaryScore(pIdx, val) {
     saveToLocalStorage();
     switchPlayer(match);
     renderGameScreen(match);
+    if (checkLegVisitLimit()) return;
     return;
   }
 
@@ -1010,6 +1013,7 @@ function applySummaryScore(pIdx, val) {
   switchPlayer(match);
   renderGameScreen(match);
   saveToLocalStorage();
+  if (checkLegVisitLimit()) return;
 }
 
 function submitSummaryScore() {
@@ -1033,6 +1037,7 @@ function submitSummaryScore() {
       switchPlayer(match);
       renderGameScreen(match);
       saveToLocalStorage();
+      if (checkLegVisitLimit()) return;
     } else {
       // Non-zero: player opened the leg — ask which dart (filtered to valid options)
       const validOpenDarts = getValidOpeningDarts(val, match.inMode);
@@ -1140,6 +1145,7 @@ function submitDartValue(base) {
     renderGameScreen(match);
     renderDartBuffer(match);
     saveToLocalStorage();
+    if (checkLegVisitLimit()) return;
     return;
   }
 
@@ -1176,6 +1182,7 @@ function submitDartValue(base) {
     renderGameScreen(match);
     renderDartBuffer(match);
     saveToLocalStorage();
+    if (checkLegVisitLimit()) return;
   }
 }
 
