@@ -293,7 +293,8 @@ function _initStep3bGroupButtons() {
 
   let defaultK = tournamentConfig.numGroups;
   if (!validCounts.includes(defaultK)) {
-    defaultK = validCounts.length >= 2 ? validCounts[1] : validCounts[0];
+    const smaller = validCounts.filter(k => k <= tournamentConfig.numGroups);
+    defaultK = smaller.length > 0 ? smaller[smaller.length - 1] : validCounts[0];
   }
 
   validCounts.forEach(k => {
