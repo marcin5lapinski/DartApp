@@ -421,11 +421,6 @@ function renderStep4Players(savedValues) {
     `;
     list.appendChild(block);
 
-    const byeToggle = block.querySelector('.bye-toggle');
-    if (byeToggle) {
-      byeToggle.parentElement.style.display = isBracket ? '' : 'none';
-    }
-
     if (savedValues && savedValues[i - 1]) {
       const v = savedValues[i - 1];
       document.getElementById('t-pname-' + i).value = v.name;
@@ -488,9 +483,6 @@ function renderStep4Players(savedValues) {
   const pgBtn = document.getElementById('btn-preview-groups');
   if (pbBtn) pbBtn.style.display = isBracketFmt ? '' : 'none';
   if (pgBtn) pgBtn.style.display = isGroupsFmt ? '' : 'none';
-
-  const byeCounter = document.getElementById('t-bye-counter');
-  if (byeCounter) byeCounter.style.display = isBracketFmt ? '' : 'none';
 }
 
 function _updateStep4Datalists() {
