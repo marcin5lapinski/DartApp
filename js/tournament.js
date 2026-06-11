@@ -421,6 +421,11 @@ function renderStep4Players(savedValues) {
     `;
     list.appendChild(block);
 
+    const byeToggle = block.querySelector('.bye-toggle');
+    if (byeToggle) {
+      byeToggle.parentElement.style.display = isBracket ? '' : 'none';
+    }
+
     if (savedValues && savedValues[i - 1]) {
       const v = savedValues[i - 1];
       document.getElementById('t-pname-' + i).value = v.name;
@@ -476,8 +481,16 @@ function renderStep4Players(savedValues) {
   _updateStep4Datalists();
   validateStep4();
 
-  const previewBtn = document.getElementById('btn-preview-bracket');
-  if (previewBtn) previewBtn.style.display = isBracket ? '' : 'none';
+  const isGroupsFmt  = tournamentConfig.format === 'groups';
+  const isBracketFmt = tournamentConfig.format === 'bracket';
+
+  const pbBtn = document.getElementById('btn-preview-bracket');
+  const pgBtn = document.getElementById('btn-preview-groups');
+  if (pbBtn) pbBtn.style.display = isBracketFmt ? '' : 'none';
+  if (pgBtn) pgBtn.style.display = isGroupsFmt ? '' : 'none';
+
+  const byeCounter = document.getElementById('t-bye-counter');
+  if (byeCounter) byeCounter.style.display = isBracketFmt ? '' : 'none';
 }
 
 function _updateStep4Datalists() {
@@ -704,3 +717,41 @@ document.getElementById('btn-preview-bracket').addEventListener('click', () => {
 document.getElementById('btn-bracket-preview-close').addEventListener('click', () => {
   closeModal('modal-bracket-preview');
 });
+
+document.getElementById('btn-preview-groups').addEventListener('click', () => {
+  renderGroupPreviewModal();
+});
+
+function renderGroupPreviewModal() {
+  const vals = _getStep4Values();
+  const n    = tournamentConfig.numPlayers;
+  const k    = tournamentConfig.numGroups;
+  if (!vals || vals.length < n) return;
+
+  const body = document.getElementById('group-preview-body');
+  body.innerHTML = '';
+
+  for (let gi = 0; gi < k; gi++) {
+    const groupName  = String.fromCharCode(65 + gi);
+    const groupBlock = document.createElement('div');
+    groupBlock.style.cssText = 'margin-bottom:14px';
+
+    const header = document.createElement('div');
+    header.className = 'group-preview-header';
+    header.textContent = 'Grupa ' + groupName;
+    groupBlock.appendChild(header);
+
+    const list = document.createElement('ul');
+    list.className = 'group-preview-list';
+    for (let pi = gi; pi < n; pi += k) {
+      const row = document.createElement('li');
+      row.className = 'group-preview-player';
+      row.textContent = (vals[pi] && vals[pi].name.trim()) || '—';
+      list.appendChild(row);
+    }
+    groupBlock.appendChild(list);
+    body.appendChild(groupBlock);
+  }
+
+  openModal('modal-group-preview');
+}

@@ -852,6 +852,7 @@
       </div>
       <p id="t-step4-error" class="t-error" hidden></p>
       <button id="btn-preview-bracket" class="btn-preview-bracket">👁 Podgląd drabinki</button>
+      <button id="btn-preview-groups" class="btn-preview-bracket" style="display:none">👁 Podgląd grup</button>
       <button id="btn-create-tournament" class="btn-create-tournament" disabled>UTWÓRZ TURNIEJ</button>
       <div class="wizard-nav" style="margin-top:8px">
         <button id="t-back-4" class="btn-wizard-back">&#8592; Wstecz</button>
@@ -871,6 +872,15 @@
     🎲 Przy losowym rozstawieniu kolejność graczy w drabince może się różnić od tej w podglądzie.
   </p>
   <div id="bracket-preview-content"></div>
+</div>
+
+<!-- Group preview modal -->
+<div class="modal" id="modal-group-preview">
+  <div class="modal-inner-rel">
+    <button class="btn-modal-corner-close" onclick="closeModal('modal-group-preview')">✕</button>
+    <h3 style="margin-bottom:12px">Podgląd grup</h3>
+    <div id="group-preview-body"></div>
+  </div>
 </div>
 
 <!-- Scripts (order matters) -->
