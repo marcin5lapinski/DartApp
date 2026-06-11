@@ -469,6 +469,10 @@ function computeLiveGroupStandings(tournament, groupIndex, liveData) {
     r1.L++; r1.pts += tournament.config.lossPoints;
   }
 
+  // Count this in-progress match for both players
+  if (r1) r1.M++;
+  if (r2) r2.M++;
+
   rows.sort((a, b) => {
     if (b.pts !== a.pts) return b.pts - a.pts;
     const aDiff = a.legsWon - a.legsLost;

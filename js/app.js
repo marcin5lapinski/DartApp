@@ -1413,8 +1413,12 @@ function loadFromLocalStorage() {
         if (match && match.tournamentMatchContext) {
           pendingTournamentMatch = match.tournamentMatchContext;
           const restoredT = loadTournaments().find(t => t.id === match.tournamentMatchContext.tournamentId);
-          document.getElementById('btn-live-standings').style.display =
-            (restoredT && restoredT.config.format === 'bracket') ? 'none' : '';
+          const restoredMatch = restoredT && match.tournamentMatchContext
+            ? restoredT.matches[match.tournamentMatchContext.matchIndex]
+            : null;
+          const hideLSRestore = (restoredT && restoredT.config.format === 'bracket') ||
+            (restoredT && restoredT.config.format === 'groups' && restoredMatch && restoredMatch.phase === 'bracket');
+          document.getElementById('btn-live-standings').style.display = hideLSRestore ? 'none' : '';
         }
         showScreen(SCREENS.GAME);
         renderGameScreen(match);
