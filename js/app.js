@@ -866,6 +866,29 @@ function renderLiveStandingsModal() {
   const t = loadTournaments().find(t => t.id === ptm.tournamentId);
   if (!t) return;
 
+  if (t.config.format === 'groups') {
+    const currentMatch = t.matches[ptm.matchIndex];
+    const gi = currentMatch ? currentMatch.groupIndex : null;
+
+    if (gi !== undefined && gi !== null) {
+      const liveData = {
+        p1Idx:   ptm.p1Idx,
+        p2Idx:   ptm.p2Idx,
+        legsWon: match.legsWon,
+        setsWon: match.setsWon || [0, 0],
+        avgs:    [getMatchAverage(match.stats[0]), getMatchAverage(match.stats[1])],
+      };
+      const rows = computeLiveGroupStandings(t, gi, liveData);
+      document.getElementById('live-modal-subtitle').textContent = t.name;
+      const container = document.getElementById('live-standings-container');
+      container.innerHTML = _renderGroupStandingsHTML(t, gi, rows);
+      document.getElementById('live-standings-note').textContent =
+        'Tabela na żywo — Grupa ' + t.config.groups[gi].name;
+      openModal('modal-live-standings');
+      return;
+    }
+  }
+
   const liveData = {
     p1Idx:   ptm.p1Idx,
     p2Idx:   ptm.p2Idx,

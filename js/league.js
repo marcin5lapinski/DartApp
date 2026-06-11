@@ -441,6 +441,75 @@ function computeLiveStandings(tournament, liveData) {
   return rows;
 }
 
+function computeLiveGroupStandings(tournament, groupIndex, liveData) {
+  const rows = computeGroupStandings(tournament, groupIndex);
+
+  const { p1Idx, p2Idx, legsWon, setsWon, avgs } = liveData;
+  const useSets = tournament.config.matchConfig.totalSets > 1;
+  const score0  = useSets ? setsWon[0] : legsWon[0];
+  const score1  = useSets ? setsWon[1] : legsWon[1];
+
+  const rowByIdx = new Map(rows.map(r => [r.playerIndex, r]));
+  const r1 = rowByIdx.get(p1Idx);
+  const r2 = rowByIdx.get(p2Idx);
+
+  if (r1) { r1.legsWon += legsWon[0]; r1.legsLost += legsWon[1]; }
+  if (r2) { r2.legsWon += legsWon[1]; r2.legsLost += legsWon[0]; }
+
+  if (avgs) {
+    if (avgs[0] !== null && r1) { r1.avgSum += avgs[0]; r1.avgCount++; }
+    if (avgs[1] !== null && r2) { r2.avgSum += avgs[1]; r2.avgCount++; }
+  }
+
+  if (score0 > score1 && r1 && r2) {
+    r1.W++; r1.pts += tournament.config.winPoints;
+    r2.L++; r2.pts += tournament.config.lossPoints;
+  } else if (score1 > score0 && r1 && r2) {
+    r2.W++; r2.pts += tournament.config.winPoints;
+    r1.L++; r1.pts += tournament.config.lossPoints;
+  }
+
+  rows.sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    const aDiff = a.legsWon - a.legsLost;
+    const bDiff = b.legsWon - b.legsLost;
+    if (bDiff !== aDiff) return bDiff - aDiff;
+    const aAvg = a.avgCount ? a.avgSum / a.avgCount : 0;
+    const bAvg = b.avgCount ? b.avgSum / b.avgCount : 0;
+    if (bAvg !== aAvg) return bAvg - aAvg;
+    return a.playerIndex - b.playerIndex;
+  });
+
+  return rows;
+}
+
+function _renderGroupStandingsHTML(tournament, groupIndex, rows) {
+  const group    = tournament.config.groups[groupIndex];
+  const advCount = group.advanceCount;
+  let html = `<div class="group-section-header" style="margin-top:0">Grupa ${group.name}</div>`;
+  html += '<table class="standings-table" style="margin-bottom:0"><thead><tr>';
+  html += '<th>#</th><th class="left">Gracz</th><th>M</th><th>W</th><th>L</th><th>Legi</th><th>Avg</th><th>Pkt</th>';
+  html += '</tr></thead><tbody>';
+  rows.forEach((row, i) => {
+    const rank      = i + 1;
+    const advancing = rank <= advCount;
+    const legDiff   = row.legsWon - row.legsLost;
+    const avg       = row.avgCount ? (row.avgSum / row.avgCount).toFixed(1) : '—';
+    const legsStr   = row.M === 0 ? '—' : `${row.legsWon}‑${row.legsLost}`;
+    const legsClass = row.M === 0 ? '' : legDiff > 0 ? 'legs-pos' : legDiff < 0 ? 'legs-neg' : 'legs-even';
+    html += `<tr${advancing ? ' class="group-advancing"' : ''}>`;
+    html += `<td class="pos-num">${rank}</td>`;
+    html += `<td class="left player-name-cell">${advancing ? '<span class="adv-dot"></span>' : ''}${escapeHtml(row.name)}</td>`;
+    html += `<td>${row.M}</td><td>${row.W}</td><td>${row.L}</td>`;
+    html += `<td class="${legsClass}">${legsStr}</td>`;
+    html += `<td class="avg-cell">${avg}</td>`;
+    html += `<td class="pts-cell">${row.pts}</td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
 function computeGroupStandings(tournament, groupIndex) {
   const { players, matches, config } = tournament;
   const group = config.groups[groupIndex];
