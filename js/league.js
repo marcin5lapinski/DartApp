@@ -648,9 +648,81 @@ function renderBracketScreen(tournament, container) {
   render();
 }
 
+function _setGroupsTab(name) {
+  const standingsEl = document.getElementById('tv-standings');
+  const matchesEl   = document.getElementById('tv-matches');
+  const bracketEl   = document.getElementById('tv-bracket');
+  standingsEl.style.display = name === 'groups'  ? '' : 'none';
+  matchesEl.style.display   = name === 'matches' ? '' : 'none';
+  bracketEl.style.display   = name === 'bracket' ? '' : 'none';
+
+  const tabTable   = document.getElementById('tv-tab-table');
+  const tabMatches = document.getElementById('tv-tab-matches');
+  const tabBracket = document.getElementById('tv-tab-bracket');
+  [tabTable, tabMatches, tabBracket].forEach(t => t && t.classList.remove('active'));
+  if (name === 'groups')  tabTable.classList.add('active');
+  if (name === 'matches') tabMatches.classList.add('active');
+  if (name === 'bracket') tabBracket.classList.add('active');
+}
+
+function renderGroupsTab(tournament) {
+  document.getElementById('tv-standings').innerHTML = '<p style="padding:12px;color:#888">Ładowanie...</p>';
+}
+
+function renderGroupMatchesTab(tournament) {
+  document.getElementById('tv-matches').innerHTML = '<p style="padding:12px;color:#888">Ładowanie...</p>';
+}
+
 function renderTournamentViewScreen(tournament) {
   _activeTournament = tournament;
   const isBracket = tournament.config.format === 'bracket';
+  const isGroups  = tournament.config.format === 'groups';
+
+  const tabBracket = document.getElementById('tv-tab-bracket');
+  if (tabBracket) tabBracket.style.display = isGroups ? '' : 'none';
+  const tabTable = document.getElementById('tv-tab-table');
+  if (tabTable && !isGroups) tabTable.textContent = 'Tabela';
+
+  if (isGroups) {
+    document.getElementById('tv-title').textContent = tournament.name;
+    document.getElementById('tv-tabs').style.display = '';
+
+    if (tabTable) tabTable.textContent = 'Grupy';
+
+    const mc           = tournament.config.matchConfig;
+    const groupMatches = tournament.matches.filter(m => m.phase === 'group');
+    const groupPlayed  = groupMatches.filter(m => m.winner !== null).length;
+    const phaseLabel   = isGroupPhaseComplete(tournament) ? '● Faza pucharowa' : '● Faza grupowa';
+
+    document.getElementById('tv-info-bar').innerHTML =
+      `<span>Grupy+Drabinka &middot; ${mc.variant} &middot; First to ${mc.totalLegs}</span>` +
+      `<span>${tournament.players.length} graczy &middot; ${groupPlayed}/${groupMatches.length} meczów gr. &middot; <b>${phaseLabel}</b></span>`;
+
+    ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
+      const old = document.getElementById(id);
+      if (!old) return;
+      const fresh = old.cloneNode(true);
+      old.parentNode.replaceChild(fresh, old);
+    });
+
+    document.getElementById('tv-tab-table').addEventListener('click', () => {
+      _setGroupsTab('groups');
+      renderGroupsTab(tournament);
+    });
+    document.getElementById('tv-tab-matches').addEventListener('click', () => {
+      _setGroupsTab('matches');
+      renderGroupMatchesTab(tournament);
+    });
+    document.getElementById('tv-tab-bracket').addEventListener('click', () => {
+      _setGroupsTab('bracket');
+      renderBracketScreen(tournament);
+    });
+
+    _setGroupsTab('groups');
+    renderGroupsTab(tournament);
+    return;
+  }
+
   if (isBracket) {
     document.getElementById('tv-title').textContent = tournament.name;
     document.getElementById('tv-tabs').style.display      = 'none';
@@ -667,6 +739,7 @@ function renderTournamentViewScreen(tournament) {
     return;
   }
   // --- league: restore tabs/standings visibility ---
+  if (tabTable) tabTable.textContent = 'Tabela';
   document.getElementById('tv-tabs').style.display = '';
   document.getElementById('tv-bracket').style.display = 'none';
   document.getElementById('tv-title').textContent = tournament.name;
