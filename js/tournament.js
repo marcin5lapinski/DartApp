@@ -384,6 +384,20 @@ function _updateStep4Datalists() {
   }
 }
 
+function _assignRandomByes(players) {
+  const numByes = nextPowerOf2(players.length) - players.length;
+  if (numByes === 0) return;
+  const byeCount = players.filter(p => p.bye).length;
+  if (byeCount !== 0) return;
+  const indices = Array.from({ length: players.length }, (_, i) => i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  const byeSet = new Set(indices.slice(0, numByes));
+  players.forEach((p, i) => { p.bye = byeSet.has(i); });
+}
+
 function _getStep4Values() {
   return Array.from(document.querySelectorAll('#t-players-list .player-block')).map(block => ({
     name: block.querySelector('.player-name-input').value,
@@ -511,19 +525,7 @@ document.getElementById('btn-create-tournament').addEventListener('click', () =>
   populatePlayerSuggestions();
 
   if (tournamentConfig.seeding === 'random') {
-    if (tournamentConfig.format === 'bracket') {
-      const numByes  = nextPowerOf2(players.length) - players.length;
-      const byeCount = players.filter(p => p.bye).length;
-      if (numByes > 0 && byeCount === 0) {
-        const indices = Array.from({ length: players.length }, (_, i) => i);
-        for (let i = indices.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [indices[i], indices[j]] = [indices[j], indices[i]];
-        }
-        const byeSet = new Set(indices.slice(0, numByes));
-        players.forEach((p, i) => { p.bye = byeSet.has(i); });
-      }
-    }
+    if (tournamentConfig.format === 'bracket') _assignRandomByes(players);
     for (let i = players.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [players[i], players[j]] = [players[j], players[i]];
@@ -546,19 +548,7 @@ document.getElementById('btn-preview-bracket').addEventListener('click', () => {
   }));
 
   if (tournamentConfig.seeding === 'random') {
-    if (tournamentConfig.format === 'bracket') {
-      const numByes  = nextPowerOf2(players.length) - players.length;
-      const byeCount = players.filter(p => p.bye).length;
-      if (numByes > 0 && byeCount === 0) {
-        const indices = Array.from({ length: players.length }, (_, i) => i);
-        for (let i = indices.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [indices[i], indices[j]] = [indices[j], indices[i]];
-        }
-        const byeSet = new Set(indices.slice(0, numByes));
-        players.forEach((p, i) => { p.bye = byeSet.has(i); });
-      }
-    }
+    if (tournamentConfig.format === 'bracket') _assignRandomByes(players);
     for (let i = players.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [players[i], players[j]] = [players[j], players[i]];
