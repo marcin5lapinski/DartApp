@@ -95,7 +95,9 @@ function renderHistoryDetailScreen(rec) {
     if (s.fastestLeg != null) {
       rows += `<tr><td>Najszybszy leg</td><td><strong>${s.fastestLeg} lotek</strong></td></tr>`;
     }
-    rows += `<tr><td>Trafione double</td><td><strong>${dblPct !== null ? dblPct.toFixed(1) + '%' : '—'} (${s.doubleHits}/${s.doubleAttempts})</strong></td></tr>`;
+    if (rec.checkoutMode === 'double') {
+      rows += `<tr><td>Trafione double</td><td><strong>${dblPct !== null ? dblPct.toFixed(1) + '%' : '—'} (${s.doubleHits}/${s.doubleAttempts})</strong></td></tr>`;
+    }
 
     card.innerHTML = `<h3>${escapeHtml(rec.players[i])}</h3><table class="stats-table">${rows}</table>`;
     container.appendChild(card);

@@ -396,6 +396,32 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Podwójny toast i poprawka losowania wolnych losów (2026-06-11)
+
+### Nowe funkcje
+- **Podwójny toast (bust + ostatnie podejście)**: gdy w tej samej turze jest jednocześnie BUST i ostrzeżenie o ostatnim podejściu, oba toasty wyświetlają się naraz — `#bust-toast` przesuwa się 44 px w górę, `#last-visit-toast` 44 px w dół (klasa `.stacked`); każdy można kliknąć, by go zamknąć
+- **Oddzielny element toastu `#last-visit-toast`**: dotychczas toast „Ostatnie podejście" był klasy `.last-visit` na `#bust-toast`; teraz to osobny element HTML z własnym stylem (niebieskie tło `#1565c0`, `font-size: 1.4rem`)
+- **`_updateByeHint()`** w `tournament.js`: dynamicznie aktualizuje tekst podpowiedzi pod licznikiem wolnych losów — zielony komunikat gdy `seeding=random` i brak zaznaczonych BYE, szary gdy inaczej
+- **`_assignRandomByes(players)`** w `tournament.js`: wydziela losowanie wolnych losów (Fisher-Yates na indeksach, przypisuje `p.bye`) — wywoływany przy tworzeniu turnieju i podglądzie drabinki
+- **Element `#t-bye-hint`** w kroku 4 wizarda: paragraf pod licznikiem BYE, widoczny tylko dla drabinki z wolnymi losami; klasy `.bye-hint` / `.bye-hint--auto`
+
+### Naprawione błędy
+- **Auto-losowanie BYE przy kliknięciu „Losuj rozstawienie"**: przycisk seeding nie losuje już wolnych losów w momencie aktywacji — losowanie odroczone do kliknięcia „Utwórz turniej" / „Podgląd drabinki"
+- **`validateStep4()` blokował button przy `seeding=random` + 0 BYE**: dodano warunek `autoAssign = isRandom && byeCount === 0` — w tym stanie „Utwórz turniej" jest odblokowany (wolne losy zostaną przydzielone automatycznie)
+
+### Zmiany wizualne
+- `.bye-hint` / `.bye-hint--auto`: hint pod licznikiem BYE (mały szary / zielony tekst)
+- `.stacked`: przesuwa toast o ±44 px gdy dwa toasty widoczne naraz
+
+### Zmiany w plikach
+- `index.html` — dodano `<div id="last-visit-toast">Ostatnie podejście</div>` obok `#bust-toast`
+- `css/style.css` — przepisano style `#bust-toast` / `#last-visit-toast` jako osobne elementy z `.stacked`; dodano `.bye-hint`, `.bye-hint--auto`
+- `js/ui.js` — `showBust()` i `showLastVisitToast()` przepisane do obsługi dwóch osobnych elementów ze stanem `.stacked`
+- `js/app.js` — listenery kliknięcia dla obu toastów (wzajemne usuwanie `.stacked`)
+- `js/tournament.js` — nowe `_updateByeHint()`, `_assignRandomByes()`; usunięty blok auto-bye z handlera seeding; zaktualizowane `_updateByeCounter`, `renderStep4Players`, `validateStep4`, handlery `btn-create-tournament` i `btn-preview-bracket`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA

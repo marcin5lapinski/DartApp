@@ -156,6 +156,10 @@ function deleteTournament(id) {
   saveTournaments(loadTournaments().filter(t => t.id !== id));
 }
 
+function deleteAllTournamentsByStatus(status) {
+  saveTournaments(loadTournaments().filter(t => t.status !== status));
+}
+
 function computeStandings(tournament) {
   const { players, matches, config } = tournament;
   const rows = players.map((p, i) => ({
@@ -281,13 +285,13 @@ function renderTournamentListScreen() {
     if (active.length > 0) {
       const atLimitClass = active.length >= 5 ? ' t-list-limit--full' : '';
       body.insertAdjacentHTML('beforeend',
-        `<div class="t-list-section-label">W toku<span class="t-list-limit${atLimitClass}">${active.length} / 5</span></div>`);
+        `<div class="t-list-section-label">W toku<div class="t-list-section-right"><span class="t-list-limit${atLimitClass}">${active.length} / 5</span><button class="btn-delete-all" id="btn-delete-all-active">Usuń wszystkie</button></div></div>`);
       active.forEach(t => body.appendChild(buildTournamentCard(t)));
     }
     if (finished.length > 0) {
       const atLimitClass = finished.length >= 40 ? ' t-list-limit--full' : '';
       body.insertAdjacentHTML('beforeend',
-        `<div class="t-list-section-label">Zakończone<span class="t-list-limit${atLimitClass}">${finished.length} / 40</span></div>`);
+        `<div class="t-list-section-label">Zakończone<div class="t-list-section-right"><span class="t-list-limit${atLimitClass}">${finished.length} / 40</span><button class="btn-delete-all" id="btn-delete-all-finished">Usuń wszystkie</button></div></div>`);
       finished.forEach(t => body.appendChild(buildTournamentCard(t)));
     }
   }

@@ -267,19 +267,24 @@ function renderStatsScreen(match) {
 
 // --- Toast / bust notification ---
 function showBust() {
-  const el = document.getElementById('bust-toast');
-  el.classList.add('visible');
-  setTimeout(() => el.classList.remove('visible'), 1500);
+  const bustEl = document.getElementById('bust-toast');
+  const lvEl   = document.getElementById('last-visit-toast');
+  bustEl.classList.add('visible');
+  setTimeout(() => {
+    bustEl.classList.remove('visible', 'stacked');
+    lvEl.classList.remove('stacked');
+  }, 1500);
 }
 
 function showLastVisitToast() {
-  const el = document.getElementById('bust-toast');
-  el.textContent = 'Ostatnie podejście';
-  el.classList.add('last-visit', 'visible');
-  setTimeout(() => {
-    el.classList.remove('visible', 'last-visit');
-    el.textContent = 'BUST!';
-  }, 1800);
+  const bustEl = document.getElementById('bust-toast');
+  const lvEl   = document.getElementById('last-visit-toast');
+  if (bustEl.classList.contains('visible')) {
+    bustEl.classList.add('stacked');
+    lvEl.classList.add('stacked');
+  }
+  lvEl.classList.add('visible');
+  setTimeout(() => lvEl.classList.remove('visible', 'stacked'), 1800);
 }
 
 // --- Which-dart dialog ---

@@ -28,15 +28,15 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
 
 | File | Responsibility |
 |---|---|
-| `js/checkouts.js` | `CHECKOUT_TABLE` (2–170), `getCheckoutHint()`, `DOUBLE_FINISHES` set, `isDoubleAttemptScore()`, `findCheckoutPath(score, targetDouble, dartsLeft)` |
+| `js/checkouts.js` | `CHECKOUT_TABLE` (2–170), `getCheckoutHint()`, `getAllCheckoutHints()`, `DOUBLE_FINISHES` set, `isDoubleAttemptScore()`, `closeDoubleLabel(val)`, `findCheckoutPath(score, targetDouble, dartsLeft)` |
 | `js/stats.js` | Per-player stat objects, `recordVisit()`, `recordDart()`, `recordLegWin()`, `recordLegWinByLimit()`, `getFirst9Average()` |
 | `js/game.js` | `createMatch()`, `applyVisitScore()`, `finalizeLeg()`, `finalizeLimitLeg()`, bust/checkout logic, `getValidClosingDarts()`, `getValidOpeningDarts()`, `_achievable2Darts()` |
 | `js/players.js` | Persistent player profiles CRUD — `loadPlayers()`, `createPlayer()`, `updatePlayer()`, `renamePlayer()`, `deletePlayer()`, `renderPlayersScreen()`, `populatePlayerSuggestions()` |
-| `js/history.js` | Match history (capped at 100) — `saveMatchToHistory()`, `deleteHistoryRecord()`, `renderHistoryScreen()`, `renderHistoryDetailScreen()` |
+| `js/history.js` | Match history (capped at 100) — `saveMatchToHistory()`, `deleteHistoryRecord()`, `clearHistory()`, `renderHistoryScreen()`, `renderHistoryDetailScreen()` |
 | `js/board.js` | Canvas 2D dartboard (Mode C) — `initBoard()`, `_drawBoard()`, click/touch hit detection |
 | `js/ui.js` | `showScreen()`, `renderGameScreen()`, `showWhichDartDialog()`, `showBust()`, `showLastVisitToast()`, modal helpers; defines `SCREENS` constant |
 | `js/league.js` | Tournament data layer — `loadTournaments()`, `saveTournaments()`, `generateSchedule()`, `createTournament()`, `deleteTournament()`, `deleteAllTournamentsByStatus(status)`, `computeStandings()`, `computeLiveStandings()`; bracket — `nextPowerOf2()`, `computeRoundName()`, `_bracketCenterY()`, `advanceBracketWinner()`, `generateBracket(players)`, `renderBracketScreen(tournament, container?)`, `_buildBracketCard()`, `buildBracketRound()`, `buildBracketConnectorSvg()`; rendering — `renderTournamentListScreen()`, `buildTournamentCard()`, `renderTournamentViewScreen()`, `renderTournamentMatchesScreen()` |
-| `js/tournament.js` | Tournament wizard — `tournamentConfig` global, `initTournamentWizard()`, `showWizardStep()`, `_computeByeSuggestion(numPlayers)`, `_updateByeCounter(numByes)`, `renderStep4Players(savedValues)`, `_getStep4Values()`, `_initStep4DragDrop()`, `_updateStep4Datalists()`, `buildDoublesOptions()`, `validateStep4()`; all wizard step event listeners |
+| `js/tournament.js` | Tournament wizard — `tournamentConfig` global, `initTournamentWizard()`, `showWizardStep()`, `_computeByeSuggestion(numPlayers)`, `_updateByeCounter(numByes)`, `_updateByeHint()`, `_assignRandomByes(players)`, `renderStep4Players(savedValues)`, `_getStep4Values()`, `_initStep4DragDrop()`, `_updateStep4Datalists()`, `buildDoublesOptions()`, `validateStep4()`; all wizard step event listeners |
 | `js/app.js` | Event wiring, `startMatch()`, `submitSummaryScore()`, `submitDart()`, `localStorage` save/load; owns `undoStack` (capped at 20) |
 
 ### Key globals defined per module (all loaded into `window`)
@@ -90,7 +90,7 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
 - **Dart-by-dart / Board mode**: buffer accumulates 3 darts, auto-submits; double-attempt detection per dart
 - **Leg start alternation**: the player who starts each leg alternates from the previous leg
 - **Leg/set/match result modal** (`#modal-leg-result`): shown by `showLegResultDialog(winnerName, num, type, callback)` in `ui.js`. Has two buttons: "↩ Cofnij" (`#btn-leg-result-undo`) and "Dalej" (`#btn-next-leg`). Cofnij calls `undoLastVisit()` — closes all modals, restores pre-visit state, re-renders game screen. Disabled when `undoStack` is empty (checked at modal open time).
-- **Dart visit limit**: optional per-leg visit cap (30–54 darts, step 3) configured in setup (`#sel-dart-limit`) and tournament wizard step 3 (`#t-dart-limit`). Stored as `match.dartLimitVisits = dartLimit/3`. After every committed visit `checkLegVisitLimit()` tests if both players' `history.length >= dartLimitVisits` — if so, `#modal-dart-limit` opens asking who won. Winner awarded via `finalizeLimitLeg()` / `recordLegWinByLimit()` (no `fastestLeg` / `highestCheckout` update). Toast "Ostatnie podejście" (blue, `#bust-toast.last-visit`) shown when active player has exactly `dartLimitVisits-1` visits.
+- **Dart visit limit**: optional per-leg visit cap (30–54 darts, step 3) configured in setup (`#sel-dart-limit`) and tournament wizard step 3 (`#t-dart-limit`). Stored as `match.dartLimitVisits = dartLimit/3`. After every committed visit `checkLegVisitLimit()` tests if both players' `history.length >= dartLimitVisits` — if so, `#modal-dart-limit` opens asking who won. Winner awarded via `finalizeLimitLeg()` / `recordLegWinByLimit()` (no `fastestLeg` / `highestCheckout` update). Toast "Ostatnie podejście" shown via `showLastVisitToast()` as a separate `#last-visit-toast` element (blue) when active player has exactly `dartLimitVisits-1` visits. If bust happens on the same turn, both toasts show stacked (`#bust-toast` on top shifted up 44 px, `#last-visit-toast` below shifted down 44 px via `.stacked` CSS class).
 
 ## Screens
 

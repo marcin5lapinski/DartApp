@@ -283,7 +283,12 @@ function setupEventListeners() {
 
   // Bust toast click to dismiss
   document.getElementById('bust-toast').addEventListener('click', () => {
-    document.getElementById('bust-toast').classList.remove('visible');
+    document.getElementById('bust-toast').classList.remove('visible', 'stacked');
+    document.getElementById('last-visit-toast').classList.remove('stacked');
+  });
+  document.getElementById('last-visit-toast').addEventListener('click', () => {
+    document.getElementById('last-visit-toast').classList.remove('visible', 'stacked');
+    document.getElementById('bust-toast').classList.remove('stacked');
   });
 
   // Navigation: home → match setup
