@@ -496,6 +496,37 @@ function isGroupPhaseComplete(tournament) {
     .every(m => m.winner !== null);
 }
 
+function finalizeGroupPhase(tournament) {
+  const { config, matches } = tournament;
+  const numGroups = config.groups.length;
+  const advCount  = config.groups[0].advanceCount;
+
+  const groupStandings = config.groups.map((g, gi) => computeGroupStandings(tournament, gi));
+
+  const labelToPlayerIdx = new Map();
+  for (let rank = 0; rank < advCount; rank++) {
+    for (let gi = 0; gi < numGroups; gi++) {
+      const row = groupStandings[gi][rank];
+      if (!row) continue;
+      const label = String.fromCharCode(65 + gi) + (rank + 1);
+      labelToPlayerIdx.set(label, row.playerIndex);
+    }
+  }
+
+  const r1Matches = matches.filter(m => m.phase === 'bracket' && m.round === 0);
+  r1Matches.forEach(m => {
+    if (m.isBye) {
+      m.p1 = labelToPlayerIdx.get(m.p1Label) ?? null;
+      m.winner = 0;
+    } else {
+      m.p1 = labelToPlayerIdx.get(m.p1Label) ?? null;
+      m.p2 = labelToPlayerIdx.get(m.p2Label) ?? null;
+    }
+  });
+
+  r1Matches.filter(m => m.isBye).forEach(m => advanceBracketWinner(matches, m));
+}
+
 function renderTournamentListScreen() {
   const all      = loadTournaments();
   const active   = all.filter(t => t.status === 'active').sort((a, b) => b.createdAt - a.createdAt);
@@ -585,7 +616,7 @@ function renderBracketScreen(tournament, container) {
 
   const byRound = [];
   for (let r = 0; r < numRounds; r++) {
-    byRound.push(matches.filter(m => m.round === r).sort((a, b) => a.slot - b.slot));
+    byRound.push(matches.filter(m => m.round === r && !m.isThirdPlace).sort((a, b) => a.slot - b.slot));
   }
 
   const numR1Slots = B / 2;
@@ -1161,9 +1192,8 @@ function _buildBracketCard(m, matchIdx, players, topPx) {
     pd.appendChild(_buildMatchPlayerRow(players[wPIdx].name, wScore, wAvg, 'winner', wBest));
     pd.appendChild(_buildMatchPlayerRow(players[lPIdx].name, lScore, lAvg, 'loser',  lBest));
   } else {
-    // Unplayed or partially-seeded TBD: show known names, "?" for unknown
-    const name1 = m.p1 !== null ? players[m.p1].name : '?';
-    const name2 = m.p2 !== null ? players[m.p2].name : '?';
+    const name1 = m.p1 !== null ? players[m.p1].name : (m.p1Label || '?');
+    const name2 = m.p2 !== null ? players[m.p2].name : (m.p2Label || '?');
     pd.appendChild(_buildMatchPlayerRow(name1, null, null, ''));
     pd.appendChild(_buildMatchPlayerRow(name2, null, null, ''));
   }
