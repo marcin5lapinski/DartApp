@@ -70,11 +70,24 @@ function initTournamentWizard() {
 function showWizardStep(n) {
   _wizardStep = n;
   document.querySelectorAll('.wizard-step').forEach(s => { s.style.display = 'none'; });
-  const step = document.getElementById('wstep-' + n);
-  if (step) step.style.display = 'flex';
-  document.querySelectorAll('.wdot').forEach(dot => {
-    const s = parseInt(dot.dataset.step);
-    dot.className = 'wdot' + (s < n ? ' wdot-done' : s === n ? ' wdot-active' : '');
+  const el = document.getElementById('wstep-' + n);
+  if (!el) return;
+  el.style.display = 'flex';
+
+  const isGroups   = tournamentConfig && tournamentConfig.format === 'groups';
+  const stepOrder  = isGroups ? [1, 2, 3, '3b', 4] : [1, 2, 3, 4];
+  const visualPos  = stepOrder.indexOf(n) + 1;  // 1-based
+  const totalSteps = stepOrder.length;
+
+  // Update step-indicator text inside current step
+  const ind = el.querySelector('.step-indicator');
+  if (ind) ind.textContent = 'Krok ' + visualPos + ' z ' + totalSteps;
+
+  // Update dots
+  document.querySelectorAll('.wdot').forEach((dot, di) => {
+    dot.classList.remove('wdot-active', 'wdot-done');
+    if (di < visualPos - 1) dot.classList.add('wdot-done');
+    else if (di === visualPos - 1) dot.classList.add('wdot-active');
   });
 }
 
@@ -158,6 +171,41 @@ document.getElementById('t-next-3').addEventListener('click', () => {
     checkoutMode: document.getElementById('t-checkout').value,
     dartLimit:    parseInt(document.getElementById('t-dart-limit').value) || null,
   };
+  if (tournamentConfig.format === 'groups') {
+    _initStep3bGroupButtons();
+    showWizardStep('3b');
+  } else {
+    renderStep4Players();
+    showWizardStep(4);
+  }
+});
+
+// ── Step 3b navigation ──
+document.getElementById('t-back-3b').addEventListener('click', () => {
+  showWizardStep(3);
+});
+
+document.getElementById('t-next-3b').addEventListener('click', () => {
+  const activeBtn   = document.querySelector('#t-groups-count-group .btn-seg.active');
+  const numGroups   = activeBtn ? parseInt(activeBtn.dataset.groups) : 0;
+  const advCount    = parseInt(document.getElementById('t-advance-count').value);
+  const n           = tournamentConfig.numPlayers;
+  const groupSize   = Math.floor(n / numGroups);
+  const errEl       = document.getElementById('t-step3b-error');
+
+  if (!numGroups || isNaN(advCount) || advCount < 2 || advCount >= groupSize) {
+    errEl.textContent = 'Nieprawidłowe ustawienia grup.';
+    errEl.hidden = false;
+    return;
+  }
+  errEl.hidden = true;
+
+  tournamentConfig.numGroups        = numGroups;
+  tournamentConfig.advanceCount     = advCount;
+  tournamentConfig.winPoints        = Math.max(0, parseInt(document.getElementById('t-group-win-pts').value) || 0);
+  tournamentConfig.lossPoints       = Math.max(0, parseInt(document.getElementById('t-group-loss-pts').value) || 0);
+  tournamentConfig.thirdPlaceMatch  = document.getElementById('t-third-place-match').checked;
+
   renderStep4Players();
   showWizardStep(4);
 });
@@ -170,7 +218,11 @@ document.getElementById('t-sets').addEventListener('change', () => {
 
 // ── Step 4 navigation ──
 document.getElementById('t-back-4').addEventListener('click', () => {
-  showWizardStep(3);
+  if (tournamentConfig.format === 'groups') {
+    showWizardStep('3b');
+  } else {
+    showWizardStep(3);
+  }
 });
 
 // ── Step 4: seeding segmented buttons ──
@@ -226,6 +278,72 @@ function _updateByeCounter(numByes) {
     counterEl.textContent = `Wolne losy: ${count} / ${numByes} — zaznacz dokładnie ${numByes}`;
   }
   _updateByeHint();
+}
+
+function _initStep3bGroupButtons() {
+  const n = tournamentConfig.numPlayers;
+  // Valid group counts: k ≥ 1 AND floor(n/k) ≥ 3
+  const validCounts = [];
+  for (let k = 1; k <= n; k++) {
+    if (Math.floor(n / k) >= 3) validCounts.push(k);
+  }
+
+  const group = document.getElementById('t-groups-count-group');
+  group.innerHTML = '';
+
+  let defaultK = tournamentConfig.numGroups;
+  if (!validCounts.includes(defaultK)) {
+    defaultK = validCounts.length >= 2 ? validCounts[1] : validCounts[0];
+  }
+
+  validCounts.forEach(k => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-seg' + (k === defaultK ? ' active' : '');
+    btn.dataset.groups = k;
+    btn.textContent = k === 1 ? '1 grupa' : k + ' grupy';
+    btn.addEventListener('click', () => {
+      group.querySelectorAll('.btn-seg').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      tournamentConfig.numGroups = k;
+      _updateAdvanceCountMax();
+      _updateThirdPlaceVisibility();
+    });
+    group.appendChild(btn);
+  });
+
+  tournamentConfig.numGroups = defaultK;
+  _updateAdvanceCountMax();
+  _updateThirdPlaceVisibility();
+
+  // Restore previously saved values if returning from step 4
+  const advInp = document.getElementById('t-advance-count');
+  if (advInp) advInp.value = tournamentConfig.advanceCount || 2;
+  const wpInp  = document.getElementById('t-group-win-pts');
+  if (wpInp)  wpInp.value  = tournamentConfig.winPoints  !== undefined ? tournamentConfig.winPoints  : 3;
+  const lpInp  = document.getElementById('t-group-loss-pts');
+  if (lpInp)  lpInp.value  = tournamentConfig.lossPoints !== undefined ? tournamentConfig.lossPoints : 0;
+  const tpCk   = document.getElementById('t-third-place-match');
+  if (tpCk)   tpCk.checked = tournamentConfig.thirdPlaceMatch || false;
+}
+
+function _updateAdvanceCountMax() {
+  const n         = tournamentConfig.numPlayers;
+  const k         = tournamentConfig.numGroups;
+  const groupSize = Math.floor(n / k);
+  const inp       = document.getElementById('t-advance-count');
+  if (!inp) return;
+  inp.max = groupSize - 1;
+  const cur = parseInt(inp.value) || 2;
+  if (cur >= groupSize) inp.value = Math.min(groupSize - 1, 2);
+}
+
+function _updateThirdPlaceVisibility() {
+  const k    = tournamentConfig.numGroups;
+  const adv  = parseInt(document.getElementById('t-advance-count')?.value) || 2;
+  const wrap = document.getElementById('t-third-place-wrap');
+  // Show "mecz o 3. miejsce" only if bracket will have ≥4 participants (= ≥2 semi-final slots)
+  if (wrap) wrap.style.display = k * adv >= 4 ? '' : 'none';
 }
 
 function renderStep4Players(savedValues) {
