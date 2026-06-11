@@ -2535,3 +2535,62 @@ html, body {
   padding: 3px 0;
   font-size: .85rem;
 }
+
+/* Groups format */
+.group-section-header {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 10px 4px 4px;
+  margin-top: 8px;
+}
+
+.group-standings-wrap {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.group-standings-table {
+  margin-bottom: 0;
+}
+
+.group-standings-table tbody tr.group-advancing td:first-child {
+  border-left: 3px solid var(--green);
+}
+
+.adv-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.adv-legend {
+  font-size: .72rem;
+  color: var(--text-muted);
+  padding: 6px 4px 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.tv-matches-section-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+  padding: 12px 0 6px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Bracket TBD card label styling */
+.tbd-card .mpname {
+  color: #555;
+  font-style: italic;
+}
