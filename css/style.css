@@ -1879,7 +1879,7 @@ html, body {
   line-height: 1.4;
 }
 .bye-hint--auto {
-  color: #2a9d4f;
+  color: var(--green);
 }
 
 /* Step 4: player block with active bye */
