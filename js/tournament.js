@@ -283,10 +283,10 @@ function _updateByeCounter(numByes) {
 
 function _initStep3bGroupButtons() {
   const n = tournamentConfig.numPlayers;
-  // Valid group counts: k ≥ 1 AND floor(n/k) ≥ 3
+  // Valid group counts: k ≥ 1 AND floor(n/k) ≥ 3 AND max 8 players per group
   const validCounts = [];
   for (let k = 1; k <= n; k++) {
-    if (Math.floor(n / k) >= 3) validCounts.push(k);
+    if (Math.floor(n / k) >= 3 && Math.floor(n / k) <= 8) validCounts.push(k);
   }
 
   const group = document.getElementById('t-groups-count-group');
