@@ -441,6 +441,61 @@ function computeLiveStandings(tournament, liveData) {
   return rows;
 }
 
+function computeGroupStandings(tournament, groupIndex) {
+  const { players, matches, config } = tournament;
+  const group = config.groups[groupIndex];
+
+  const rows = group.playerIndices.map(pi => ({
+    playerIndex: pi,
+    name: players[pi].name,
+    M: 0, W: 0, L: 0,
+    legsWon: 0, legsLost: 0,
+    avgSum: 0, avgCount: 0,
+    pts: 0,
+  }));
+
+  const rowByIdx = new Map(rows.map(r => [r.playerIndex, r]));
+
+  for (const m of matches) {
+    if (m.phase !== 'group' || m.groupIndex !== groupIndex || m.winner === null) continue;
+    const wIdx = m.winner === 0 ? m.p1 : m.p2;
+    const lIdx = m.winner === 0 ? m.p2 : m.p1;
+    const wr = rowByIdx.get(wIdx);
+    const lr = rowByIdx.get(lIdx);
+    if (!wr || !lr) continue;
+
+    wr.M++; wr.W++; wr.pts += config.winPoints;
+    lr.M++; lr.L++; lr.pts += config.lossPoints;
+
+    const r1 = rowByIdx.get(m.p1);
+    const r2 = rowByIdx.get(m.p2);
+    if (r1) { r1.legsWon += m.legs[0] || 0; r1.legsLost += m.legs[1] || 0; }
+    if (r2) { r2.legsWon += m.legs[1] || 0; r2.legsLost += m.legs[0] || 0; }
+
+    if (m.avgs[0] !== null && r1) { r1.avgSum += m.avgs[0]; r1.avgCount++; }
+    if (m.avgs[1] !== null && r2) { r2.avgSum += m.avgs[1]; r2.avgCount++; }
+  }
+
+  rows.sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    const aDiff = a.legsWon - a.legsLost;
+    const bDiff = b.legsWon - b.legsLost;
+    if (bDiff !== aDiff) return bDiff - aDiff;
+    const aAvg = a.avgCount ? a.avgSum / a.avgCount : 0;
+    const bAvg = b.avgCount ? b.avgSum / b.avgCount : 0;
+    if (bAvg !== aAvg) return bAvg - aAvg;
+    return a.playerIndex - b.playerIndex;
+  });
+
+  return rows;
+}
+
+function isGroupPhaseComplete(tournament) {
+  return tournament.matches
+    .filter(m => m.phase === 'group')
+    .every(m => m.winner !== null);
+}
+
 function renderTournamentListScreen() {
   const all      = loadTournaments();
   const active   = all.filter(t => t.status === 'active').sort((a, b) => b.createdAt - a.createdAt);
