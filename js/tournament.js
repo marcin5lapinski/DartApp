@@ -511,6 +511,19 @@ document.getElementById('btn-create-tournament').addEventListener('click', () =>
   populatePlayerSuggestions();
 
   if (tournamentConfig.seeding === 'random') {
+    if (tournamentConfig.format === 'bracket') {
+      const numByes  = nextPowerOf2(players.length) - players.length;
+      const byeCount = players.filter(p => p.bye).length;
+      if (numByes > 0 && byeCount === 0) {
+        const indices = Array.from({ length: players.length }, (_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        const byeSet = new Set(indices.slice(0, numByes));
+        players.forEach((p, i) => { p.bye = byeSet.has(i); });
+      }
+    }
     for (let i = players.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [players[i], players[j]] = [players[j], players[i]];
@@ -533,6 +546,19 @@ document.getElementById('btn-preview-bracket').addEventListener('click', () => {
   }));
 
   if (tournamentConfig.seeding === 'random') {
+    if (tournamentConfig.format === 'bracket') {
+      const numByes  = nextPowerOf2(players.length) - players.length;
+      const byeCount = players.filter(p => p.bye).length;
+      if (numByes > 0 && byeCount === 0) {
+        const indices = Array.from({ length: players.length }, (_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        const byeSet = new Set(indices.slice(0, numByes));
+        players.forEach((p, i) => { p.bye = byeSet.has(i); });
+      }
+    }
     for (let i = players.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [players[i], players[j]] = [players[j], players[i]];
