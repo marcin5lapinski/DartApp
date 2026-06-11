@@ -642,16 +642,24 @@ function buildTournamentCard(t) {
   const formatLabel = isBracket ? 'Drabinka' : isGroups ? 'Grupy+Drabinka' : 'Liga';
   const meta  = formatLabel + ' · ' + t.players.length + ' graczy · ' + mc.variant + ' · First to ' + mc.totalLegs;
   const groupMatches = isGroups ? t.matches.filter(m => m.phase === 'group') : null;
-  const played = isBracket
-    ? t.matches.filter(m => !m.isBye && m.winner !== null).length
-    : isGroups
-      ? groupMatches.filter(m => m.winner !== null).length
-      : t.matches.filter(m => m.winner !== null).length;
-  const total = isBracket
-    ? t.matches.filter(m => !m.isBye).length
-    : isGroups
-      ? groupMatches.length
-      : t.matches.length;
+  let played, total;
+  if (isBracket) {
+    played = t.matches.filter(m => !m.isBye && m.winner !== null).length;
+    total  = t.matches.filter(m => !m.isBye).length;
+  } else if (isGroups) {
+    const allGroupDone = groupMatches.every(m => m.winner !== null);
+    if (allGroupDone) {
+      const bracketList = t.matches.filter(m => m.phase === 'bracket' && !m.isBye);
+      played = bracketList.filter(m => m.winner !== null).length;
+      total  = bracketList.length;
+    } else {
+      played = groupMatches.filter(m => m.winner !== null).length;
+      total  = groupMatches.length;
+    }
+  } else {
+    played = t.matches.filter(m => m.winner !== null).length;
+    total  = t.matches.length;
+  }
 
   let statusHtml;
   if (t.status === 'active') {
@@ -1051,6 +1059,30 @@ function renderTournamentViewScreen(tournament) {
     return;
   }
   // --- league: restore tabs/standings visibility ---
+
+  // Re-clone tabs to remove any stale groups handlers left from a previous groups visit
+  ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
+    const old = document.getElementById(id);
+    if (!old) return;
+    const fresh = old.cloneNode(true);
+    old.parentNode.replaceChild(fresh, old);
+  });
+
+  // Wire liga tab handlers
+  document.getElementById('tv-tab-table').addEventListener('click', () => {
+    document.getElementById('tv-tab-table').classList.add('active');
+    document.getElementById('tv-tab-matches').classList.remove('active');
+    document.getElementById('tv-standings').style.display = '';
+    document.getElementById('tv-matches').style.display = 'none';
+  });
+  document.getElementById('tv-tab-matches').addEventListener('click', () => {
+    document.getElementById('tv-tab-matches').classList.add('active');
+    document.getElementById('tv-tab-table').classList.remove('active');
+    document.getElementById('tv-standings').style.display = 'none';
+    document.getElementById('tv-matches').style.display = '';
+    if (_activeTournament) renderTournamentMatchesScreen(_activeTournament);
+  });
+
   document.getElementById('tv-tabs').style.display = '';
   document.getElementById('tv-bracket').style.display = 'none';
   document.getElementById('tv-title').textContent = tournament.name;
@@ -1261,15 +1293,27 @@ function _buildBracketCard(m, matchIdx, players, topPx) {
   pd.className = 'match-players';
 
   if (m.isBye) {
-    // Bye: show seeded player name + "— wolny los —" placeholder
-    pd.appendChild(_buildMatchPlayerRow(players[m.p1].name, null, null, ''));
-    const byeRow = document.createElement('div');
-    byeRow.className = 'match-player-row bye-slot-row';
-    const byeSpan = document.createElement('span');
-    byeSpan.className = 'mpname';
-    byeSpan.textContent = '— wolny los —';
-    byeRow.appendChild(byeSpan);
-    pd.appendChild(byeRow);
+    if (m.p1 !== null) {
+      // Finalized: show seeded player name + "— wolny los —" placeholder
+      pd.appendChild(_buildMatchPlayerRow(players[m.p1].name, null, null, ''));
+      const byeRow = document.createElement('div');
+      byeRow.className = 'match-player-row bye-slot-row';
+      const byeSpan = document.createElement('span');
+      byeSpan.className = 'mpname';
+      byeSpan.textContent = '— wolny los —';
+      byeRow.appendChild(byeSpan);
+      pd.appendChild(byeRow);
+    } else {
+      // Not yet finalized (groups format in group phase): show TBD
+      pd.appendChild(_buildMatchPlayerRow(m.p1Label || '?', null, null, ''));
+      const byeRow = document.createElement('div');
+      byeRow.className = 'match-player-row bye-slot-row';
+      const byeSpan = document.createElement('span');
+      byeSpan.className = 'mpname';
+      byeSpan.textContent = '— bye —';
+      byeRow.appendChild(byeSpan);
+      pd.appendChild(byeRow);
+    }
   } else if (m.winner !== null) {
     // Played: show winner/loser with scores and averages
     const useSet = m.sets && m.sets[0] !== null;
