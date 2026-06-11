@@ -565,13 +565,20 @@ function buildTournamentCard(t) {
 
   const mc    = t.config.matchConfig;
   const isBracket = t.config.format === 'bracket';
-  const meta  = (isBracket ? 'Drabinka' : 'Liga') + ' · ' + t.players.length + ' graczy · ' + mc.variant + ' · First to ' + mc.totalLegs;
+  const isGroups = t.config.format === 'groups';
+  const formatLabel = isBracket ? 'Drabinka' : isGroups ? 'Grupy+Drabinka' : 'Liga';
+  const meta  = formatLabel + ' · ' + t.players.length + ' graczy · ' + mc.variant + ' · First to ' + mc.totalLegs;
+  const groupMatches = isGroups ? t.matches.filter(m => m.phase === 'group') : null;
   const played = isBracket
     ? t.matches.filter(m => !m.isBye && m.winner !== null).length
-    : t.matches.filter(m => m.winner !== null).length;
+    : isGroups
+      ? groupMatches.filter(m => m.winner !== null).length
+      : t.matches.filter(m => m.winner !== null).length;
   const total = isBracket
     ? t.matches.filter(m => !m.isBye).length
-    : t.matches.length;
+    : isGroups
+      ? groupMatches.length
+      : t.matches.length;
 
   let statusHtml;
   if (t.status === 'active') {
@@ -584,6 +591,21 @@ function buildTournamentCard(t) {
       if (finalMatch && finalMatch.winner !== null) {
         const wIdx = finalMatch.winner === 0 ? finalMatch.p1 : finalMatch.p2;
         winner = escapeHtml(t.players[wIdx].name);
+      } else {
+        winner = '&mdash;';
+      }
+    } else if (isGroups) {
+      // For groups format, find winner from the bracket final
+      const bracketMatches = t.matches.filter(m => m.phase === 'bracket');
+      if (bracketMatches.length > 0) {
+        const maxRound = Math.max(...bracketMatches.map(m => m.round));
+        const finalMatch = bracketMatches.find(m => m.round === maxRound && m.slot === 0);
+        if (finalMatch && finalMatch.winner !== null) {
+          const wIdx = finalMatch.winner === 0 ? finalMatch.p1 : finalMatch.p2;
+          winner = escapeHtml(t.players[wIdx].name);
+        } else {
+          winner = '&mdash;';
+        }
       } else {
         winner = '&mdash;';
       }
@@ -956,7 +978,6 @@ function renderTournamentViewScreen(tournament) {
     return;
   }
   // --- league: restore tabs/standings visibility ---
-  if (tabTable) tabTable.textContent = 'Tabela';
   document.getElementById('tv-tabs').style.display = '';
   document.getElementById('tv-bracket').style.display = 'none';
   document.getElementById('tv-title').textContent = tournament.name;
