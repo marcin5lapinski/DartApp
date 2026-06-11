@@ -3,8 +3,19 @@
 let tournamentConfig = null;
 let _wizardStep = 1;
 
-// stub replaced by Task 2
-function _updateByeHint() {}
+function _updateByeHint() {
+  const hintEl = document.getElementById('t-bye-hint');
+  if (!hintEl || hintEl.style.display === 'none') return;
+  const isRandom = document.querySelector('#t-seeding-group .btn-seg.active')?.dataset.seeding === 'random';
+  const byeCount = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
+  if (isRandom && byeCount === 0) {
+    hintEl.textContent = '✓ Wolne losy zostaną wylosowane automatycznie przy tworzeniu turnieju.';
+    hintEl.className = 'bye-hint bye-hint--auto';
+  } else {
+    hintEl.textContent = 'ℹ️ Aby wylosować wolne losy automatycznie — odznacz wszystkie BYE i wybierz „Losuj rozstawienie".';
+    hintEl.className = 'bye-hint';
+  }
+}
 
 function initTournamentWizard() {
   tournamentConfig = {
@@ -205,6 +216,7 @@ function _updateByeCounter(numByes) {
     counterEl.className = 'bye-counter warn';
     counterEl.textContent = `Wolne losy: ${count} / ${numByes} — zaznacz dokładnie ${numByes}`;
   }
+  _updateByeHint();
 }
 
 function renderStep4Players(savedValues) {
@@ -223,6 +235,15 @@ function renderStep4Players(savedValues) {
     document.getElementById('t-players-list').before(counterEl);
   }
   counterEl.style.display = (isBracket && numByes > 0) ? '' : 'none';
+
+  // ── Bye hint ──
+  let hintEl = document.getElementById('t-bye-hint');
+  if (!hintEl) {
+    hintEl = document.createElement('p');
+    hintEl.id = 't-bye-hint';
+    document.getElementById('t-players-list').before(hintEl);
+  }
+  hintEl.style.display = (isBracket && numByes > 0) ? '' : 'none';
 
   // ── Player blocks ──
   const suggestedByes = savedValues
@@ -321,6 +342,7 @@ function renderStep4Players(savedValues) {
     noteEl.style.display = 'none';
   }
 
+  _updateByeHint();
   _initStep4DragDrop(list);
   _updateStep4Datalists();
   validateStep4();

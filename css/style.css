@@ -740,12 +740,12 @@ html, body {
 }
 
 /* Bust toast */
-#bust-toast {
+#bust-toast,
+#last-visit-toast {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.8);
-  background: var(--accent);
   color: #fff;
   padding: 20px 40px;
   border-radius: 16px;
@@ -758,13 +758,33 @@ html, body {
   z-index: 200;
 }
 
+#bust-toast { background: var(--accent); }
+#last-visit-toast { background: #1565c0; font-size: 1.4rem; letter-spacing: 0; }
+
 #bust-toast.visible {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
   pointer-events: auto;
 }
+#last-visit-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  pointer-events: auto;
+}
 
-#bust-toast.last-visit { background: #1565c0; }
+/* When both show simultaneously */
+#bust-toast.stacked {
+  transform: translate(-50%, calc(-50% - 44px)) scale(0.8);
+}
+#bust-toast.visible.stacked {
+  transform: translate(-50%, calc(-50% - 44px)) scale(1);
+}
+#last-visit-toast.stacked {
+  transform: translate(-50%, calc(-50% + 44px)) scale(0.8);
+}
+#last-visit-toast.visible.stacked {
+  transform: translate(-50%, calc(-50% + 44px)) scale(1);
+}
 
 /* ===== MODALS ===== */
 #modal-overlay {
@@ -1851,6 +1871,16 @@ html, body {
 }
 .bye-counter.ok   { background: #0e1f12; border: 1px solid var(--green); color: var(--green); }
 .bye-counter.warn { background: #1f0a0c; border: 1px solid var(--accent); color: var(--accent); }
+
+.bye-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 4px 0 8px;
+  line-height: 1.4;
+}
+.bye-hint--auto {
+  color: #2a9d4f;
+}
 
 /* Step 4: player block with active bye */
 .player-block.has-bye {
