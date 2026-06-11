@@ -481,7 +481,9 @@ function validateStep4() {
     const numByes = B - tournamentConfig.numPlayers;
     if (numByes > 0) {
       const byeCount = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
-      if (byeCount !== numByes) {
+      const isRandom  = document.querySelector('#t-seeding-group .btn-seg.active')?.dataset.seeding === 'random';
+      const autoAssign = isRandom && byeCount === 0;
+      if (!autoAssign && byeCount !== numByes) {
         errEl.hidden = true;
         btn.disabled = true;
         return;
