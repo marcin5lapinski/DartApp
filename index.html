@@ -623,13 +623,14 @@
       <span class="wdot" data-step="1"></span>
       <span class="wdot" data-step="2"></span>
       <span class="wdot" data-step="3"></span>
+      <span class="wdot" data-step="3b"></span>
       <span class="wdot" data-step="4"></span>
     </div>
 
     <!-- ── Step 1: Number of players ── -->
     <div class="wizard-step" id="wstep-1">
       <div class="wizard-title">🎯 Nowy turniej</div>
-      <div class="step-indicator">Krok 1 z 4</div>
+      <div class="step-indicator">Krok 1 z 5</div>
       <label class="wlabel" for="t-name">Nazwa turnieju</label>
       <input id="t-name" type="text" class="player-name-input" maxlength="40"
              placeholder="np. Liga czwartkowa" autocomplete="off">
@@ -646,7 +647,7 @@
     <!-- ── Step 2: Format ── -->
     <div class="wizard-step" id="wstep-2">
       <div class="wizard-title">🎯 Nowy turniej</div>
-      <div class="step-indicator">Krok 2 z 4</div>
+      <div class="step-indicator">Krok 2 z 5</div>
       <label class="wlabel">Format turnieju</label>
       <div class="format-tile active" id="t-format-league" data-format="league">
         Liga (Round-Robin)
@@ -700,7 +701,7 @@
     <!-- ── Step 3: Match settings ── -->
     <div class="wizard-step" id="wstep-3">
       <div class="wizard-title">🎯 Nowy turniej</div>
-      <div class="step-indicator">Krok 3 z 4</div>
+      <div class="step-indicator">Krok 3 z 5</div>
       <div class="form-row">
         <div class="form-group">
           <label for="t-variant">Wariant</label>
@@ -793,10 +794,55 @@
       </div>
     </div>
 
+    <!-- ── Step 3b: Group configuration (groups format only) ── -->
+    <div class="wizard-step" id="wstep-3b">
+      <div class="wizard-title">🎯 Nowy turniej</div>
+      <div class="step-indicator">Krok 4 z 5</div>
+
+      <label class="wlabel">Liczba grup</label>
+      <div class="btn-group" id="t-groups-count-group">
+        <!-- populated dynamically by _initStep3bGroupButtons() -->
+      </div>
+
+      <div class="form-row" style="margin-top:14px">
+        <div class="form-group">
+          <label for="t-advance-count">Awansujących z grupy</label>
+          <input id="t-advance-count" type="number" min="2" value="2" style="text-align:center">
+        </div>
+        <div class="form-group">
+          <!-- spacer -->
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group">
+          <label for="t-group-win-pts">Pkt za wygraną</label>
+          <input id="t-group-win-pts" type="number" min="0" value="3" style="text-align:center">
+        </div>
+        <div class="form-group">
+          <label for="t-group-loss-pts">Pkt za przegraną</label>
+          <input id="t-group-loss-pts" type="number" min="0" value="0" style="text-align:center">
+        </div>
+      </div>
+
+      <div id="t-third-place-wrap" style="margin-top:10px;display:none">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.9rem">
+          <input type="checkbox" id="t-third-place-match"> Mecz o 3. miejsce
+        </label>
+      </div>
+
+      <span id="t-step3b-error" class="t-error" hidden></span>
+
+      <div class="wizard-nav">
+        <button id="t-back-3b" class="btn-wizard-back">&#8592; Wstecz</button>
+        <button id="t-next-3b" class="btn-wizard-next">DALEJ &#8594;</button>
+      </div>
+    </div>
+
     <!-- ── Step 4: Players & seeding ── -->
     <div class="wizard-step" id="wstep-4">
       <div class="wizard-title">🎯 Nowy turniej</div>
-      <div class="step-indicator">Krok 4 z 4</div>
+      <div class="step-indicator">Krok 5 z 5</div>
       <label class="wlabel" id="t-players-label">Gracze</label>
       <div id="t-players-list"></div>
       <label class="wlabel" style="margin-top:12px">Rozstawienie</label>
