@@ -3,6 +3,9 @@
 let tournamentConfig = null;
 let _wizardStep = 1;
 
+// stub replaced by Task 2
+function _updateByeHint() {}
+
 function initTournamentWizard() {
   tournamentConfig = {
     name: '',
@@ -156,30 +159,8 @@ document.querySelectorAll('#t-seeding-group .btn-seg').forEach(btn => {
     document.querySelectorAll('#t-seeding-group .btn-seg').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     tournamentConfig.seeding = btn.dataset.seeding;
-
-    if (btn.dataset.seeding === 'random' && tournamentConfig.format === 'bracket') {
-      const n = tournamentConfig.numPlayers;
-      const numByes = nextPowerOf2(n) - n;
-      if (numByes > 0) {
-        const byeCount = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
-        if (byeCount === 0) {
-          const indices = Array.from({ length: n }, (_, i) => i);
-          for (let i = indices.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [indices[i], indices[j]] = [indices[j], indices[i]];
-          }
-          const byeSet = new Set(indices.slice(0, numByes));
-          document.querySelectorAll('#t-players-list .bye-toggle').forEach((toggle, i) => {
-            const active = byeSet.has(i);
-            toggle.classList.toggle('active', active);
-            toggle.textContent = active ? 'BYE ✓' : 'BYE';
-            toggle.closest('.player-block').classList.toggle('has-bye', active);
-          });
-          _updateByeCounter(numByes);
-          validateStep4();
-        }
-      }
-    }
+    _updateByeHint();
+    validateStep4();
   });
 });
 
