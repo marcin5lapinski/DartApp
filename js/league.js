@@ -126,7 +126,177 @@ function generateBracket(players) {
   return matches;
 }
 
+function _buildGroups(players, numGroups, advanceCount) {
+  const groups = Array.from({ length: numGroups }, (_, gi) => ({
+    name: String.fromCharCode(65 + gi),
+    playerIndices: [],
+    advanceCount,
+  }));
+  players.forEach((p, i) => {
+    groups[i % numGroups].playerIndices.push(i);
+  });
+  return groups;
+}
+
+function _generateGroupMatches(groups) {
+  const buckets = groups.map(() => []);
+  groups.forEach((g, gi) => {
+    const idxs = g.playerIndices;
+    for (let a = 0; a < idxs.length; a++) {
+      for (let b = a + 1; b < idxs.length; b++) {
+        buckets[gi].push({
+          p1: idxs[a], p2: idxs[b],
+          winner: null,
+          legs: [null, null], sets: [null, null],
+          avgs: [null, null], stats: [null, null],
+          starter: null,
+          phase: 'group',
+          groupIndex: gi,
+          isBye: false,
+        });
+      }
+    }
+  });
+  // Interleave: A#1, B#1, C#1, A#2, B#2, ...
+  const result = [];
+  const ptrs   = new Array(groups.length).fill(0);
+  let remaining = buckets.reduce((s, b) => s + b.length, 0);
+  while (remaining > 0) {
+    for (let gi = 0; gi < groups.length; gi++) {
+      if (ptrs[gi] < buckets[gi].length) {
+        result.push(buckets[gi][ptrs[gi]++]);
+        remaining--;
+      }
+    }
+  }
+  return result;
+}
+
+function _computeSnakePairs(n) {
+  if (n <= 1) return [];
+  if (n === 2) return [[0, 1]];
+  const half   = n / 2;
+  const result = [];
+  for (let i = 0; i < half / 2; i++) {
+    result.push([i, n - 1 - i]);
+    result.push([half - 1 - i, half + i]);
+  }
+  return result;
+}
+
+function _generateBracketTBD(numGroups, advanceCount, thirdPlaceMatch) {
+  const totalSeeds = numGroups * advanceCount;
+  const B          = nextPowerOf2(totalSeeds);
+  const numByes    = B - totalSeeds;
+  const numRounds  = Math.log2(B);
+  const r1Slots    = B / 2;
+
+  const seedLabels = [];
+  for (let rank = 1; rank <= advanceCount; rank++) {
+    for (let gi = 0; gi < numGroups; gi++) {
+      seedLabels.push(String.fromCharCode(65 + gi) + rank);
+    }
+  }
+
+  const byeSeeds  = seedLabels.slice(0, numByes);
+  const realSeeds = seedLabels.slice(numByes);
+
+  const matches = [];
+
+  if (numByes === 0) {
+    const snakePairs = _computeSnakePairs(totalSeeds);
+    for (let slot = 0; slot < r1Slots; slot++) {
+      const pair = snakePairs[slot] || [0, 1];
+      matches.push({
+        round: 0, slot, phase: 'bracket', isBye: false, isThirdPlace: false,
+        p1: null, p2: null, winner: null,
+        legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+        p1Label: seedLabels[pair[0]], p2Label: seedLabels[pair[1]],
+      });
+    }
+  } else {
+    const numReal    = totalSeeds - r1Slots;
+    const realSlotSet = new Set();
+    for (let i = 0; i < numReal; i++) {
+      realSlotSet.add(Math.floor(i * r1Slots / numReal));
+    }
+    let byePtr = 0, realPtr = 0;
+    for (let slot = 0; slot < r1Slots; slot++) {
+      if (realSlotSet.has(slot)) {
+        matches.push({
+          round: 0, slot, phase: 'bracket', isBye: false, isThirdPlace: false,
+          p1: null, p2: null, winner: null,
+          legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+          p1Label: realSeeds[realPtr]     || null,
+          p2Label: realSeeds[realPtr + 1] || null,
+        });
+        realPtr += 2;
+      } else {
+        matches.push({
+          round: 0, slot, phase: 'bracket', isBye: true, isThirdPlace: false,
+          p1: null, p2: null, winner: null,
+          legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+          p1Label: byeSeeds[byePtr] || null, p2Label: null,
+        });
+        byePtr++;
+      }
+    }
+  }
+
+  for (let r = 1; r < numRounds; r++) {
+    const slotsInRound = B / Math.pow(2, r + 1);
+    for (let slot = 0; slot < slotsInRound; slot++) {
+      matches.push({
+        round: r, slot, phase: 'bracket', isBye: false, isThirdPlace: false,
+        p1: null, p2: null, winner: null,
+        legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+        p1Label: null, p2Label: null,
+      });
+    }
+  }
+
+  if (thirdPlaceMatch) {
+    matches.push({
+      round: numRounds - 1, slot: -1, phase: 'bracket', isBye: false, isThirdPlace: true,
+      p1: null, p2: null, winner: null,
+      legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+      p1Label: null, p2Label: null,
+    });
+  }
+
+  return { bracketSize: B, matches };
+}
+
 function createTournament(config, players) {
+  if (config.format === 'groups') {
+    const groups = _buildGroups(players, config.numGroups, config.advanceCount);
+    const { bracketSize, matches: bracketMatches } = _generateBracketTBD(
+      groups.length, config.advanceCount, config.thirdPlaceMatch || false
+    );
+    const tournament = {
+      id:        't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      name:      config.name,
+      status:    'active',
+      createdAt: Math.floor(Date.now() / 1000),
+      config: {
+        numPlayers:      config.numPlayers,
+        format:          'groups',
+        groups,
+        winPoints:       config.winPoints  !== undefined ? config.winPoints  : 3,
+        lossPoints:      config.lossPoints !== undefined ? config.lossPoints : 0,
+        thirdPlaceMatch: config.thirdPlaceMatch || false,
+        bracketSize,
+        matchConfig:     { ...config.matchConfig },
+      },
+      players: players.map(({ bye, ...rest }) => rest),
+      matches: [..._generateGroupMatches(groups), ...bracketMatches],
+    };
+    const list = loadTournaments();
+    list.push(tournament);
+    saveTournaments(list);
+    return tournament;
+  }
+
   const isBracket = config.format === 'bracket';
   const tournament = {
     id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
