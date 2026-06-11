@@ -344,8 +344,8 @@ function _updateThirdPlaceVisibility() {
   const k    = tournamentConfig.numGroups;
   const adv  = tournamentConfig.advanceCount || 2;
   const wrap = document.getElementById('t-third-place-wrap');
-  // Show "mecz o 3. miejsce" only if bracket will have ≥4 participants (= ≥2 semi-final slots)
-  if (wrap) wrap.style.display = k * adv >= 4 ? '' : 'none';
+  // Show when ≥3 bracket participants: nextPowerOf2(3)=4 → bracket has semi-finals
+  if (wrap) wrap.style.display = k * adv >= 3 ? '' : 'none';
 }
 
 function renderStep4Players(savedValues) {
