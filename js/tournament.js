@@ -86,6 +86,7 @@ function showWizardStep(n) {
   // Update dots
   document.querySelectorAll('.wdot').forEach((dot, di) => {
     dot.classList.remove('wdot-active', 'wdot-done');
+    if (di >= totalSteps) return;
     if (di < visualPos - 1) dot.classList.add('wdot-done');
     else if (di === visualPos - 1) dot.classList.add('wdot-active');
   });
@@ -302,7 +303,7 @@ function _initStep3bGroupButtons() {
     btn.type = 'button';
     btn.className = 'btn-seg' + (k === defaultK ? ' active' : '');
     btn.dataset.groups = k;
-    btn.textContent = k === 1 ? '1 grupa' : k + ' grupy';
+    btn.textContent = k === 1 ? '1 grupa' : k <= 4 ? k + ' grupy' : k + ' grup';
     btn.addEventListener('click', () => {
       group.querySelectorAll('.btn-seg').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -341,7 +342,7 @@ function _updateAdvanceCountMax() {
 
 function _updateThirdPlaceVisibility() {
   const k    = tournamentConfig.numGroups;
-  const adv  = parseInt(document.getElementById('t-advance-count')?.value) || 2;
+  const adv  = tournamentConfig.advanceCount || 2;
   const wrap = document.getElementById('t-third-place-wrap');
   // Show "mecz o 3. miejsce" only if bracket will have ≥4 participants (= ≥2 semi-final slots)
   if (wrap) wrap.style.display = k * adv >= 4 ? '' : 'none';
