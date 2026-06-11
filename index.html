@@ -634,8 +634,8 @@
       <input id="t-name" type="text" class="player-name-input" maxlength="40"
              placeholder="np. Liga czwartkowa" autocomplete="off">
       <label class="wlabel" for="t-num-players">Liczba graczy</label>
-      <p class="step-hint">Minimum: 3 &nbsp;·&nbsp; Maksimum: 10</p>
-      <input id="t-num-players" type="number" class="t-input-center" min="3" max="10" placeholder="np. 4">
+      <p class="step-hint">Minimum: 3 &nbsp;·&nbsp; Maksimum: 16</p>
+      <input id="t-num-players" type="number" class="t-input-center" min="3" max="16" placeholder="np. 4">
       <span id="t-step1-error" class="t-error" hidden></span>
       <div class="wizard-nav">
         <button id="t-back-1" class="btn-wizard-back">&#8592; Powrót</button>
@@ -652,9 +652,9 @@
         Liga (Round-Robin)
         <span class="format-tile-sub">każdy z każdym</span>
       </div>
-      <div class="format-tile disabled" data-format="groups">
+      <div class="format-tile" id="t-format-groups" data-format="groups">
         Grupy + Drabinka
-        <span class="format-tile-sub">wkrótce</span>
+        <span class="format-tile-sub">faza grupowa + puchar</span>
       </div>
       <div class="format-tile" id="t-format-bracket" data-format="bracket">
         Drabinka
@@ -683,6 +683,12 @@
         <p id="t-bracket-desc" class="wizard-hint format-hidden">
           Puchar — każdy mecz eliminuje przegranego. Zwycięzca finału wygrywa turniej.
         </p>
+
+        <div id="groups-settings" class="format-hidden">
+          <p class="wizard-hint" style="margin-top:8px">
+            Liczba grup i awansujący ustalane w następnym kroku.
+          </p>
+        </div>
       </div>
 
       <div class="wizard-nav">

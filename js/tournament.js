@@ -25,6 +25,9 @@ function initTournamentWizard() {
     leagueRounds: 'single',
     winPoints: 2,
     lossPoints: 0,
+    numGroups: 2,
+    advanceCount: 2,
+    thirdPlaceMatch: false,
     matchConfig: {
       variant: 501,
       totalSets: 1,
@@ -59,6 +62,8 @@ function initTournamentWizard() {
   document.getElementById('league-settings').classList.remove('format-hidden');
   const bracketDesc = document.getElementById('t-bracket-desc');
   if (bracketDesc) bracketDesc.classList.add('format-hidden');
+  const gs = document.getElementById('groups-settings');
+  if (gs) gs.classList.add('format-hidden');
   showWizardStep(1);
 }
 
@@ -90,8 +95,8 @@ document.getElementById('t-next-1').addEventListener('click', () => {
     err.hidden = false;
     return;
   }
-  if (!raw || isNaN(val) || val < 3 || val > 10) {
-    err.textContent = 'Wpisz liczbę graczy od 3 do 10.';
+  if (!raw || isNaN(val) || val < 3 || val > 16) {
+    err.textContent = 'Wpisz liczbę graczy od 3 do 16.';
     err.hidden = false;
     return;
   }
@@ -123,15 +128,19 @@ document.querySelectorAll('#t-rounds-group .btn-seg').forEach(btn => {
 });
 
 // ── Step 2: format tile selection ──
-document.querySelectorAll('#wstep-2 .format-tile:not(.disabled)').forEach(tile => {
+document.querySelectorAll('#wstep-2 .format-tile').forEach(tile => {
   tile.addEventListener('click', () => {
     document.querySelectorAll('#wstep-2 .format-tile').forEach(t => t.classList.remove('active'));
     tile.classList.add('active');
     tournamentConfig.format = tile.dataset.format;
 
+    const isLeague  = tile.dataset.format === 'league';
     const isBracket = tile.dataset.format === 'bracket';
-    document.getElementById('league-settings').classList.toggle('format-hidden', isBracket);
+    const isGroups  = tile.dataset.format === 'groups';
+
+    document.getElementById('league-settings').classList.toggle('format-hidden', !isLeague);
     document.getElementById('t-bracket-desc').classList.toggle('format-hidden', !isBracket);
+    document.getElementById('groups-settings').classList.toggle('format-hidden', !isGroups);
   });
 });
 
