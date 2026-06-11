@@ -764,8 +764,9 @@ function startTournamentMatch(tournament, matchIndex, startingPlayer) {
   undoStack = [];
   updateUndoButton();
 
-  document.getElementById('btn-live-standings').style.display =
-    tournament.config.format === 'bracket' ? 'none' : '';
+  const hideLS = tournament.config.format === 'bracket' ||
+                 (tournament.config.format === 'groups' && m.phase === 'bracket');
+  document.getElementById('btn-live-standings').style.display = hideLS ? 'none' : '';
   showScreen(SCREENS.GAME);
   renderGameScreen(match);
   focusSummaryInput();
@@ -789,9 +790,37 @@ function saveTournamentMatchResult(finishedMatch, ptm) {
 
   if (t.config.format === 'bracket') {
     advanceBracketWinner(t.matches, m);
-  }
+    if (t.matches.filter(mx => !mx.isBye).every(mx => mx.winner !== null)) {
+      t.status = 'finished';
+    }
+  } else if (t.config.format === 'groups') {
+    if (m.phase === 'group') {
+      if (isGroupPhaseComplete(t)) {
+        finalizeGroupPhase(t);
+      }
+    } else if (m.phase === 'bracket') {
+      advanceBracketWinner(t.matches, m);
 
-  if (t.matches.every(mx => mx.winner !== null)) t.status = 'finished';
+      const totalBracketRounds = Math.log2(t.config.bracketSize);
+      const isSemiFinal = m.round === totalBracketRounds - 2 && totalBracketRounds >= 2;
+      if (isSemiFinal && t.config.thirdPlaceMatch) {
+        const thirdMatch = t.matches.find(mx => mx.phase === 'bracket' && mx.isThirdPlace);
+        if (thirdMatch) {
+          const loserIdx = m.winner === 0 ? m.p2 : m.p1;
+          if (thirdMatch.p1 === null) thirdMatch.p1 = loserIdx;
+          else if (thirdMatch.p2 === null) thirdMatch.p2 = loserIdx;
+        }
+      }
+
+      const bracketNonBye = t.matches.filter(mx => mx.phase === 'bracket' && !mx.isBye);
+      if (bracketNonBye.every(mx => mx.winner !== null)) {
+        t.status = 'finished';
+      }
+    }
+  } else {
+    // league
+    if (t.matches.every(mx => mx.winner !== null)) t.status = 'finished';
+  }
 
   saveTournaments(list);
   _activeTournament = t;
