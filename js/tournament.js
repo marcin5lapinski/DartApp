@@ -93,6 +93,19 @@ function showWizardStep(n) {
     if (di < visualPos - 1) dot.classList.add('wdot-done');
     else if (di === visualPos - 1) dot.classList.add('wdot-active');
   });
+
+  if (n === 2) _updateBracketThirdPlaceWrap();
+}
+
+function _updateBracketThirdPlaceWrap() {
+  const wrap = document.getElementById('t-bracket-third-place-wrap');
+  if (!wrap) return;
+  const tooFew = tournamentConfig && tournamentConfig.numPlayers < 4;
+  wrap.style.display = tooFew ? 'none' : '';
+  if (tooFew) {
+    const ck = document.getElementById('t-bracket-third-place-match');
+    if (ck) ck.checked = false;
+  }
 }
 
 // ── Debug autofill (hidden 15×15 button, top-left corner of wizard card) ──
@@ -177,6 +190,7 @@ document.querySelectorAll('#wstep-2 .format-tile').forEach(tile => {
     document.getElementById('league-settings').classList.toggle('format-hidden', !isLeague);
     document.getElementById('bracket-settings').classList.toggle('format-hidden', !isBracket);
     document.getElementById('groups-settings').classList.toggle('format-hidden', !isGroups);
+    _updateBracketThirdPlaceWrap();
   });
 });
 
@@ -219,6 +233,11 @@ document.getElementById('t-advance-count').addEventListener('input', () => {
   _validateStep3b();
 });
 
+document.getElementById('t-third-place-match').addEventListener('change', () => {
+  _updateAdvanceCountLock();
+  _validateStep3b();
+});
+
 document.getElementById('t-next-3b').addEventListener('click', () => {
   const activeBtn  = document.querySelector('#t-groups-count-group .btn-seg.active');
   const numGroups  = activeBtn ? parseInt(activeBtn.dataset.groups) : 0;
@@ -255,7 +274,8 @@ document.getElementById('t-next-3b').addEventListener('click', () => {
   } else {
     advCount = parseInt(document.getElementById('t-advance-count').value);
     const groupSize = Math.floor(n / numGroups);
-    if (isNaN(advCount) || advCount < 1 || advCount >= groupSize) {
+    const minAdv    = (n === 3 && numGroups === 1) ? 2 : 1;
+    if (isNaN(advCount) || advCount < minAdv || advCount >= groupSize) {
       errEl.textContent = 'Nieprawidłowe ustawienia grup.';
       errEl.hidden = false;
       return;
@@ -406,6 +426,7 @@ function _initStep3bGroupButtons() {
       _updateAdvanceCountMax();
       _updateAdvancePerGroupUI();
       _updateThirdPlaceVisibility();
+      _updateAdvanceCountLock();
       _validateStep3b();
       _updateStep3bGroupsInfo();
     });
@@ -431,18 +452,31 @@ function _initStep3bGroupButtons() {
   if (togEl) togEl.checked = !!tournamentConfig.advanceCounts;
   _updateAdvancePerGroupUI();
   _updateThirdPlaceVisibility();
+  _updateAdvanceCountLock();
   _validateStep3b();
+}
+
+function _updateAdvanceCountLock() {
+  const activeBtn = document.querySelector('#t-groups-count-group .btn-seg.active');
+  const numGroups = activeBtn ? parseInt(activeBtn.dataset.groups) : 0;
+  const tpCk      = document.getElementById('t-third-place-match');
+  const inp       = document.getElementById('t-advance-count');
+  if (!inp) return;
+  inp.disabled = (numGroups === 1 && !!tpCk?.checked);
 }
 
 function _updateAdvanceCountMax() {
   const n         = tournamentConfig.numPlayers;
   const k         = tournamentConfig.numGroups;
   const groupSize = Math.floor(n / k);
+  const minAdv    = (n === 3 && k === 1) ? 2 : 1;
   const inp       = document.getElementById('t-advance-count');
   if (!inp) return;
+  inp.min = minAdv;
   inp.max = groupSize - 1;
   const cur = parseInt(inp.value) || 2;
   if (cur >= groupSize) inp.value = Math.min(groupSize - 1, 2);
+  if (cur < minAdv) inp.value = minAdv;
 }
 
 function _validateStep3b() {
@@ -485,12 +519,13 @@ function _validateStep3b() {
     const inp       = document.getElementById('t-advance-count');
     const groupSize = Math.floor(n / numGroups);
     const maxAdv    = groupSize - 1;
+    const minAdv    = (n === 3 && numGroups === 1) ? 2 : 1;
     const v         = parseInt(inp?.value);
     if (inp) inp.classList.remove('input-error');
-    if (isNaN(v) || v < 1 || v > maxAdv) {
+    if (isNaN(v) || v < minAdv || v > maxAdv) {
       if (inp) inp.classList.add('input-error');
       if (errEl) {
-        errEl.textContent = 'Awansujący: min 1, max ' + maxAdv + ' (gr. liczy ' + groupSize + ' graczy)';
+        errEl.textContent = 'Awansujący: min ' + minAdv + ', max ' + maxAdv + ' (gr. liczy ' + groupSize + ' graczy)';
         errEl.hidden = false;
       }
       if (nextBtn) nextBtn.disabled = true;
@@ -513,7 +548,8 @@ function _updateThirdPlaceVisibility() {
     total = k * (parseInt(document.getElementById('t-advance-count')?.value) || tournamentConfig.advanceCount || 2);
   }
   const wrap = document.getElementById('t-third-place-wrap');
-  if (wrap) wrap.style.display = total >= 3 ? '' : 'none';
+  const show = total >= 3 || (k === 1 && tournamentConfig.numPlayers - total >= 2);
+  if (wrap) wrap.style.display = show ? '' : 'none';
 }
 
 function _updateAdvancePerGroupUI() {

@@ -41,6 +41,7 @@ function nextPowerOf2(n) {
 
 function computeRoundName(roundIdx, numRounds) {
   const tables = {
+    1: ['Finał'],
     2: ['Półfinał', 'Finał'],
     3: ['Ćwierćfinał', 'Półfinał', 'Finał'],
     4: ['1/8 Finału', 'Ćwierćfinał', 'Półfinał', 'Finał'],
@@ -268,11 +269,13 @@ function _generateBracketTBD(groups, thirdPlaceMatch) {
   }
 
   if (thirdPlaceMatch) {
+    const isSingleGroup = numGroups === 1;
     matches.push({
       round: numRounds - 1, slot: -1, phase: 'bracket', isBye: false, isThirdPlace: true,
       p1: null, p2: null, winner: null,
       legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
-      p1Label: null, p2Label: null,
+      p1Label: isSingleGroup ? ('A' + (advCounts[0] + 1)) : null,
+      p2Label: isSingleGroup ? ('A' + (advCounts[0] + 2)) : null,
     });
   }
 
@@ -630,6 +633,17 @@ function finalizeGroupPhase(tournament) {
   });
 
   r1Matches.filter(m => m.isBye).forEach(m => advanceBracketWinner(matches, m));
+
+  // Single-group format: resolve the third-place match (A3/A4) from group standings
+  const thirdPlaceM = matches.find(m => m.phase === 'bracket' && m.isThirdPlace && m.p1Label && m.p2Label);
+  if (thirdPlaceM) {
+    const standings = groupStandings[0];
+    standings.forEach((row, rank) => {
+      if (row) labelToPlayerIdx.set('A' + (rank + 1), row.playerIndex);
+    });
+    thirdPlaceM.p1 = labelToPlayerIdx.get(thirdPlaceM.p1Label) ?? null;
+    thirdPlaceM.p2 = labelToPlayerIdx.get(thirdPlaceM.p2Label) ?? null;
+  }
 }
 
 function renderTournamentListScreen() {

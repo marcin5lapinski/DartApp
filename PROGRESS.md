@@ -557,6 +557,35 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Poprawki formatu grupy + drabinka (2026-06-12)
+
+### Naprawione błędy
+- **Min. awansujący = 2 dla 3 graczy (1 grupa)**: przy 3 graczach w formacie groups+bracket ustawienie 1 awansującego było możliwe, co dałoby bezsensowny finał. Naprawione w `_updateAdvanceCountMax()` (ustawia `inp.min = 2`), `_validateStep3b()` i handlerze `t-next-3b` — warunek `minAdv = (n === 3 && numGroups === 1) ? 2 : 1`.
+- **Brak rewanżu w bracket/groups**: kliknięcie meczu drabinki, gdzie ci sami zawodnicy grali już w fazie grupowej, pokazywało modal „Rewanż" zamiast wyboru kto zaczyna. Naprawione w `openTournamentStarterModal` (`app.js`) — detekcja `firstMatch` uruchamia się tylko gdy `tournament.config.format === 'liga'`.
+- **Checkbox „Mecz o 3. miejsce" w bracket ukryty dla <4 graczy**: przy 3 graczach checkbox był widoczny mimo że mecz o 3. miejsce nie ma sensu. Dodano `id="t-bracket-third-place-wrap"` do `index.html`, nowa `_updateBracketThirdPlaceWrap()` ukrywa wrap i odznacza checkbox gdy `numPlayers < 4`. Wywoływana z `showWizardStep(2)` i handlera kafelków formatu.
+
+### Nowe funkcje
+- **„Finał" zamiast „Runda 1" w drabince 1-rundowej**: `computeRoundName()` w `league.js` ma teraz wpis `1: ['Finał']` w tablicy nazw — dotyczy formatu groups+bracket z 3 graczami (2 awansujących → 1 mecz finałowy).
+- **Mecz o 3. miejsce dla 1 grupy ≥4 graczy**: `_updateThirdPlaceVisibility()` pokazuje checkbox gdy `k === 1 && numPlayers - total >= 2` (2+ nieawansujących graczy w grupie). `_generateBracketTBD()` przypisuje `p1Label: 'A(advCount+1)', p2Label: 'A(advCount+2)'` (np. A3/A4) meczu o 3. miejsce w przypadku 1 grupy. `finalizeGroupPhase()` rozwiązuje te etykiety na prawdziwe indeksy graczy po zakończeniu fazy grupowej.
+
+### Zmiany w plikach
+- `js/tournament.js` — `_updateAdvanceCountMax()`, `_validateStep3b()`, `t-next-3b` handler: warunek `minAdv`; nowa `_updateBracketThirdPlaceWrap()`; `showWizardStep()` wywołuje ją dla kroku 2; handler kafelków formatu wywołuje ją; `_updateThirdPlaceVisibility()`: dodano warunek `k === 1 && numPlayers - total >= 2`
+- `js/app.js` — `openTournamentStarterModal`: detekcja rewanżu ograniczona do `format === 'liga'`
+- `js/league.js` — `computeRoundName()`: wpis `1: ['Finał']`; `_generateBracketTBD()`: etykiety A3/A4 w meczu o 3. miejsce dla 1 grupy; `finalizeGroupPhase()`: rozwiązywanie etykiet A3/A4 na indeksy graczy
+- `index.html` — `id="t-bracket-third-place-wrap"` na div owijającym checkbox meczu o 3. miejsce (bracket format)
+
+---
+
+## Blokada inputu awansujących przy meczu o 3. miejsce (2026-06-12)
+
+### Nowe funkcje
+- **`_updateAdvanceCountLock()`** w `tournament.js`: gdy wybrana jest 1 grupa i zaznaczony checkbox `#t-third-place-match`, input `#t-advance-count` zostaje zablokowany (`disabled`). Odblokowuje się po odznaczeniu checkboksa lub przełączeniu na więcej niż 1 grupę. Wywoływana z: event listenera `#t-third-place-match` change, handlera kliknięcia przycisków grup w `_initStep3bGroupButtons()`, oraz inicjalizacji step 3b.
+
+### Zmiany w plikach
+- `js/tournament.js` — nowa `_updateAdvanceCountLock()`; event listener `#t-third-place-match` change; wywołania w `_initStep3bGroupButtons()` (klik przycisku grupy i inicjalizacja)
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA

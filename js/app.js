@@ -699,11 +699,11 @@ function openTournamentStarterModal(tournament, matchIndex) {
   const opts = document.getElementById('starter-options');
   opts.innerHTML = '';
 
-  // Detect rematch: find the completed first match between the same pair
-  const firstMatch = tournament.matches.find(
+  // Detect rematch: only in liga format (bracket/groups phases are never rematches)
+  const firstMatch = tournament.config.format === 'liga' ? tournament.matches.find(
     (mx, i) => i !== matchIndex && mx.winner !== null && mx.starter != null &&
       ((mx.p1 === m.p1 && mx.p2 === m.p2) || (mx.p1 === m.p2 && mx.p2 === m.p1))
-  );
+  ) : null;
 
   let autoStarter = null;
   if (firstMatch) {
