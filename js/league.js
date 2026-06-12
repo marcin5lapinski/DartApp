@@ -499,6 +499,16 @@ function computeLiveGroupStandings(tournament, groupIndex, liveData) {
   return rows;
 }
 
+function _advancingBg(rank, advCount) {
+  if (rank === 1) return '#103110';
+  // rank 2+: linear interpolation from #203c20 toward #cce8cc
+  const t = (rank - 2) / Math.max(advCount - 1, 1);
+  const r = Math.round(0x20 + (0xcc - 0x20) * t);
+  const g = Math.round(0x3c + (0xe8 - 0x3c) * t);
+  const b = Math.round(0x20 + (0xcc - 0x20) * t);
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
 function _renderGroupStandingsHTML(tournament, groupIndex, rows) {
   const group    = tournament.config.groups[groupIndex];
   const advCount = group.advanceCount;
@@ -513,9 +523,9 @@ function _renderGroupStandingsHTML(tournament, groupIndex, rows) {
     const avg       = row.avgCount ? (row.avgSum / row.avgCount).toFixed(1) : '—';
     const legsStr   = row.M === 0 ? '—' : `${row.legsWon}‑${row.legsLost}`;
     const legsClass = row.M === 0 ? '' : legDiff > 0 ? 'legs-pos' : legDiff < 0 ? 'legs-neg' : 'legs-even';
-    html += `<tr${advancing ? ' class="group-advancing"' : ''}>`;
+    html += `<tr${advancing ? ` style="background:${_advancingBg(rank, advCount)}"` : ''}>`;
     html += `<td class="pos-num">${rank}</td>`;
-    html += `<td class="left player-name-cell">${advancing ? '<span class="adv-dot"></span>' : ''}${escapeHtml(row.name)}</td>`;
+    html += `<td class="left player-name-cell">${escapeHtml(row.name)}</td>`;
     html += `<td>${row.M}</td><td>${row.W}</td><td>${row.L}</td>`;
     html += `<td class="${legsClass}">${legsStr}</td>`;
     html += `<td class="avg-cell">${avg}</td>`;
@@ -858,11 +868,11 @@ function renderGroupsTab(tournament) {
       }
 
       const tr = document.createElement('tr');
-      if (advancing) tr.classList.add('group-advancing');
+      if (advancing) tr.style.background = _advancingBg(rank, advCount);
       tr.innerHTML = `
         <td class="${posClass}">${rank}</td>
         <td class="left player-name-cell ${nameClass}">
-          ${advancing ? '<span class="adv-dot"></span>' : ''}${escapeHtml(row.name)}
+          ${escapeHtml(row.name)}
         </td>
         <td>${row.M}</td>
         <td>${row.W}</td>
@@ -876,11 +886,6 @@ function renderGroupsTab(tournament) {
     table.appendChild(tbody);
     wrap.appendChild(table);
   });
-
-  const legend = document.createElement('div');
-  legend.className = 'adv-legend';
-  legend.innerHTML = '<span class="adv-dot"></span> awansuje do fazy pucharowej';
-  wrap.appendChild(legend);
 
   container.appendChild(wrap);
 }

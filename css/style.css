@@ -2638,27 +2638,6 @@ html, body {
   margin-bottom: 0;
 }
 
-.group-standings-table tbody tr.group-advancing td:first-child {
-  border-left: 3px solid var(--green);
-}
-
-.adv-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--green);
-  margin-right: 6px;
-  vertical-align: middle;
-}
-
-.adv-legend {
-  font-size: .72rem;
-  color: var(--text-muted);
-  padding: 6px 4px 12px;
-  max-width: 600px;
-  margin: 0 auto;
-}
 
 .tv-matches-section-label {
   font-size: .7rem;
