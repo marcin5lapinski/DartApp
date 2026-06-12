@@ -501,6 +501,25 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Drobne poprawki UI grup + narzędzie deweloperskie (2026-06-12)
+
+### Naprawione błędy
+- **Kolory medali w tabelach grup (format grupy+drabinka)**: `renderGroupsTab` błędnie wyświetlał złote/srebrne/brązowe kolory dla miejsc 1–3 po zakończeniu turnieju. Usunięto `MEDAL_POS`, `MEDAL_NAME`, zmienną `finished` i blok `if (finished && rank <= 3)` — tabele grup zawsze używają teraz `pos-num` bez kolorowania pozycji. Kolory medali pozostają wyłącznie w lidze (`renderTournamentViewScreen`).
+
+### Nowe funkcje
+- **Przycisk debug autofill w wizardzie** (`#btn-debug-autofill`): niewidoczny kwadrat 15×15 px w lewym górnym rogu `.tournament-card`, pojawia się po najechaniu kursorem (`opacity: 0 → 1`). Kliknięcie w kroku 4 odczytuje `loadPlayers()` i wypełnia pola `#t-pname-N` imionami graczy z zapisanej listy (w kolejności), selecty `#t-pd1-N` / `#t-pd2-N` ich ulubionymi podwójnymi; jeśli graczy jest mniej niż `numPlayers` — wstawia „Gracz N". Na koniec wywołuje `_updateStep4Datalists()` i `validateStep4()`.
+
+### Zmiany wizualne
+- `#btn-debug-autofill`: `position: absolute; top: 0; left: 0; width: 15px; height: 15px; opacity: 0`; na `:hover` — `opacity: 1; background: #333`. Wymaga `position: relative` na `.tournament-card`.
+
+### Zmiany w plikach
+- `js/league.js` — `renderGroupsTab`: usunięto logikę medali (MEDAL_POS, MEDAL_NAME, finished, blok if)
+- `js/tournament.js` — nowy listener `#btn-debug-autofill click` z logiką autofill
+- `index.html` — `<button id="btn-debug-autofill">` wewnątrz `.tournament-card`
+- `css/style.css` — `position: relative` na `.tournament-card`; nowe reguły `#btn-debug-autofill` i `#btn-debug-autofill:hover`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA

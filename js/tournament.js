@@ -93,6 +93,25 @@ function showWizardStep(n) {
   });
 }
 
+// ── Debug autofill (hidden 15×15 button, top-left corner of wizard card) ──
+document.getElementById('btn-debug-autofill').addEventListener('click', () => {
+  if (!tournamentConfig || !tournamentConfig.numPlayers) return;
+  const players = loadPlayers();
+  const n = tournamentConfig.numPlayers;
+  for (let i = 1; i <= n; i++) {
+    const p = players[i - 1];
+    const nameInp = document.getElementById(`t-pname-${i}`);
+    if (!nameInp) continue;
+    nameInp.value = p ? p.name : `Gracz ${i}`;
+    const pd1 = document.getElementById(`t-pd1-${i}`);
+    const pd2 = document.getElementById(`t-pd2-${i}`);
+    if (pd1 && p && p.primaryDouble)   pd1.value = p.primaryDouble;
+    if (pd2 && p && p.secondaryDouble) pd2.value = p.secondaryDouble;
+  }
+  _updateStep4Datalists();
+  validateStep4();
+});
+
 // ── Step 1 navigation ──
 document.getElementById('t-back-1').addEventListener('click', () => {
   tournamentConfig = null;

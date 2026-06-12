@@ -848,9 +848,8 @@ function renderGroupsTab(tournament) {
   wrap.className = 'group-standings-wrap';
 
   tournament.config.groups.forEach((group, gi) => {
-    const rows      = computeGroupStandings(tournament, gi);
-    const advCount  = group.advanceCount;
-    const finished  = tournament.status === 'finished';
+    const rows     = computeGroupStandings(tournament, gi);
+    const advCount = group.advanceCount;
 
     const sectionLabel = document.createElement('div');
     sectionLabel.className = 'group-section-header';
@@ -877,14 +876,8 @@ function renderGroupsTab(tournament) {
       const legsStr   = row.M === 0 ? '&mdash;' : `${row.legsWon}&#8209;${row.legsLost}`;
       const legsClass = row.M === 0 ? '' : legDiff > 0 ? 'legs-pos' : legDiff < 0 ? 'legs-neg' : 'legs-even';
 
-      const MEDAL_POS  = ['pos-gold',  'pos-silver',  'pos-bronze'];
-      const MEDAL_NAME = ['name-gold', 'name-silver', 'name-bronze'];
-      let posClass  = 'pos-num';
-      let nameClass = '';
-      if (finished && rank <= 3) {
-        posClass  = MEDAL_POS[rank - 1]  || 'pos-num';
-        nameClass = MEDAL_NAME[rank - 1] || '';
-      }
+      const posClass  = 'pos-num';
+      const nameClass = '';
 
       const tr = document.createElement('tr');
       if (advancing) tr.style.background = _advancingBg(rank, advCount);
