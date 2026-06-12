@@ -586,6 +586,16 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Styl checkboksa w kroku 2 wizarda (2026-06-12)
+
+### Zmiany wizualne
+- Checkbox `#t-bracket-third-place-match` w kroku 2 wizarda otrzymał ten sam custom styl co checkboxy w kroku 3b. Selektory CSS rozszerzone z `#wstep-3b input[type=checkbox]` na `#wstep-2 input[type=checkbox], #wstep-3b input[type=checkbox]` dla czterech reguł: bazowy wygląd, `:checked`, `:checked::after` (ptaszek) i `:focus-visible`.
+
+### Zmiany w plikach
+- `css/style.css` — rozszerzono selektory custom checkboksa o `#wstep-2`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
