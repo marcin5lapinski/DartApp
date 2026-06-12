@@ -469,6 +469,18 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Kolory tła awansujących w tabelach grup (2026-06-12)
+
+### Zmiany wizualne
+- **Kolory tła rzędów awansujących**: zamiast zielonej kropki (`adv-dot`) rzędy awansujących graczy w tabelach grup dostają kolorowe tło — 1. miejsce `#103110` (ciemna zieleń), 2. miejsce `#203c20`, kolejne miejsca (jeśli awansuje więcej niż 2) interpolowane liniowo od `#203c20` do `#cce8cc` (jasna zieleń); implementacja: `_advancingBg(rank, advCount)` w `league.js`
+- Usunięto: `<span class="adv-dot">`, legendę pod tabelami (`adv-legend`), lewy border (`group-advancing`)
+
+### Zmiany w plikach
+- `js/league.js` — nowa funkcja `_advancingBg(rank, advCount)`; `_renderGroupStandingsHTML()` i `renderGroupsTab()` używają `tr.style.background`; usunięto `adv-dot`, `group-advancing`, legendę
+- `css/style.css` — usunięto `.group-standings-table tbody tr.group-advancing td:first-child`, `.adv-dot`, `.adv-legend`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
