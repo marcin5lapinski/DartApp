@@ -126,16 +126,23 @@ function generateBracket(players) {
   return matches;
 }
 
-function _buildGroups(players, numGroups, advanceCountOrArray) {
+function _buildGroups(players, numGroups, advanceCountOrArray, sequential = false) {
+  const n     = players.length;
   const isArr = Array.isArray(advanceCountOrArray);
   const groups = Array.from({ length: numGroups }, (_, gi) => ({
     name: String.fromCharCode(65 + gi),
     playerIndices: [],
     advanceCount: isArr ? advanceCountOrArray[gi] : advanceCountOrArray,
   }));
-  players.forEach((p, i) => {
-    groups[i % numGroups].playerIndices.push(i);
-  });
+  if (sequential) {
+    let idx = 0;
+    groups.forEach((g, gi) => {
+      const size = Math.floor(n / numGroups) + (gi < n % numGroups ? 1 : 0);
+      for (let j = 0; j < size; j++) g.playerIndices.push(idx++);
+    });
+  } else {
+    players.forEach((p, i) => { groups[i % numGroups].playerIndices.push(i); });
+  }
   return groups;
 }
 
@@ -274,7 +281,7 @@ function _generateBracketTBD(groups, thirdPlaceMatch) {
 
 function createTournament(config, players) {
   if (config.format === 'groups') {
-    const groups = _buildGroups(players, config.numGroups, config.advanceCounts || config.advanceCount);
+    const groups = _buildGroups(players, config.numGroups, config.advanceCounts || config.advanceCount, config.seeding === 'ordered');
     const { bracketSize, matches: bracketMatches } = _generateBracketTBD(
       groups, config.thirdPlaceMatch || false
     );

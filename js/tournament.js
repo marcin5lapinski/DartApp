@@ -26,7 +26,7 @@ function initTournamentWizard() {
     winPoints: 2,
     lossPoints: 0,
     numGroups: 2,
-    advanceCount: 2,
+    advanceCount: 1,
     advanceCounts: null,
     thirdPlaceMatch: false,
     matchConfig: {
@@ -190,9 +190,13 @@ document.getElementById('t-back-3b').addEventListener('click', () => {
 document.getElementById('t-advance-per-group-toggle').addEventListener('change', () => {
   _updateAdvancePerGroupUI();
   _updateThirdPlaceVisibility();
+  _validateStep3b();
 });
 
-document.getElementById('t-advance-count').addEventListener('input', _updateThirdPlaceVisibility);
+document.getElementById('t-advance-count').addEventListener('input', () => {
+  _updateThirdPlaceVisibility();
+  _validateStep3b();
+});
 
 document.getElementById('t-next-3b').addEventListener('click', () => {
   const activeBtn  = document.querySelector('#t-groups-count-group .btn-seg.active');
@@ -218,7 +222,7 @@ document.getElementById('t-next-3b').addEventListener('click', () => {
     inputs.forEach((inp, gi) => {
       const groupSize = Math.floor(n / numGroups) + (gi < n % numGroups ? 1 : 0);
       const v = parseInt(inp.value);
-      if (isNaN(v) || v < 2 || v >= groupSize) { valid = false; }
+      if (isNaN(v) || v < 1 || v >= groupSize) { valid = false; }
       else { advanceCounts.push(v); }
     });
     if (!valid || advanceCounts.length !== numGroups) {
@@ -230,7 +234,7 @@ document.getElementById('t-next-3b').addEventListener('click', () => {
   } else {
     advCount = parseInt(document.getElementById('t-advance-count').value);
     const groupSize = Math.floor(n / numGroups);
-    if (isNaN(advCount) || advCount < 2 || advCount >= groupSize) {
+    if (isNaN(advCount) || advCount < 1 || advCount >= groupSize) {
       errEl.textContent = 'Nieprawidłowe ustawienia grup.';
       errEl.hidden = false;
       return;
@@ -262,6 +266,7 @@ document.getElementById('t-sets').addEventListener('change', () => {
 document.getElementById('t-back-4').addEventListener('click', () => {
   if (tournamentConfig.format === 'groups') {
     showWizardStep('3b');
+    _validateStep3b();
   } else {
     showWizardStep(3);
   }
@@ -352,6 +357,7 @@ function _initStep3bGroupButtons() {
       _updateAdvanceCountMax();
       _updateAdvancePerGroupUI();
       _updateThirdPlaceVisibility();
+      _validateStep3b();
     });
     group.appendChild(btn);
   });
@@ -361,7 +367,7 @@ function _initStep3bGroupButtons() {
 
   // Restore previously saved values if returning from step 4
   const advInp = document.getElementById('t-advance-count');
-  if (advInp) advInp.value = tournamentConfig.advanceCount || 2;
+  if (advInp) advInp.value = tournamentConfig.advanceCount || 1;
   const wpInp  = document.getElementById('t-group-win-pts');
   if (wpInp)  wpInp.value  = tournamentConfig.winPoints  !== undefined ? tournamentConfig.winPoints  : 3;
   const lpInp  = document.getElementById('t-group-loss-pts');
@@ -374,6 +380,7 @@ function _initStep3bGroupButtons() {
   if (togEl) togEl.checked = !!tournamentConfig.advanceCounts;
   _updateAdvancePerGroupUI();
   _updateThirdPlaceVisibility();
+  _validateStep3b();
 }
 
 function _updateAdvanceCountMax() {
@@ -383,8 +390,64 @@ function _updateAdvanceCountMax() {
   const inp       = document.getElementById('t-advance-count');
   if (!inp) return;
   inp.max = groupSize - 1;
-  const cur = parseInt(inp.value) || 2;
-  if (cur >= groupSize) inp.value = Math.min(groupSize - 1, 2);
+  const cur = parseInt(inp.value) || 1;
+  if (cur >= groupSize) inp.value = Math.min(groupSize - 1, 1);
+}
+
+function _validateStep3b() {
+  const activeBtn = document.querySelector('#t-groups-count-group .btn-seg.active');
+  const numGroups = activeBtn ? parseInt(activeBtn.dataset.groups) : 0;
+  const n         = tournamentConfig.numPlayers;
+  const nextBtn   = document.getElementById('t-next-3b');
+  const errEl     = document.getElementById('t-step3b-error');
+  const togEl     = document.getElementById('t-advance-per-group-toggle');
+  const perGroup  = togEl && togEl.checked && numGroups > 1;
+
+  if (!numGroups) {
+    if (errEl) { errEl.textContent = 'Wybierz liczbę grup.'; errEl.hidden = false; }
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+
+  if (perGroup) {
+    const inputs = document.querySelectorAll('#t-per-group-advance-inputs input[type=number]');
+    const errors = [];
+    inputs.forEach((inp, gi) => {
+      const groupSize = Math.floor(n / numGroups) + (gi < n % numGroups ? 1 : 0);
+      const maxAdv    = groupSize - 1;
+      const v         = parseInt(inp.value);
+      inp.classList.remove('input-error');
+      if (isNaN(v) || v < 1 || v > maxAdv) {
+        inp.classList.add('input-error');
+        errors.push('Grupa ' + String.fromCharCode(65 + gi) + ': min 1, max ' + maxAdv);
+      }
+    });
+    if (errors.length) {
+      errEl.textContent = errors.join(' • ');
+      errEl.hidden = false;
+      if (nextBtn) nextBtn.disabled = true;
+    } else {
+      errEl.hidden = true;
+      if (nextBtn) nextBtn.disabled = false;
+    }
+  } else {
+    const inp       = document.getElementById('t-advance-count');
+    const groupSize = Math.floor(n / numGroups);
+    const maxAdv    = groupSize - 1;
+    const v         = parseInt(inp?.value);
+    if (inp) inp.classList.remove('input-error');
+    if (isNaN(v) || v < 1 || v > maxAdv) {
+      if (inp) inp.classList.add('input-error');
+      if (errEl) {
+        errEl.textContent = 'Awansujący: min 1, max ' + maxAdv + ' (gr. liczy ' + groupSize + ' graczy)';
+        errEl.hidden = false;
+      }
+      if (nextBtn) nextBtn.disabled = true;
+    } else {
+      if (errEl) errEl.hidden = true;
+      if (nextBtn) nextBtn.disabled = false;
+    }
+  }
 }
 
 function _updateThirdPlaceVisibility() {
@@ -394,9 +457,9 @@ function _updateThirdPlaceVisibility() {
   if (togEl && togEl.checked) {
     total = 0;
     document.querySelectorAll('#t-per-group-advance-inputs input[type=number]')
-      .forEach(inp => { total += parseInt(inp.value) || 2; });
+      .forEach(inp => { total += parseInt(inp.value) || 1; });
   } else {
-    total = k * (parseInt(document.getElementById('t-advance-count')?.value) || tournamentConfig.advanceCount || 2);
+    total = k * (parseInt(document.getElementById('t-advance-count')?.value) || tournamentConfig.advanceCount || 1);
   }
   const wrap = document.getElementById('t-third-place-wrap');
   if (wrap) wrap.style.display = total >= 3 ? '' : 'none';
@@ -436,7 +499,7 @@ function _rebuildPerGroupAdvanceInputs() {
     const groupSize = Math.floor(n / k) + (gi < n % k ? 1 : 0);
     const maxAdv    = groupSize - 1;
     const saved     = tournamentConfig.advanceCounts && tournamentConfig.advanceCounts[gi];
-    const val       = Math.min(Math.max(2, saved || 2), maxAdv);
+    const val       = Math.min(Math.max(1, saved || 1), maxAdv);
 
     const row = document.createElement('div');
     row.className = 't-pg-row';
@@ -447,16 +510,18 @@ function _rebuildPerGroupAdvanceInputs() {
 
     const inp = document.createElement('input');
     inp.type = 'number';
-    inp.min  = '2';
+    inp.min  = '1';
     inp.max  = String(maxAdv);
     inp.value = String(val);
     inp.className = 't-pg-inp';
     inp.dataset.groupIndex = gi;
     inp.addEventListener('change', () => {
-      const v = parseInt(inp.value) || 2;
-      inp.value = String(Math.min(Math.max(2, v), maxAdv));
+      const v = parseInt(inp.value) || 1;
+      inp.value = String(Math.min(Math.max(1, v), maxAdv));
       _updateThirdPlaceVisibility();
+      _validateStep3b();
     });
+    inp.addEventListener('input', _validateStep3b);
 
     const hint = document.createElement('span');
     hint.className = 't-pg-hint';
@@ -842,7 +907,9 @@ function _refreshGroupPreviewBody() {
   const k    = tournamentConfig.numGroups;
   if (!vals || vals.length < n) return;
 
-  const isRandom = document.querySelector('#t-seeding-group .btn-seg.active')?.dataset.seeding === 'random';
+  const seeding  = document.querySelector('#t-seeding-group .btn-seg.active')?.dataset.seeding;
+  const isRandom  = seeding === 'random';
+  const isOrdered = seeding === 'ordered';
   const noteEl   = document.getElementById('group-preview-note');
   if (noteEl) noteEl.hidden = !isRandom;
 
@@ -861,11 +928,23 @@ function _refreshGroupPreviewBody() {
 
     const list = document.createElement('ul');
     list.className = 'group-preview-list';
-    for (let pi = gi; pi < n; pi += k) {
-      const row = document.createElement('li');
-      row.className = 'group-preview-player';
-      row.textContent = (vals[pi] && vals[pi].name.trim()) || '—';
-      list.appendChild(row);
+    if (isOrdered) {
+      let startIdx = 0;
+      for (let g = 0; g < gi; g++) startIdx += Math.floor(n / k) + (g < n % k ? 1 : 0);
+      const groupSize = Math.floor(n / k) + (gi < n % k ? 1 : 0);
+      for (let j = 0; j < groupSize; j++) {
+        const row = document.createElement('li');
+        row.className = 'group-preview-player';
+        row.textContent = (vals[startIdx + j] && vals[startIdx + j].name.trim()) || '—';
+        list.appendChild(row);
+      }
+    } else {
+      for (let pi = gi; pi < n; pi += k) {
+        const row = document.createElement('li');
+        row.className = 'group-preview-player';
+        row.textContent = (vals[pi] && vals[pi].name.trim()) || '—';
+        list.appendChild(row);
+      }
     }
     groupBlock.appendChild(list);
     body.appendChild(groupBlock);

@@ -1622,6 +1622,7 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 .btn-wizard-next:active { transform: scale(0.97); }
+.btn-wizard-next:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
 
 /* Step 2: format tiles */
 .format-tile {
@@ -1744,6 +1745,8 @@ html, body {
   -moz-appearance: textfield;
 }
 .t-pg-inp:focus { border-color: var(--accent); }
+.t-pg-inp.input-error,
+#t-advance-count.input-error { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(230,57,70,.25); }
 .t-pg-inp::-webkit-inner-spin-button,
 .t-pg-inp::-webkit-outer-spin-button { -webkit-appearance: none; }
 .t-pg-hint {
