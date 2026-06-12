@@ -245,7 +245,10 @@ document.getElementById('t-next-3b').addEventListener('click', () => {
   tournamentConfig.lossPoints       = Math.max(0, parseInt(document.getElementById('t-group-loss-pts').value) || 0);
   tournamentConfig.thirdPlaceMatch  = document.getElementById('t-third-place-match').checked;
 
-  renderStep4Players();
+  // Preserve any player data the user already entered in step 4
+  const existingBlocks = document.querySelectorAll('#t-players-list .player-block').length;
+  const savedStep4 = existingBlocks === tournamentConfig.numPlayers ? _getStep4Values() : null;
+  renderStep4Players(savedStep4);
   showWizardStep(4);
 });
 
@@ -703,6 +706,7 @@ function _initStep4DragDrop(list) {
     const vals = _getStep4Values();
     vals.splice(toIdx, 0, vals.splice(fromIdx, 1)[0]);
     renderStep4Players(vals);
+    if (tournamentConfig && tournamentConfig.format === 'groups') _refreshGroupPreviewBody();
   });
 }
 
@@ -832,11 +836,15 @@ document.getElementById('btn-preview-groups').addEventListener('click', () => {
   renderGroupPreviewModal();
 });
 
-function renderGroupPreviewModal() {
+function _refreshGroupPreviewBody() {
   const vals = _getStep4Values();
   const n    = tournamentConfig.numPlayers;
   const k    = tournamentConfig.numGroups;
   if (!vals || vals.length < n) return;
+
+  const isRandom = document.querySelector('#t-seeding-group .btn-seg.active')?.dataset.seeding === 'random';
+  const noteEl   = document.getElementById('group-preview-note');
+  if (noteEl) noteEl.hidden = !isRandom;
 
   const body = document.getElementById('group-preview-body');
   body.innerHTML = '';
@@ -862,6 +870,9 @@ function renderGroupPreviewModal() {
     groupBlock.appendChild(list);
     body.appendChild(groupBlock);
   }
+}
 
+function renderGroupPreviewModal() {
+  _refreshGroupPreviewBody();
   openModal('modal-group-preview');
 }
