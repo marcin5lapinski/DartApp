@@ -239,9 +239,7 @@ function setupEventListeners() {
         _activeTournament = t;
         renderTournamentViewScreen(t);
         showScreen(SCREENS.TOURNAMENT_VIEW);
-        if (t.config.format !== 'bracket') {
-          document.getElementById('tv-tab-matches').click();
-        }
+        _returnToTournamentTab(t, ptm.matchIndex);
       } else {
         showScreen(SCREENS.HOME);
       }
@@ -270,9 +268,7 @@ function setupEventListeners() {
         _activeTournament = t;
         renderTournamentViewScreen(t);
         showScreen(SCREENS.TOURNAMENT_VIEW);
-        if (t.config.format !== 'bracket') {
-          document.getElementById('tv-tab-matches').click();
-        }
+        _returnToTournamentTab(t, ptm.matchIndex);
       } else {
         showScreen(SCREENS.HOME);
       }
@@ -671,6 +667,20 @@ function startMatch() {
   renderGameScreen(match);
   document.getElementById('input-score').focus();
   saveToLocalStorage();
+}
+
+function _returnToTournamentTab(t, matchIndex) {
+  if (t.config.format === 'liga') {
+    document.getElementById('tv-tab-matches').click();
+  } else if (t.config.format === 'groups') {
+    const m = t.matches[matchIndex];
+    if (m && m.phase === 'group') {
+      document.getElementById('tv-tab-matches').click();
+    } else {
+      document.getElementById('tv-tab-bracket').click();
+    }
+  }
+  // bracket format: renderTournamentViewScreen already shows bracket, no tab click needed
 }
 
 function openTournamentStarterModal(tournament, matchIndex) {

@@ -663,21 +663,14 @@ function buildTournamentCard(t) {
   const isGroups = t.config.format === 'groups';
   const formatLabel = isBracket ? 'Drabinka' : isGroups ? 'Grupy+Drabinka' : 'Liga';
   const meta  = formatLabel + ' · ' + t.players.length + ' graczy · ' + mc.variant + ' · First to ' + mc.totalLegs;
-  const groupMatches = isGroups ? t.matches.filter(m => m.phase === 'group') : null;
   let played, total;
   if (isBracket) {
     played = t.matches.filter(m => !m.isBye && m.winner !== null).length;
     total  = t.matches.filter(m => !m.isBye).length;
   } else if (isGroups) {
-    const allGroupDone = groupMatches.every(m => m.winner !== null);
-    if (allGroupDone) {
-      const bracketList = t.matches.filter(m => m.phase === 'bracket' && !m.isBye);
-      played = bracketList.filter(m => m.winner !== null).length;
-      total  = bracketList.length;
-    } else {
-      played = groupMatches.filter(m => m.winner !== null).length;
-      total  = groupMatches.length;
-    }
+    const allMatches = t.matches.filter(m => !m.isBye);
+    played = allMatches.filter(m => m.winner !== null).length;
+    total  = allMatches.length;
   } else {
     played = t.matches.filter(m => m.winner !== null).length;
     total  = t.matches.length;
@@ -798,7 +791,33 @@ function renderBracketScreen(tournament, container) {
       wrap.appendChild(rBtn);
     }
 
-    container.appendChild(wrap);
+    const outer = document.createElement('div');
+    outer.className = 'bk-outer-wrap';
+    outer.appendChild(wrap);
+
+    if (config.thirdPlaceMatch) {
+      const thirdMatch = matches.find(m => m.isThirdPlace);
+      if (thirdMatch) {
+        const thirdIdx = matches.indexOf(thirdMatch);
+        const section = document.createElement('div');
+        section.className = 'bk-third-place-section';
+
+        const lbl = document.createElement('div');
+        lbl.className = 'bk-third-place-label';
+        lbl.textContent = 'Mecz o 3. miejsce';
+        section.appendChild(lbl);
+
+        const body = document.createElement('div');
+        body.className = 'bk-body bk-third-place-body';
+        body.style.height = CARD_H + 'px';
+        body.appendChild(_buildBracketCard(thirdMatch, thirdIdx, players, 0));
+        section.appendChild(body);
+
+        outer.appendChild(section);
+      }
+    }
+
+    container.appendChild(outer);
   }
 
   render();
@@ -891,9 +910,8 @@ function renderGroupsTab(tournament) {
 }
 
 function renderGroupMatchesTab(tournament) {
-  const container      = document.getElementById('tv-matches');
-  container.innerHTML  = '';
-  const groupPhaseDone = isGroupPhaseComplete(tournament);
+  const container     = document.getElementById('tv-matches');
+  container.innerHTML = '';
 
   tournament.config.groups.forEach((group, gi) => {
     const label = document.createElement('div');
@@ -912,43 +930,6 @@ function renderGroupMatchesTab(tournament) {
         grid.appendChild(_buildGroupMatchCell(tournament, m, globalIdx));
       });
   });
-
-  if (groupPhaseDone) {
-    const bracketMatches = tournament.matches
-      .filter(m => m.phase === 'bracket' && !m.isBye && !m.isThirdPlace)
-      .sort((a, b) => a.round - b.round || a.slot - b.slot);
-
-    if (bracketMatches.length > 0) {
-      const label = document.createElement('div');
-      label.className = 'tv-matches-section';
-      label.textContent = 'Faza pucharowa';
-      container.appendChild(label);
-
-      const grid = document.createElement('div');
-      grid.className = 'matches-grid';
-      container.appendChild(grid);
-
-      bracketMatches.forEach(m => {
-        const globalIdx = tournament.matches.indexOf(m);
-        grid.appendChild(_buildGroupMatchCell(tournament, m, globalIdx));
-      });
-    }
-
-    const thirdMatch = tournament.matches.find(m => m.phase === 'bracket' && m.isThirdPlace);
-    if (thirdMatch) {
-      const label = document.createElement('div');
-      label.className = 'tv-matches-section';
-      label.textContent = 'Mecz o 3. miejsce';
-      container.appendChild(label);
-
-      const grid = document.createElement('div');
-      grid.className = 'matches-grid';
-      container.appendChild(grid);
-
-      const globalIdx = tournament.matches.indexOf(thirdMatch);
-      grid.appendChild(_buildGroupMatchCell(tournament, thirdMatch, globalIdx));
-    }
-  }
 }
 
 function _buildGroupMatchCell(tournament, m, globalIdx) {
@@ -1026,14 +1007,14 @@ function renderTournamentViewScreen(tournament) {
 
     if (tabTable) tabTable.textContent = 'Grupy';
 
-    const mc           = tournament.config.matchConfig;
-    const groupMatches = tournament.matches.filter(m => m.phase === 'group');
-    const groupPlayed  = groupMatches.filter(m => m.winner !== null).length;
-    const phaseLabel   = isGroupPhaseComplete(tournament) ? '● Faza pucharowa' : '● Faza grupowa';
+    const mc          = tournament.config.matchConfig;
+    const allMatches  = tournament.matches.filter(m => !m.isBye);
+    const allPlayed   = allMatches.filter(m => m.winner !== null).length;
+    const phaseLabel  = isGroupPhaseComplete(tournament) ? '● Faza pucharowa' : '● Faza grupowa';
 
     document.getElementById('tv-info-bar').innerHTML =
       `<span>Grupy+Drabinka &middot; ${mc.variant} &middot; First to ${mc.totalLegs}</span>` +
-      `<span>${tournament.players.length} graczy &middot; ${groupPlayed}/${groupMatches.length} meczów gr. &middot; <b>${phaseLabel}</b></span>`;
+      `<span>${tournament.players.length} graczy &middot; ${allPlayed}/${allMatches.length} meczów &middot; <b>${phaseLabel}</b></span>`;
 
     ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
       const old = document.getElementById(id);

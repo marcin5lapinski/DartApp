@@ -481,6 +481,26 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Mecz o 3. miejsce + UX zakładek grupy+drabinka (2026-06-12)
+
+### Nowe funkcje
+- **Mecz o 3. miejsce w widoku drabinki**: `renderBracketScreen` renderuje teraz mecz `isThirdPlace` poniżej głównej drabinki — owinięty w `.bk-outer-wrap` (flex-column), sekcja `.bk-third-place-section` z etykietą `.bk-third-place-label` i kartą `_buildBracketCard`. Karta klikalny (otwiera starter modal lub statystyki) przez istniejący delegowany listener na `#tv-bracket`. Wyświetlany jako TBD przed rozegraniem półfinałów, z graczami po ich zakończeniu.
+- **`_returnToTournamentTab(t, matchIndex)`** w `app.js`: po powrocie z meczu turnieju wybiera właściwą zakładkę — liga → Mecze; grupy + mecz grupowy → Mecze gr.; grupy + mecz bracketu → Drabinka; format bracket → brak kliknięcia (domyślnie drabinka). Wywoływana w obu ścieżkach powrotu: exit confirm i „Nowy mecz" ze statystyk.
+
+### Naprawione błędy
+- **Zakładka „Mecze gr." wyświetlała mecze bracketu**: `renderGroupMatchesTab` zawierała sekcje „Faza pucharowa" i „Mecz o 3. miejsce" — usunięte; zakładka pokazuje teraz wyłącznie mecze grupowe (sekcja per grupa); mecze bracketu dostępne tylko z zakładki Drabinka.
+- **Liczba meczów w headerze turnieju (format groups) pokazywała tylko jedną fazę**: `buildTournamentCard` liczył osobno mecze grupowe lub bracketowe zależnie od fazy; `renderTournamentViewScreen` liczył tylko grupowe — obie funkcje zmienione na `t.matches.filter(m => !m.isBye)` (wszystkie fazy łącznie, w tym mecz o 3. miejsce).
+
+### Zmiany wizualne
+- Nowe klasy CSS drabinki: `.bk-outer-wrap` (flex-column wrapper całości), `.bk-third-place-section`, `.bk-third-place-label`, `.bk-third-place-body`; `zoom: 1.25` na desktopie przeniesiony z `.bk-nav-wrap` na `.bk-outer-wrap` (sekcja 3. miejsca skaluje się razem z drabinką).
+
+### Zmiany w plikach
+- `js/league.js` — `renderBracketScreen`: obejmuje trzecią fazę w `.bk-outer-wrap`, renderuje `isThirdPlace` po nawigacji; `renderGroupMatchesTab`: usunięty blok `if (groupPhaseDone)` z bracketowymi sekcjami; `buildTournamentCard` i `renderTournamentViewScreen` (sekcja groups): licznik meczów oparty na `filter(m => !m.isBye)` zamiast per-fazy
+- `js/app.js` — nowa `_returnToTournamentTab(t, matchIndex)`; oba handlery powrotu (exit confirm, btn-new-match) używają jej zamiast warunkowego `.click()` na zakładce
+- `css/style.css` — nowe klasy `.bk-outer-wrap`, `.bk-third-place-section`, `.bk-third-place-label`, `.bk-third-place-body`; `zoom: 1.25` na `.bk-outer-wrap` w `@media (min-width: 600px)`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
