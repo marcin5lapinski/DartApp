@@ -26,7 +26,7 @@ function initTournamentWizard() {
     winPoints: 2,
     lossPoints: 0,
     numGroups: 2,
-    advanceCount: 1,
+    advanceCount: 2,
     advanceCounts: null,
     thirdPlaceMatch: false,
     matchConfig: {
@@ -367,7 +367,7 @@ function _initStep3bGroupButtons() {
 
   // Restore previously saved values if returning from step 4
   const advInp = document.getElementById('t-advance-count');
-  if (advInp) advInp.value = tournamentConfig.advanceCount || 1;
+  if (advInp) advInp.value = tournamentConfig.advanceCount || 2;
   const wpInp  = document.getElementById('t-group-win-pts');
   if (wpInp)  wpInp.value  = tournamentConfig.winPoints  !== undefined ? tournamentConfig.winPoints  : 3;
   const lpInp  = document.getElementById('t-group-loss-pts');
@@ -390,8 +390,8 @@ function _updateAdvanceCountMax() {
   const inp       = document.getElementById('t-advance-count');
   if (!inp) return;
   inp.max = groupSize - 1;
-  const cur = parseInt(inp.value) || 1;
-  if (cur >= groupSize) inp.value = Math.min(groupSize - 1, 1);
+  const cur = parseInt(inp.value) || 2;
+  if (cur >= groupSize) inp.value = Math.min(groupSize - 1, 2);
 }
 
 function _validateStep3b() {
@@ -457,9 +457,9 @@ function _updateThirdPlaceVisibility() {
   if (togEl && togEl.checked) {
     total = 0;
     document.querySelectorAll('#t-per-group-advance-inputs input[type=number]')
-      .forEach(inp => { total += parseInt(inp.value) || 1; });
+      .forEach(inp => { total += parseInt(inp.value) || 2; });
   } else {
-    total = k * (parseInt(document.getElementById('t-advance-count')?.value) || tournamentConfig.advanceCount || 1);
+    total = k * (parseInt(document.getElementById('t-advance-count')?.value) || tournamentConfig.advanceCount || 2);
   }
   const wrap = document.getElementById('t-third-place-wrap');
   if (wrap) wrap.style.display = total >= 3 ? '' : 'none';
@@ -499,7 +499,7 @@ function _rebuildPerGroupAdvanceInputs() {
     const groupSize = Math.floor(n / k) + (gi < n % k ? 1 : 0);
     const maxAdv    = groupSize - 1;
     const saved     = tournamentConfig.advanceCounts && tournamentConfig.advanceCounts[gi];
-    const val       = Math.min(Math.max(1, saved || 1), maxAdv);
+    const val       = Math.min(Math.max(1, saved || 2), maxAdv);
 
     const row = document.createElement('div');
     row.className = 't-pg-row';
@@ -516,7 +516,7 @@ function _rebuildPerGroupAdvanceInputs() {
     inp.className = 't-pg-inp';
     inp.dataset.groupIndex = gi;
     inp.addEventListener('change', () => {
-      const v = parseInt(inp.value) || 1;
+      const v = parseInt(inp.value) || 2;
       inp.value = String(Math.min(Math.max(1, v), maxAdv));
       _updateThirdPlaceVisibility();
       _validateStep3b();
