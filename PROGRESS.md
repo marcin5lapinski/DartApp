@@ -422,6 +422,29 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Ulepszenia wizarda grup + drabinka (2026-06-12)
+
+### Nowe funkcje
+- **Różna liczba awansujących z grupy**: w kroku 3b (format "grupy + drabinka", k > 1) pojawia się checkbox „Różna liczba awansujących z grupy"; po zaznaczeniu globalny input `#t-advance-count-row` jest ukrywany, a w `#t-per-group-advance-inputs` pojawia się osobny input dla każdej grupy z limitem `groupSize − 1` i podpowiedzią „max N (M graczy)"; implementacja: `_updateAdvancePerGroupUI()` i `_rebuildPerGroupAdvanceInputs()` w `tournament.js`; dane zapisywane jako `tournamentConfig.advanceCounts` (tablica) lub `null` (tryb globalny); `_buildGroups()` i `_generateBracketTBD()` w `league.js` zaktualizowane pod tablicę
+- **Limit 8 graczy na grupę**: opcja „1 grupa" w kroku 3b jest ukrywana gdy łączna liczba graczy > 8 — filtr `Math.floor(n/k) <= 8` w `_initStep3bGroupButtons()`
+- **Mecz o 3. miejsce dla 1 grupy**: `#t-third-place-wrap` pojawia się gdy `totalBracket ≥ 3`, co obejmuje scenariusz 1 grupy z ≥ 3 awansującymi
+
+### Naprawione błędy
+- **`_updateThirdPlaceVisibility()` czytała przestarzałą wartość z configa**: przepisana na odczyt z DOM — gdy toggle per-group włączony sumuje wartości inputów, inaczej czyta `#t-advance-count`
+- **`finalizeGroupPhase()` używała `groups[0].advanceCount` dla wszystkich grup**: poprawione — pętla po `gi` z `config.groups[gi].advanceCount` dla każdej grupy osobno
+
+### Zmiany wizualne
+- **Custom checkboxy w kroku 3b** (`#t-advance-per-group-toggle`, `#t-third-place-match`): `appearance:none`, `var(--surface2)` tło, `var(--accent)` przy zaznaczeniu, biały ptaszek `::after`; klasa `wiz-check-label` na labelach
+- **Inputy per-group** (`.t-pg-inp`): ciemne tło `var(--surface2)`, ramka `var(--border)`, czerwony focus, bez spinnerów przeglądarki
+
+### Zmiany w plikach
+- `js/tournament.js` — nowe: `_updateAdvancePerGroupUI()`, `_rebuildPerGroupAdvanceInputs()`; zaktualizowane: `_initStep3bGroupButtons()` (filtr ≤8, wywołanie per-group UI), `_updateThirdPlaceVisibility()` (odczyt z DOM), handler `t-next-3b` (obsługa `advanceCounts`), `initTournamentWizard` (reset `advanceCounts: null`); nowe listenery: `t-advance-per-group-toggle change`, `t-advance-count input`
+- `js/league.js` — `_buildGroups()` przyjmuje tablicę lub skalara; `_generateBracketTBD()` przyjmuje tablicę grup (suma `totalSeeds`, etykiety rank-first z filtrem per-group); `createTournament()` przekazuje `advanceCounts || advanceCount`; `finalizeGroupPhase()` iteruje per-group `advanceCount`
+- `index.html` — nowy blok `#t-advance-per-group-wrap` z `#t-advance-per-group-toggle` i `#t-per-group-advance-inputs`; `id="t-advance-count-row"` na globalnym wierszu; klasa `wiz-check-label` na labelach checkboxów
+- `css/style.css` — nowe: `#wstep-3b input[type=checkbox]` (custom), `.wiz-check-label`, `.t-pg-row`, `.t-pg-lbl`, `.t-pg-inp`, `.t-pg-hint`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
