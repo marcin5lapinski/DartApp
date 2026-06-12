@@ -805,7 +805,7 @@
         <!-- populated dynamically by _initStep3bGroupButtons() -->
       </div>
 
-      <div class="form-row" style="margin-top:14px">
+      <div class="form-row" style="margin-top:14px" id="t-advance-count-row">
         <div class="form-group">
           <label for="t-advance-count">Awansujących z grupy</label>
           <input id="t-advance-count" type="number" min="2" value="2" style="text-align:center">
@@ -813,6 +813,13 @@
         <div class="form-group">
           <!-- spacer -->
         </div>
+      </div>
+
+      <div id="t-advance-per-group-wrap" style="display:none;margin-top:6px">
+        <label class="wiz-check-label">
+          <input type="checkbox" id="t-advance-per-group-toggle"> Różna liczba awansujących z grupy
+        </label>
+        <div id="t-per-group-advance-inputs" style="margin-top:10px"></div>
       </div>
 
       <div class="form-row" style="margin-top:8px">
@@ -827,7 +834,7 @@
       </div>
 
       <div id="t-third-place-wrap" style="margin-top:10px;display:none">
-        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.9rem">
+        <label class="wiz-check-label">
           <input type="checkbox" id="t-third-place-match"> Mecz o 3. miejsce
         </label>
       </div>

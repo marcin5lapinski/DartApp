@@ -126,11 +126,12 @@ function generateBracket(players) {
   return matches;
 }
 
-function _buildGroups(players, numGroups, advanceCount) {
+function _buildGroups(players, numGroups, advanceCountOrArray) {
+  const isArr = Array.isArray(advanceCountOrArray);
   const groups = Array.from({ length: numGroups }, (_, gi) => ({
     name: String.fromCharCode(65 + gi),
     playerIndices: [],
-    advanceCount,
+    advanceCount: isArr ? advanceCountOrArray[gi] : advanceCountOrArray,
   }));
   players.forEach((p, i) => {
     groups[i % numGroups].playerIndices.push(i);
@@ -184,17 +185,21 @@ function _computeSnakePairs(n) {
   return result;
 }
 
-function _generateBracketTBD(numGroups, advanceCount, thirdPlaceMatch) {
-  const totalSeeds = numGroups * advanceCount;
+function _generateBracketTBD(groups, thirdPlaceMatch) {
+  const numGroups  = groups.length;
+  const advCounts  = groups.map(g => g.advanceCount);
+  const totalSeeds = advCounts.reduce((s, a) => s + a, 0);
   const B          = nextPowerOf2(totalSeeds);
   const numByes    = B - totalSeeds;
   const numRounds  = Math.log2(B);
   const r1Slots    = B / 2;
 
+  // Rank-first ordering: A1, B1, C1, A2, B2, ... filtering per-group advance limit
+  const maxAdv = Math.max(...advCounts);
   const seedLabels = [];
-  for (let rank = 1; rank <= advanceCount; rank++) {
+  for (let rank = 1; rank <= maxAdv; rank++) {
     for (let gi = 0; gi < numGroups; gi++) {
-      seedLabels.push(String.fromCharCode(65 + gi) + rank);
+      if (rank <= advCounts[gi]) seedLabels.push(String.fromCharCode(65 + gi) + rank);
     }
   }
 
@@ -269,9 +274,9 @@ function _generateBracketTBD(numGroups, advanceCount, thirdPlaceMatch) {
 
 function createTournament(config, players) {
   if (config.format === 'groups') {
-    const groups = _buildGroups(players, config.numGroups, config.advanceCount);
+    const groups = _buildGroups(players, config.numGroups, config.advanceCounts || config.advanceCount);
     const { bracketSize, matches: bracketMatches } = _generateBracketTBD(
-      groups.length, config.advanceCount, config.thirdPlaceMatch || false
+      groups, config.thirdPlaceMatch || false
     );
     const tournament = {
       id:        't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
@@ -572,13 +577,13 @@ function isGroupPhaseComplete(tournament) {
 function finalizeGroupPhase(tournament) {
   const { config, matches } = tournament;
   const numGroups = config.groups.length;
-  const advCount  = config.groups[0].advanceCount;
 
   const groupStandings = config.groups.map((g, gi) => computeGroupStandings(tournament, gi));
 
   const labelToPlayerIdx = new Map();
-  for (let rank = 0; rank < advCount; rank++) {
-    for (let gi = 0; gi < numGroups; gi++) {
+  for (let gi = 0; gi < numGroups; gi++) {
+    const advCount = config.groups[gi].advanceCount;
+    for (let rank = 0; rank < advCount; rank++) {
       const row = groupStandings[gi][rank];
       if (!row) continue;
       const label = String.fromCharCode(65 + gi) + (rank + 1);

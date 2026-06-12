@@ -27,6 +27,7 @@ function initTournamentWizard() {
     lossPoints: 0,
     numGroups: 2,
     advanceCount: 2,
+    advanceCounts: null,
     thirdPlaceMatch: false,
     matchConfig: {
       variant: 501,
@@ -186,23 +187,60 @@ document.getElementById('t-back-3b').addEventListener('click', () => {
   showWizardStep(3);
 });
 
-document.getElementById('t-next-3b').addEventListener('click', () => {
-  const activeBtn   = document.querySelector('#t-groups-count-group .btn-seg.active');
-  const numGroups   = activeBtn ? parseInt(activeBtn.dataset.groups) : 0;
-  const advCount    = parseInt(document.getElementById('t-advance-count').value);
-  const n           = tournamentConfig.numPlayers;
-  const groupSize   = Math.floor(n / numGroups);
-  const errEl       = document.getElementById('t-step3b-error');
+document.getElementById('t-advance-per-group-toggle').addEventListener('change', () => {
+  _updateAdvancePerGroupUI();
+  _updateThirdPlaceVisibility();
+});
 
-  if (!numGroups || isNaN(advCount) || advCount < 2 || advCount >= groupSize) {
+document.getElementById('t-advance-count').addEventListener('input', _updateThirdPlaceVisibility);
+
+document.getElementById('t-next-3b').addEventListener('click', () => {
+  const activeBtn  = document.querySelector('#t-groups-count-group .btn-seg.active');
+  const numGroups  = activeBtn ? parseInt(activeBtn.dataset.groups) : 0;
+  const n          = tournamentConfig.numPlayers;
+  const errEl      = document.getElementById('t-step3b-error');
+  const togEl      = document.getElementById('t-advance-per-group-toggle');
+  const perGroup   = togEl && togEl.checked && numGroups > 1;
+
+  if (!numGroups) {
     errEl.textContent = 'Nieprawidłowe ustawienia grup.';
     errEl.hidden = false;
     return;
+  }
+
+  let advCount = null;
+  let advanceCounts = null;
+
+  if (perGroup) {
+    const inputs = document.querySelectorAll('#t-per-group-advance-inputs input[type=number]');
+    advanceCounts = [];
+    let valid = true;
+    inputs.forEach((inp, gi) => {
+      const groupSize = Math.floor(n / numGroups) + (gi < n % numGroups ? 1 : 0);
+      const v = parseInt(inp.value);
+      if (isNaN(v) || v < 2 || v >= groupSize) { valid = false; }
+      else { advanceCounts.push(v); }
+    });
+    if (!valid || advanceCounts.length !== numGroups) {
+      errEl.textContent = 'Nieprawidłowe ustawienia awansujących.';
+      errEl.hidden = false;
+      return;
+    }
+    advCount = Math.min(...advanceCounts);
+  } else {
+    advCount = parseInt(document.getElementById('t-advance-count').value);
+    const groupSize = Math.floor(n / numGroups);
+    if (isNaN(advCount) || advCount < 2 || advCount >= groupSize) {
+      errEl.textContent = 'Nieprawidłowe ustawienia grup.';
+      errEl.hidden = false;
+      return;
+    }
   }
   errEl.hidden = true;
 
   tournamentConfig.numGroups        = numGroups;
   tournamentConfig.advanceCount     = advCount;
+  tournamentConfig.advanceCounts    = advanceCounts;
   tournamentConfig.winPoints        = Math.max(0, parseInt(document.getElementById('t-group-win-pts').value) || 0);
   tournamentConfig.lossPoints       = Math.max(0, parseInt(document.getElementById('t-group-loss-pts').value) || 0);
   tournamentConfig.thirdPlaceMatch  = document.getElementById('t-third-place-match').checked;
@@ -309,6 +347,7 @@ function _initStep3bGroupButtons() {
       btn.classList.add('active');
       tournamentConfig.numGroups = k;
       _updateAdvanceCountMax();
+      _updateAdvancePerGroupUI();
       _updateThirdPlaceVisibility();
     });
     group.appendChild(btn);
@@ -316,7 +355,6 @@ function _initStep3bGroupButtons() {
 
   tournamentConfig.numGroups = defaultK;
   _updateAdvanceCountMax();
-  _updateThirdPlaceVisibility();
 
   // Restore previously saved values if returning from step 4
   const advInp = document.getElementById('t-advance-count');
@@ -327,6 +365,12 @@ function _initStep3bGroupButtons() {
   if (lpInp)  lpInp.value  = tournamentConfig.lossPoints !== undefined ? tournamentConfig.lossPoints : 0;
   const tpCk   = document.getElementById('t-third-place-match');
   if (tpCk)   tpCk.checked = tournamentConfig.thirdPlaceMatch || false;
+
+  // Restore per-group toggle state + rebuild inputs, then update visibility
+  const togEl = document.getElementById('t-advance-per-group-toggle');
+  if (togEl) togEl.checked = !!tournamentConfig.advanceCounts;
+  _updateAdvancePerGroupUI();
+  _updateThirdPlaceVisibility();
 }
 
 function _updateAdvanceCountMax() {
@@ -341,11 +385,85 @@ function _updateAdvanceCountMax() {
 }
 
 function _updateThirdPlaceVisibility() {
-  const k    = tournamentConfig.numGroups;
-  const adv  = tournamentConfig.advanceCount || 2;
+  const k     = tournamentConfig.numGroups;
+  const togEl = document.getElementById('t-advance-per-group-toggle');
+  let total;
+  if (togEl && togEl.checked) {
+    total = 0;
+    document.querySelectorAll('#t-per-group-advance-inputs input[type=number]')
+      .forEach(inp => { total += parseInt(inp.value) || 2; });
+  } else {
+    total = k * (parseInt(document.getElementById('t-advance-count')?.value) || tournamentConfig.advanceCount || 2);
+  }
   const wrap = document.getElementById('t-third-place-wrap');
-  // Show when ≥3 bracket participants: nextPowerOf2(3)=4 → bracket has semi-finals
-  if (wrap) wrap.style.display = k * adv >= 3 ? '' : 'none';
+  if (wrap) wrap.style.display = total >= 3 ? '' : 'none';
+}
+
+function _updateAdvancePerGroupUI() {
+  const k         = tournamentConfig.numGroups;
+  const togEl     = document.getElementById('t-advance-per-group-toggle');
+  const wrapEl    = document.getElementById('t-advance-per-group-wrap');
+  const globalRow = document.getElementById('t-advance-count-row');
+  const inputsEl  = document.getElementById('t-per-group-advance-inputs');
+
+  if (k <= 1) {
+    if (wrapEl)    wrapEl.style.display = 'none';
+    if (togEl)     togEl.checked = false;
+    if (globalRow) globalRow.style.display = '';
+    if (inputsEl)  inputsEl.style.display = 'none';
+    return;
+  }
+
+  if (wrapEl) wrapEl.style.display = '';
+  const isPerGroup = togEl && togEl.checked;
+  if (globalRow) globalRow.style.display = isPerGroup ? 'none' : '';
+  if (inputsEl)  inputsEl.style.display  = isPerGroup ? ''     : 'none';
+  if (isPerGroup) _rebuildPerGroupAdvanceInputs();
+}
+
+function _rebuildPerGroupAdvanceInputs() {
+  const k         = tournamentConfig.numGroups;
+  const n         = tournamentConfig.numPlayers;
+  const container = document.getElementById('t-per-group-advance-inputs');
+  if (!container) return;
+  container.innerHTML = '';
+
+  for (let gi = 0; gi < k; gi++) {
+    const groupName = String.fromCharCode(65 + gi);
+    const groupSize = Math.floor(n / k) + (gi < n % k ? 1 : 0);
+    const maxAdv    = groupSize - 1;
+    const saved     = tournamentConfig.advanceCounts && tournamentConfig.advanceCounts[gi];
+    const val       = Math.min(Math.max(2, saved || 2), maxAdv);
+
+    const row = document.createElement('div');
+    row.className = 't-pg-row';
+
+    const lbl = document.createElement('span');
+    lbl.className = 't-pg-lbl';
+    lbl.textContent = 'Grupa ' + groupName;
+
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min  = '2';
+    inp.max  = String(maxAdv);
+    inp.value = String(val);
+    inp.className = 't-pg-inp';
+    inp.dataset.groupIndex = gi;
+    inp.addEventListener('change', () => {
+      const v = parseInt(inp.value) || 2;
+      inp.value = String(Math.min(Math.max(2, v), maxAdv));
+      _updateThirdPlaceVisibility();
+    });
+
+    const hint = document.createElement('span');
+    hint.className = 't-pg-hint';
+    hint.textContent = 'max ' + maxAdv + ' (' + groupSize + ' graczy)';
+
+    row.appendChild(lbl);
+    row.appendChild(inp);
+    row.appendChild(hint);
+    container.appendChild(row);
+  }
 }
 
 function renderStep4Players(savedValues) {
