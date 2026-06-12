@@ -396,6 +396,196 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Podwójny toast i poprawka losowania wolnych losów (2026-06-11)
+
+### Nowe funkcje
+- **Podwójny toast (bust + ostatnie podejście)**: gdy w tej samej turze jest jednocześnie BUST i ostrzeżenie o ostatnim podejściu, oba toasty wyświetlają się naraz — `#bust-toast` przesuwa się 44 px w górę, `#last-visit-toast` 44 px w dół (klasa `.stacked`); każdy można kliknąć, by go zamknąć
+- **Oddzielny element toastu `#last-visit-toast`**: dotychczas toast „Ostatnie podejście" był klasy `.last-visit` na `#bust-toast`; teraz to osobny element HTML z własnym stylem (niebieskie tło `#1565c0`, `font-size: 1.4rem`)
+- **`_updateByeHint()`** w `tournament.js`: dynamicznie aktualizuje tekst podpowiedzi pod licznikiem wolnych losów — zielony komunikat gdy `seeding=random` i brak zaznaczonych BYE, szary gdy inaczej
+- **`_assignRandomByes(players)`** w `tournament.js`: wydziela losowanie wolnych losów (Fisher-Yates na indeksach, przypisuje `p.bye`) — wywoływany przy tworzeniu turnieju i podglądzie drabinki
+- **Element `#t-bye-hint`** w kroku 4 wizarda: paragraf pod licznikiem BYE, widoczny tylko dla drabinki z wolnymi losami; klasy `.bye-hint` / `.bye-hint--auto`
+
+### Naprawione błędy
+- **Auto-losowanie BYE przy kliknięciu „Losuj rozstawienie"**: przycisk seeding nie losuje już wolnych losów w momencie aktywacji — losowanie odroczone do kliknięcia „Utwórz turniej" / „Podgląd drabinki"
+- **`validateStep4()` blokował button przy `seeding=random` + 0 BYE**: dodano warunek `autoAssign = isRandom && byeCount === 0` — w tym stanie „Utwórz turniej" jest odblokowany (wolne losy zostaną przydzielone automatycznie)
+
+### Zmiany wizualne
+- `.bye-hint` / `.bye-hint--auto`: hint pod licznikiem BYE (mały szary / zielony tekst)
+- `.stacked`: przesuwa toast o ±44 px gdy dwa toasty widoczne naraz
+
+### Zmiany w plikach
+- `index.html` — dodano `<div id="last-visit-toast">Ostatnie podejście</div>` obok `#bust-toast`
+- `css/style.css` — przepisano style `#bust-toast` / `#last-visit-toast` jako osobne elementy z `.stacked`; dodano `.bye-hint`, `.bye-hint--auto`
+- `js/ui.js` — `showBust()` i `showLastVisitToast()` przepisane do obsługi dwóch osobnych elementów ze stanem `.stacked`
+- `js/app.js` — listenery kliknięcia dla obu toastów (wzajemne usuwanie `.stacked`)
+- `js/tournament.js` — nowe `_updateByeHint()`, `_assignRandomByes()`; usunięty blok auto-bye z handlera seeding; zaktualizowane `_updateByeCounter`, `renderStep4Players`, `validateStep4`, handlery `btn-create-tournament` i `btn-preview-bracket`
+
+---
+
+## Ulepszenia wizarda grup + drabinka (2026-06-12)
+
+### Nowe funkcje
+- **Różna liczba awansujących z grupy**: w kroku 3b (format "grupy + drabinka", k > 1) pojawia się checkbox „Różna liczba awansujących z grupy"; po zaznaczeniu globalny input `#t-advance-count-row` jest ukrywany, a w `#t-per-group-advance-inputs` pojawia się osobny input dla każdej grupy z limitem `groupSize − 1` i podpowiedzią „max N (M graczy)"; implementacja: `_updateAdvancePerGroupUI()` i `_rebuildPerGroupAdvanceInputs()` w `tournament.js`; dane zapisywane jako `tournamentConfig.advanceCounts` (tablica) lub `null` (tryb globalny); `_buildGroups()` i `_generateBracketTBD()` w `league.js` zaktualizowane pod tablicę
+- **Limit 8 graczy na grupę**: opcja „1 grupa" w kroku 3b jest ukrywana gdy łączna liczba graczy > 8 — filtr `Math.floor(n/k) <= 8` w `_initStep3bGroupButtons()`
+- **Mecz o 3. miejsce dla 1 grupy**: `#t-third-place-wrap` pojawia się gdy `totalBracket ≥ 3`, co obejmuje scenariusz 1 grupy z ≥ 3 awansującymi
+
+### Naprawione błędy
+- **`_updateThirdPlaceVisibility()` czytała przestarzałą wartość z configa**: przepisana na odczyt z DOM — gdy toggle per-group włączony sumuje wartości inputów, inaczej czyta `#t-advance-count`
+- **`finalizeGroupPhase()` używała `groups[0].advanceCount` dla wszystkich grup**: poprawione — pętla po `gi` z `config.groups[gi].advanceCount` dla każdej grupy osobno
+
+### Zmiany wizualne
+- **Custom checkboxy w kroku 3b** (`#t-advance-per-group-toggle`, `#t-third-place-match`): `appearance:none`, `var(--surface2)` tło, `var(--accent)` przy zaznaczeniu, biały ptaszek `::after`; klasa `wiz-check-label` na labelach
+- **Inputy per-group** (`.t-pg-inp`): ciemne tło `var(--surface2)`, ramka `var(--border)`, czerwony focus, bez spinnerów przeglądarki
+
+### Zmiany w plikach
+- `js/tournament.js` — nowe: `_updateAdvancePerGroupUI()`, `_rebuildPerGroupAdvanceInputs()`; zaktualizowane: `_initStep3bGroupButtons()` (filtr ≤8, wywołanie per-group UI), `_updateThirdPlaceVisibility()` (odczyt z DOM), handler `t-next-3b` (obsługa `advanceCounts`), `initTournamentWizard` (reset `advanceCounts: null`); nowe listenery: `t-advance-per-group-toggle change`, `t-advance-count input`
+- `js/league.js` — `_buildGroups()` przyjmuje tablicę lub skalara; `_generateBracketTBD()` przyjmuje tablicę grup (suma `totalSeeds`, etykiety rank-first z filtrem per-group); `createTournament()` przekazuje `advanceCounts || advanceCount`; `finalizeGroupPhase()` iteruje per-group `advanceCount`
+- `index.html` — nowy blok `#t-advance-per-group-wrap` z `#t-advance-per-group-toggle` i `#t-per-group-advance-inputs`; `id="t-advance-count-row"` na globalnym wierszu; klasa `wiz-check-label` na labelach checkboxów
+- `css/style.css` — nowe: `#wstep-3b input[type=checkbox]` (custom), `.wiz-check-label`, `.t-pg-row`, `.t-pg-lbl`, `.t-pg-inp`, `.t-pg-hint`
+
+---
+
+## Poprawki wizarda grup + walidacja awansujących (2026-06-12)
+
+### Nowe funkcje
+- **`_validateStep3b()`** w `tournament.js`: live walidacja liczby awansujących w kroku 3b — przy każdej zmianie inputu lub toggle sprawdza przedział [1, groupSize−1]; błędne inputy dostają klasę `.input-error`; `#t-step3b-error` pokazuje per-grupowe komunikaty (np. „Grupa A: min 1, max 3 • Grupa B: min 1, max 2"); blokuje/odblokowuje `#t-next-3b`. Wywoływana przy zmianie inputów, toggleu, przycisku liczby grup, wejściu i powrocie do kroku 3b
+- **Sekwencyjne rozstawianie grup** (`seeding = 'ordered'`): `_buildGroups()` z parametrem `sequential=true` wypełnia grupy po kolei — Grupa A dostaje pierwszych N graczy, Grupa B kolejnych M itd.; aktywowane gdy `config.seeding === 'ordered'`
+- **Podgląd grup zgodny z rozstawieniem**: `_refreshGroupPreviewBody()` używa sekwencyjnego obliczania startIdx gdy `seeding === 'ordered'`, round-robin gdy `random`; odświeżany po każdym drag-and-drop
+
+### Naprawione błędy
+- **Zakładka „Mecze" zawsze wyłączona w turnieju grup**: hardkodowana klasa `tv-tab-disabled` w HTML nigdy nie była usuwana przez branch groups — dodano `classList.remove('tv-tab-disabled')` i zmianę tekstu na „Mecze gr." po `cloneNode`
+- **„Użyj kolejności" nie zachowywało kolejności drag-and-drop**: handler `t-next-3b` wywoływał `renderStep4Players()` bez `savedValues`, resetując porządek — naprawione przez odczyt aktualnego stanu DOM przed wejściem do kroku 4
+- **Tekst podpowiedzi grup w kroku 2 źle wyrównany**: `#groups-settings` był `<div>` opakowującym, więc `align-self: center` ze `.wizard-hint` nie działał — zmieniony na bezpośredni `<p>` wewnątrz `format-details-panel`
+
+### Zmiany wizualne
+- **`.btn-wizard-next:disabled`**: `opacity: 0.35; pointer-events: none` — przycisk DALEJ wyszarzony gdy walidacja nie przejdzie
+- **`.input-error` dla inputów awansujących**: czerwona ramka + glow (`box-shadow 0 0 0 2px rgba(230,57,70,.25)`) dla `#t-advance-count` i `.t-pg-inp`
+
+### Zmiany w plikach
+- `js/tournament.js` — nowe: `_validateStep3b()`; zaktualizowane: `_refreshGroupPreviewBody()` (tryb sequential/round-robin), listenery `t-advance-count input` i `t-advance-per-group-toggle change` (dodano walidację), per-group inputy (dodano `input` listener + `_validateStep3b` w `change`), `_initStep3bGroupButtons()` (wywołanie `_validateStep3b` w click i na końcu init), `t-back-4` handler (wywołanie `_validateStep3b`); min awansujących = 1, domyślna = 2
+- `js/league.js` — `_buildGroups()` nowy parametr `sequential=false` (sekwencyjne wypełnianie grup); `createTournament()` przekazuje `config.seeding === 'ordered'`
+- `css/style.css` — `.btn-wizard-next:disabled`, `.t-pg-inp.input-error`, `#t-advance-count.input-error`
+- `index.html` — `#t-advance-count`: `min="1"`, `value="2"`
+
+---
+
+## Kolory tła awansujących w tabelach grup (2026-06-12)
+
+### Zmiany wizualne
+- **Kolory tła rzędów awansujących**: zamiast zielonej kropki (`adv-dot`) rzędy awansujących graczy w tabelach grup dostają kolorowe tło — 1. miejsce `#103110` (ciemna zieleń), 2. miejsce `#203c20`, kolejne miejsca (jeśli awansuje więcej niż 2) interpolowane liniowo od `#203c20` do `#cce8cc` (jasna zieleń); implementacja: `_advancingBg(rank, advCount)` w `league.js`
+- Usunięto: `<span class="adv-dot">`, legendę pod tabelami (`adv-legend`), lewy border (`group-advancing`)
+
+### Zmiany w plikach
+- `js/league.js` — nowa funkcja `_advancingBg(rank, advCount)`; `_renderGroupStandingsHTML()` i `renderGroupsTab()` używają `tr.style.background`; usunięto `adv-dot`, `group-advancing`, legendę
+- `css/style.css` — usunięto `.group-standings-table tbody tr.group-advancing td:first-child`, `.adv-dot`, `.adv-legend`
+
+---
+
+## Mecz o 3. miejsce + UX zakładek grupy+drabinka (2026-06-12)
+
+### Nowe funkcje
+- **Mecz o 3. miejsce w widoku drabinki**: `renderBracketScreen` renderuje teraz mecz `isThirdPlace` poniżej głównej drabinki — owinięty w `.bk-outer-wrap` (flex-column), sekcja `.bk-third-place-section` z etykietą `.bk-third-place-label` i kartą `_buildBracketCard`. Karta klikalny (otwiera starter modal lub statystyki) przez istniejący delegowany listener na `#tv-bracket`. Wyświetlany jako TBD przed rozegraniem półfinałów, z graczami po ich zakończeniu.
+- **`_returnToTournamentTab(t, matchIndex)`** w `app.js`: po powrocie z meczu turnieju wybiera właściwą zakładkę — liga → Mecze; grupy + mecz grupowy → Mecze gr.; grupy + mecz bracketu → Drabinka; format bracket → brak kliknięcia (domyślnie drabinka). Wywoływana w obu ścieżkach powrotu: exit confirm i „Nowy mecz" ze statystyk.
+
+### Naprawione błędy
+- **Zakładka „Mecze gr." wyświetlała mecze bracketu**: `renderGroupMatchesTab` zawierała sekcje „Faza pucharowa" i „Mecz o 3. miejsce" — usunięte; zakładka pokazuje teraz wyłącznie mecze grupowe (sekcja per grupa); mecze bracketu dostępne tylko z zakładki Drabinka.
+- **Liczba meczów w headerze turnieju (format groups) pokazywała tylko jedną fazę**: `buildTournamentCard` liczył osobno mecze grupowe lub bracketowe zależnie od fazy; `renderTournamentViewScreen` liczył tylko grupowe — obie funkcje zmienione na `t.matches.filter(m => !m.isBye)` (wszystkie fazy łącznie, w tym mecz o 3. miejsce).
+
+### Zmiany wizualne
+- Nowe klasy CSS drabinki: `.bk-outer-wrap` (flex-column wrapper całości), `.bk-third-place-section`, `.bk-third-place-label`, `.bk-third-place-body`; `zoom: 1.25` na desktopie przeniesiony z `.bk-nav-wrap` na `.bk-outer-wrap` (sekcja 3. miejsca skaluje się razem z drabinką).
+
+### Zmiany w plikach
+- `js/league.js` — `renderBracketScreen`: obejmuje trzecią fazę w `.bk-outer-wrap`, renderuje `isThirdPlace` po nawigacji; `renderGroupMatchesTab`: usunięty blok `if (groupPhaseDone)` z bracketowymi sekcjami; `buildTournamentCard` i `renderTournamentViewScreen` (sekcja groups): licznik meczów oparty na `filter(m => !m.isBye)` zamiast per-fazy
+- `js/app.js` — nowa `_returnToTournamentTab(t, matchIndex)`; oba handlery powrotu (exit confirm, btn-new-match) używają jej zamiast warunkowego `.click()` na zakładce
+- `css/style.css` — nowe klasy `.bk-outer-wrap`, `.bk-third-place-section`, `.bk-third-place-label`, `.bk-third-place-body`; `zoom: 1.25` na `.bk-outer-wrap` w `@media (min-width: 600px)`
+
+---
+
+## Drobne poprawki UI grup + narzędzie deweloperskie (2026-06-12)
+
+### Naprawione błędy
+- **Kolory medali w tabelach grup (format grupy+drabinka)**: `renderGroupsTab` błędnie wyświetlał złote/srebrne/brązowe kolory dla miejsc 1–3 po zakończeniu turnieju. Usunięto `MEDAL_POS`, `MEDAL_NAME`, zmienną `finished` i blok `if (finished && rank <= 3)` — tabele grup zawsze używają teraz `pos-num` bez kolorowania pozycji. Kolory medali pozostają wyłącznie w lidze (`renderTournamentViewScreen`).
+
+### Nowe funkcje
+- **Przycisk debug autofill w wizardzie** (`#btn-debug-autofill`): niewidoczny kwadrat 15×15 px w lewym górnym rogu `.tournament-card`, pojawia się po najechaniu kursorem (`opacity: 0 → 1`). Kliknięcie w kroku 4 odczytuje `loadPlayers()` i wypełnia pola `#t-pname-N` imionami graczy z zapisanej listy (w kolejności), selecty `#t-pd1-N` / `#t-pd2-N` ich ulubionymi podwójnymi; jeśli graczy jest mniej niż `numPlayers` — wstawia „Gracz N". Na koniec wywołuje `_updateStep4Datalists()` i `validateStep4()`.
+
+### Zmiany wizualne
+- `#btn-debug-autofill`: `position: absolute; top: 0; left: 0; width: 15px; height: 15px; opacity: 0`; na `:hover` — `opacity: 1; background: #333`. Wymaga `position: relative` na `.tournament-card`.
+
+### Zmiany w plikach
+- `js/league.js` — `renderGroupsTab`: usunięto logikę medali (MEDAL_POS, MEDAL_NAME, finished, blok if)
+- `js/tournament.js` — nowy listener `#btn-debug-autofill click` z logiką autofill
+- `index.html` — `<button id="btn-debug-autofill">` wewnątrz `.tournament-card`
+- `css/style.css` — `position: relative` na `.tournament-card`; nowe reguły `#btn-debug-autofill` i `#btn-debug-autofill:hover`
+
+---
+
+## Poprawki wizualne drabinki i grup (2026-06-12)
+
+### Naprawione błędy
+- **Kolory awansu w tabelach grup** (`_advancingBg`): poprzednia interpolacja kończyła się na `#cce8cc` (bardzo jasny zielony), przez co biały tekst stawał się nieczytelny. Przepisano na jednolitą interpolację `#1b601b` (ranga 1, najjaśniejsza) → `#0a2d0a` (ostatnie awansujące miejsce, najciemniejsza) — wszystkie odcienie pozostają ciemne i czytelne z `var(--text)`.
+- **Mecze z bye w niezafinalizowanej drabince (format grupy+drabinka)**: przed zakończeniem fazy grupowej karty bye miały inny styl (`bye-card` — jaśniejsze tło `#131318`). Zmieniono logikę w `_buildBracketCard`: gdy `m.isBye && m.p1 === null` (faza grupowa jeszcze trwa), karta dostaje klasę `tbd-card` jak pozostałe nierozegrane mecze drabinki.
+- **Pozycja meczu o 3. miejsce w drabince**: poprzednio renderowany poniżej całej drabinki jako element `.bk-outer-wrap`. Przeniesiony do wnętrza kolumny finałowej (`finalColEl.appendChild(section)`) — pojawia się bezpośrednio pod kartą finału w kolumnie „FINAŁ". Chowa się razem z kolumną gdy nawigacja przesuwa finał poza widok.
+
+### Nowe funkcje
+- **Info o składach grup w kroku 3b wizarda** (`_updateStep3bGroupsInfo`): wyświetla `#t-step3b-groups-info` z tekstem np. „Składy grup: A: 4 · B: 3 · C: 3". Odświeżane przy inicjalizacji przycisków grup i po każdym kliknięciu przycisku liczby grup.
+- **Info o składach grup w kroku 4 wizarda** (`#t-groups-info`): analogiczny element tworzony dynamicznie przez `renderStep4Players`, wyświetlany gdy format=groups i brak trybu per-group advance (`!tournamentConfig.advanceCounts`). Ukrywany gdy per-group toggle jest aktywny.
+
+### Zmiany w plikach
+- `js/league.js` — `_advancingBg`: nowa interpolacja ciemnozielona; `_buildBracketCard`: `tbd-card` dla niezafinalizowanych bye; `renderBracketScreen`: mecz o 3. miejsce dołączany do `finalColEl` zamiast `outer`
+- `js/tournament.js` — nowa `_updateStep3bGroupsInfo()`; wywołania w `_initStep3bGroupButtons()`; `renderStep4Players`: nowy `#t-groups-info` element z logiką show/hide
+- `index.html` — `<p id="t-step3b-groups-info" class="t-groups-info">` w kroku 3b
+- `css/style.css` — nowa klasa `.t-groups-info`; `margin-top: 16px` na `.bk-third-place-section`
+
+---
+
+## Mecz o 3. miejsce w drabince + przycisk wolnych losów (2026-06-12)
+
+### Nowe funkcje
+- **Mecz o 3. miejsce w formacie Drabinka**: checkbox `#t-bracket-third-place-match` w kroku 2 wizarda (w nowym `#bracket-settings` div, zastępującym `#t-bracket-desc`). Przy tworzeniu turnieju `createTournament` dołącza do `matches[]` mecz `{ isThirdPlace: true, round: numRounds-1, slot: -1 }` i zapisuje `config.thirdPlaceMatch: boolean`. `saveTournamentMatchResult` wykrywa półfinały (`m.round === totalBracketRounds - 2`) i propaguje przegranego do `thirdMatch.p1`/`p2`. Widok drabinki (`renderBracketScreen`) obsługiwał już `config.thirdPlaceMatch` — bez zmian.
+- **Przycisk „Odznacz wszystkie" / „Wylosuj wolne losy"** w kroku 4 wizarda (bracket, tylko gdy `numByes > 0`): element `#t-bye-action-btn` tworzony w `renderStep4Players` po `#t-bye-hint`. Stan przycisku aktualizuje nowa funkcja `_updateByeActionBtn()`, wywoływana z `_updateByeCounter()`. Kliknięcie przy ≥1 BYE: odznacza wszystkie toggles. Kliknięcie przy 0 BYE: losuje dokładnie `numByes` graczy (Fisher-Yates na indeksach toggles).
+
+### Zmiany wizualne
+- Nowe klasy CSS `.btn-bye-action` i `.btn-bye-action--randomize`: pełna szerokość, neutralna ramka (clear) / zielona ramka (randomize), hover + active scale.
+
+### Zmiany w plikach
+- `index.html` — `#t-bracket-desc` zastąpiony przez `#bracket-settings` (div z tekstem + `#t-bracket-third-place-match` checkbox)
+- `js/tournament.js` — nowa `_updateByeActionBtn()`; `#t-bye-action-btn` tworzony w `renderStep4Players`; `initTournamentWizard` resetuje `bracket-settings`; handler `btn-create-tournament` odczytuje `#t-bracket-third-place-match`; tekst hintu rozszerzony o „lub po naciśnięciu przycisku Losuj wolne losy"
+- `js/league.js` — `createTournament` bracket branch: dołącza `isThirdPlace` mecz, zapisuje `thirdPlaceMatch` w `config`
+- `js/app.js` — `saveTournamentMatchResult` bracket branch: propagacja przegranego półfinału do meczu o 3. miejsce
+- `css/style.css` — `.btn-bye-action`, `.btn-bye-action--randomize`
+
+---
+
+## Poprawki formatu grupy + drabinka (2026-06-12)
+
+### Naprawione błędy
+- **Min. awansujący = 2 dla 3 graczy (1 grupa)**: przy 3 graczach w formacie groups+bracket ustawienie 1 awansującego było możliwe, co dałoby bezsensowny finał. Naprawione w `_updateAdvanceCountMax()` (ustawia `inp.min = 2`), `_validateStep3b()` i handlerze `t-next-3b` — warunek `minAdv = (n === 3 && numGroups === 1) ? 2 : 1`.
+- **Brak rewanżu w bracket/groups**: kliknięcie meczu drabinki, gdzie ci sami zawodnicy grali już w fazie grupowej, pokazywało modal „Rewanż" zamiast wyboru kto zaczyna. Naprawione w `openTournamentStarterModal` (`app.js`) — detekcja `firstMatch` uruchamia się tylko gdy `tournament.config.format === 'liga'`.
+- **Checkbox „Mecz o 3. miejsce" w bracket ukryty dla <4 graczy**: przy 3 graczach checkbox był widoczny mimo że mecz o 3. miejsce nie ma sensu. Dodano `id="t-bracket-third-place-wrap"` do `index.html`, nowa `_updateBracketThirdPlaceWrap()` ukrywa wrap i odznacza checkbox gdy `numPlayers < 4`. Wywoływana z `showWizardStep(2)` i handlera kafelków formatu.
+
+### Nowe funkcje
+- **„Finał" zamiast „Runda 1" w drabince 1-rundowej**: `computeRoundName()` w `league.js` ma teraz wpis `1: ['Finał']` w tablicy nazw — dotyczy formatu groups+bracket z 3 graczami (2 awansujących → 1 mecz finałowy).
+- **Mecz o 3. miejsce dla 1 grupy ≥4 graczy**: `_updateThirdPlaceVisibility()` pokazuje checkbox gdy `k === 1 && numPlayers - total >= 2` (2+ nieawansujących graczy w grupie). `_generateBracketTBD()` przypisuje `p1Label: 'A(advCount+1)', p2Label: 'A(advCount+2)'` (np. A3/A4) meczu o 3. miejsce w przypadku 1 grupy. `finalizeGroupPhase()` rozwiązuje te etykiety na prawdziwe indeksy graczy po zakończeniu fazy grupowej.
+
+### Zmiany w plikach
+- `js/tournament.js` — `_updateAdvanceCountMax()`, `_validateStep3b()`, `t-next-3b` handler: warunek `minAdv`; nowa `_updateBracketThirdPlaceWrap()`; `showWizardStep()` wywołuje ją dla kroku 2; handler kafelków formatu wywołuje ją; `_updateThirdPlaceVisibility()`: dodano warunek `k === 1 && numPlayers - total >= 2`
+- `js/app.js` — `openTournamentStarterModal`: detekcja rewanżu ograniczona do `format === 'liga'`
+- `js/league.js` — `computeRoundName()`: wpis `1: ['Finał']`; `_generateBracketTBD()`: etykiety A3/A4 w meczu o 3. miejsce dla 1 grupy; `finalizeGroupPhase()`: rozwiązywanie etykiet A3/A4 na indeksy graczy
+- `index.html` — `id="t-bracket-third-place-wrap"` na div owijającym checkbox meczu o 3. miejsce (bracket format)
+
+---
+
+## Blokada inputu awansujących przy meczu o 3. miejsce (2026-06-12)
+
+### Nowe funkcje
+- **`_updateAdvanceCountLock()`** w `tournament.js`: gdy wybrana jest 1 grupa i zaznaczony checkbox `#t-third-place-match`, input `#t-advance-count` zostaje zablokowany (`disabled`). Odblokowuje się po odznaczeniu checkboksa lub przełączeniu na więcej niż 1 grupę. Wywoływana z: event listenera `#t-third-place-match` change, handlera kliknięcia przycisków grup w `_initStep3bGroupButtons()`, oraz inicjalizacji step 3b.
+
+### Zmiany w plikach
+- `js/tournament.js` — nowa `_updateAdvanceCountLock()`; event listener `#t-third-place-match` change; wywołania w `_initStep3bGroupButtons()` (klik przycisku grupy i inicjalizacja)
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA

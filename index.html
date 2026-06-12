@@ -481,6 +481,7 @@
 
 <!-- Bust notification -->
 <div id="bust-toast">BUST!</div>
+<div id="last-visit-toast">Ostatnie podejście</div>
 
 <!-- Edit player -->
 <div class="modal" id="modal-edit-player">
@@ -607,6 +608,7 @@
   <div class="tv-tabs" id="tv-tabs">
     <button class="tv-tab active" id="tv-tab-table">Tabela</button>
     <button class="tv-tab tv-tab-disabled" id="tv-tab-matches">Mecze</button>
+    <button class="tv-tab" id="tv-tab-bracket" style="display:none">Drabinka</button>
   </div>
   <div id="tv-info-bar" class="tv-info-bar"></div>
   <div id="tv-standings" class="tv-standings"></div>
@@ -618,23 +620,26 @@
 <section id="screen-tournament" class="screen">
   <div class="tournament-card">
 
+    <button id="btn-debug-autofill" type="button" title=""></button>
+
     <div class="wizard-dots">
       <span class="wdot" data-step="1"></span>
       <span class="wdot" data-step="2"></span>
       <span class="wdot" data-step="3"></span>
+      <span class="wdot" data-step="3b"></span>
       <span class="wdot" data-step="4"></span>
     </div>
 
     <!-- ── Step 1: Number of players ── -->
     <div class="wizard-step" id="wstep-1">
       <div class="wizard-title">🎯 Nowy turniej</div>
-      <div class="step-indicator">Krok 1 z 4</div>
+      <div class="step-indicator">Krok 1 z 5</div>
       <label class="wlabel" for="t-name">Nazwa turnieju</label>
       <input id="t-name" type="text" class="player-name-input" maxlength="40"
              placeholder="np. Liga czwartkowa" autocomplete="off">
       <label class="wlabel" for="t-num-players">Liczba graczy</label>
-      <p class="step-hint">Minimum: 3 &nbsp;·&nbsp; Maksimum: 10</p>
-      <input id="t-num-players" type="number" class="t-input-center" min="3" max="10" placeholder="np. 4">
+      <p class="step-hint">Minimum: 3 &nbsp;·&nbsp; Maksimum: 16</p>
+      <input id="t-num-players" type="number" class="t-input-center" min="3" max="16" placeholder="np. 4">
       <span id="t-step1-error" class="t-error" hidden></span>
       <div class="wizard-nav">
         <button id="t-back-1" class="btn-wizard-back">&#8592; Powrót</button>
@@ -645,15 +650,15 @@
     <!-- ── Step 2: Format ── -->
     <div class="wizard-step" id="wstep-2">
       <div class="wizard-title">🎯 Nowy turniej</div>
-      <div class="step-indicator">Krok 2 z 4</div>
+      <div class="step-indicator">Krok 2 z 5</div>
       <label class="wlabel">Format turnieju</label>
       <div class="format-tile active" id="t-format-league" data-format="league">
         Liga (Round-Robin)
         <span class="format-tile-sub">każdy z każdym</span>
       </div>
-      <div class="format-tile disabled" data-format="groups">
+      <div class="format-tile" id="t-format-groups" data-format="groups">
         Grupy + Drabinka
-        <span class="format-tile-sub">wkrótce</span>
+        <span class="format-tile-sub">faza grupowa + puchar</span>
       </div>
       <div class="format-tile" id="t-format-bracket" data-format="bracket">
         Drabinka
@@ -679,8 +684,17 @@
           </div>
         </div>
 
-        <p id="t-bracket-desc" class="wizard-hint format-hidden">
-          Puchar — każdy mecz eliminuje przegranego. Zwycięzca finału wygrywa turniej.
+        <div id="bracket-settings" class="format-hidden">
+          <p class="wizard-hint">Puchar — każdy mecz eliminuje przegranego. Zwycięzca finału wygrywa turniej.</p>
+          <div id="t-bracket-third-place-wrap" style="margin-top:8px">
+            <label class="wiz-check-label">
+              <input type="checkbox" id="t-bracket-third-place-match"> Mecz o 3. miejsce
+            </label>
+          </div>
+        </div>
+
+        <p id="groups-settings" class="wizard-hint format-hidden">
+          Liczba grup i awansujący ustalane w następnym kroku.
         </p>
       </div>
 
@@ -693,7 +707,7 @@
     <!-- ── Step 3: Match settings ── -->
     <div class="wizard-step" id="wstep-3">
       <div class="wizard-title">🎯 Nowy turniej</div>
-      <div class="step-indicator">Krok 3 z 4</div>
+      <div class="step-indicator">Krok 3 z 5</div>
       <div class="form-row">
         <div class="form-group">
           <label for="t-variant">Wariant</label>
@@ -786,10 +800,63 @@
       </div>
     </div>
 
+    <!-- ── Step 3b: Group configuration (groups format only) ── -->
+    <div class="wizard-step" id="wstep-3b">
+      <div class="wizard-title">🎯 Nowy turniej</div>
+      <div class="step-indicator">Krok 4 z 5</div>
+
+      <label class="wlabel">Liczba grup</label>
+      <div class="btn-group" id="t-groups-count-group">
+        <!-- populated dynamically by _initStep3bGroupButtons() -->
+      </div>
+      <p id="t-step3b-groups-info" class="t-groups-info"></p>
+
+      <div class="form-row" style="margin-top:14px" id="t-advance-count-row">
+        <div class="form-group">
+          <label for="t-advance-count">Awansujących z grupy</label>
+          <input id="t-advance-count" type="number" min="1" value="2" style="text-align:center">
+        </div>
+        <div class="form-group">
+          <!-- spacer -->
+        </div>
+      </div>
+
+      <div id="t-advance-per-group-wrap" style="display:none;margin-top:6px">
+        <label class="wiz-check-label">
+          <input type="checkbox" id="t-advance-per-group-toggle"> Różna liczba awansujących z grupy
+        </label>
+        <div id="t-per-group-advance-inputs" style="margin-top:10px"></div>
+      </div>
+
+      <div class="form-row" style="margin-top:8px">
+        <div class="form-group">
+          <label for="t-group-win-pts">Pkt za wygraną</label>
+          <input id="t-group-win-pts" type="number" min="0" value="3" style="text-align:center">
+        </div>
+        <div class="form-group">
+          <label for="t-group-loss-pts">Pkt za przegraną</label>
+          <input id="t-group-loss-pts" type="number" min="0" value="0" style="text-align:center">
+        </div>
+      </div>
+
+      <div id="t-third-place-wrap" style="margin-top:10px;display:none">
+        <label class="wiz-check-label">
+          <input type="checkbox" id="t-third-place-match"> Mecz o 3. miejsce
+        </label>
+      </div>
+
+      <span id="t-step3b-error" class="t-error" hidden></span>
+
+      <div class="wizard-nav">
+        <button id="t-back-3b" class="btn-wizard-back">&#8592; Wstecz</button>
+        <button id="t-next-3b" class="btn-wizard-next">DALEJ &#8594;</button>
+      </div>
+    </div>
+
     <!-- ── Step 4: Players & seeding ── -->
     <div class="wizard-step" id="wstep-4">
       <div class="wizard-title">🎯 Nowy turniej</div>
-      <div class="step-indicator">Krok 4 z 4</div>
+      <div class="step-indicator">Krok 5 z 5</div>
       <label class="wlabel" id="t-players-label">Gracze</label>
       <div id="t-players-list"></div>
       <label class="wlabel" style="margin-top:12px">Rozstawienie</label>
@@ -799,6 +866,7 @@
       </div>
       <p id="t-step4-error" class="t-error" hidden></p>
       <button id="btn-preview-bracket" class="btn-preview-bracket">👁 Podgląd drabinki</button>
+      <button id="btn-preview-groups" class="btn-preview-bracket" style="display:none">👁 Podgląd grup</button>
       <button id="btn-create-tournament" class="btn-create-tournament" disabled>UTWÓRZ TURNIEJ</button>
       <div class="wizard-nav" style="margin-top:8px">
         <button id="t-back-4" class="btn-wizard-back">&#8592; Wstecz</button>
@@ -818,6 +886,18 @@
     🎲 Przy losowym rozstawieniu kolejność graczy w drabince może się różnić od tej w podglądzie.
   </p>
   <div id="bracket-preview-content"></div>
+</div>
+
+<!-- Group preview modal -->
+<div class="modal" id="modal-group-preview">
+  <div class="modal-inner-rel">
+    <button class="btn-modal-corner-close" onclick="closeModal('modal-group-preview')">✕</button>
+    <h3 style="margin-bottom:8px">Podgląd grup</h3>
+    <p id="group-preview-note" class="bracket-preview-note" hidden>
+      🎲 Przy losowym rozstawieniu kolejność graczy w grupach może się różnić od tej w podglądzie. Losowanie nastąpi po naciśnięciu „UTWÓRZ TURNIEJ".
+    </p>
+    <div id="group-preview-body"></div>
+  </div>
 </div>
 
 <!-- Scripts (order matters) -->

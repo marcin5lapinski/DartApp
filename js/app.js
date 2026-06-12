@@ -239,9 +239,7 @@ function setupEventListeners() {
         _activeTournament = t;
         renderTournamentViewScreen(t);
         showScreen(SCREENS.TOURNAMENT_VIEW);
-        if (t.config.format !== 'bracket') {
-          document.getElementById('tv-tab-matches').click();
-        }
+        _returnToTournamentTab(t, ptm.matchIndex);
       } else {
         showScreen(SCREENS.HOME);
       }
@@ -270,9 +268,7 @@ function setupEventListeners() {
         _activeTournament = t;
         renderTournamentViewScreen(t);
         showScreen(SCREENS.TOURNAMENT_VIEW);
-        if (t.config.format !== 'bracket') {
-          document.getElementById('tv-tab-matches').click();
-        }
+        _returnToTournamentTab(t, ptm.matchIndex);
       } else {
         showScreen(SCREENS.HOME);
       }
@@ -283,7 +279,12 @@ function setupEventListeners() {
 
   // Bust toast click to dismiss
   document.getElementById('bust-toast').addEventListener('click', () => {
-    document.getElementById('bust-toast').classList.remove('visible');
+    document.getElementById('bust-toast').classList.remove('visible', 'stacked');
+    document.getElementById('last-visit-toast').classList.remove('stacked');
+  });
+  document.getElementById('last-visit-toast').addEventListener('click', () => {
+    document.getElementById('last-visit-toast').classList.remove('visible', 'stacked');
+    document.getElementById('bust-toast').classList.remove('stacked');
   });
 
   // Navigation: home → match setup
@@ -668,6 +669,20 @@ function startMatch() {
   saveToLocalStorage();
 }
 
+function _returnToTournamentTab(t, matchIndex) {
+  if (t.config.format === 'liga') {
+    document.getElementById('tv-tab-matches').click();
+  } else if (t.config.format === 'groups') {
+    const m = t.matches[matchIndex];
+    if (m && m.phase === 'group') {
+      document.getElementById('tv-tab-matches').click();
+    } else {
+      document.getElementById('tv-tab-bracket').click();
+    }
+  }
+  // bracket format: renderTournamentViewScreen already shows bracket, no tab click needed
+}
+
 function openTournamentStarterModal(tournament, matchIndex) {
   const m  = tournament.matches[matchIndex];
   const mc = tournament.config.matchConfig;
@@ -684,11 +699,11 @@ function openTournamentStarterModal(tournament, matchIndex) {
   const opts = document.getElementById('starter-options');
   opts.innerHTML = '';
 
-  // Detect rematch: find the completed first match between the same pair
-  const firstMatch = tournament.matches.find(
+  // Detect rematch: only in liga format (bracket/groups phases are never rematches)
+  const firstMatch = tournament.config.format === 'liga' ? tournament.matches.find(
     (mx, i) => i !== matchIndex && mx.winner !== null && mx.starter != null &&
       ((mx.p1 === m.p1 && mx.p2 === m.p2) || (mx.p1 === m.p2 && mx.p2 === m.p1))
-  );
+  ) : null;
 
   let autoStarter = null;
   if (firstMatch) {
@@ -759,8 +774,9 @@ function startTournamentMatch(tournament, matchIndex, startingPlayer) {
   undoStack = [];
   updateUndoButton();
 
-  document.getElementById('btn-live-standings').style.display =
-    tournament.config.format === 'bracket' ? 'none' : '';
+  const hideLS = tournament.config.format === 'bracket' ||
+                 (tournament.config.format === 'groups' && m.phase === 'bracket');
+  document.getElementById('btn-live-standings').style.display = hideLS ? 'none' : '';
   showScreen(SCREENS.GAME);
   renderGameScreen(match);
   focusSummaryInput();
@@ -784,9 +800,49 @@ function saveTournamentMatchResult(finishedMatch, ptm) {
 
   if (t.config.format === 'bracket') {
     advanceBracketWinner(t.matches, m);
-  }
 
-  if (t.matches.every(mx => mx.winner !== null)) t.status = 'finished';
+    const totalBracketRounds = Math.log2(t.config.bracketSize);
+    const isSemiFinal = m.round === totalBracketRounds - 2 && totalBracketRounds >= 2;
+    if (isSemiFinal && t.config.thirdPlaceMatch) {
+      const thirdMatch = t.matches.find(mx => mx.isThirdPlace);
+      if (thirdMatch) {
+        const loserIdx = m.winner === 0 ? m.p2 : m.p1;
+        if (thirdMatch.p1 === null) thirdMatch.p1 = loserIdx;
+        else if (thirdMatch.p2 === null) thirdMatch.p2 = loserIdx;
+      }
+    }
+
+    if (t.matches.filter(mx => !mx.isBye).every(mx => mx.winner !== null)) {
+      t.status = 'finished';
+    }
+  } else if (t.config.format === 'groups') {
+    if (m.phase === 'group') {
+      if (isGroupPhaseComplete(t)) {
+        finalizeGroupPhase(t);
+      }
+    } else if (m.phase === 'bracket') {
+      advanceBracketWinner(t.matches, m);
+
+      const totalBracketRounds = Math.log2(t.config.bracketSize);
+      const isSemiFinal = m.round === totalBracketRounds - 2 && totalBracketRounds >= 2;
+      if (isSemiFinal && t.config.thirdPlaceMatch) {
+        const thirdMatch = t.matches.find(mx => mx.phase === 'bracket' && mx.isThirdPlace);
+        if (thirdMatch) {
+          const loserIdx = m.winner === 0 ? m.p2 : m.p1;
+          if (thirdMatch.p1 === null) thirdMatch.p1 = loserIdx;
+          else if (thirdMatch.p2 === null) thirdMatch.p2 = loserIdx;
+        }
+      }
+
+      const bracketNonBye = t.matches.filter(mx => mx.phase === 'bracket' && !mx.isBye);
+      if (bracketNonBye.every(mx => mx.winner !== null)) {
+        t.status = 'finished';
+      }
+    }
+  } else {
+    // league
+    if (t.matches.every(mx => mx.winner !== null)) t.status = 'finished';
+  }
 
   saveTournaments(list);
   _activeTournament = t;
@@ -831,6 +887,29 @@ function renderLiveStandingsModal() {
 
   const t = loadTournaments().find(t => t.id === ptm.tournamentId);
   if (!t) return;
+
+  if (t.config.format === 'groups') {
+    const currentMatch = t.matches[ptm.matchIndex];
+    const gi = currentMatch ? currentMatch.groupIndex : null;
+
+    if (gi !== undefined && gi !== null) {
+      const liveData = {
+        p1Idx:   ptm.p1Idx,
+        p2Idx:   ptm.p2Idx,
+        legsWon: match.legsWon,
+        setsWon: match.setsWon || [0, 0],
+        avgs:    [getMatchAverage(match.stats[0]), getMatchAverage(match.stats[1])],
+      };
+      const rows = computeLiveGroupStandings(t, gi, liveData);
+      document.getElementById('live-modal-subtitle').textContent = t.name;
+      const container = document.getElementById('live-standings-container');
+      container.innerHTML = _renderGroupStandingsHTML(t, gi, rows);
+      document.getElementById('live-standings-note').textContent =
+        'Tabela na żywo — Grupa ' + t.config.groups[gi].name;
+      openModal('modal-live-standings');
+      return;
+    }
+  }
 
   const liveData = {
     p1Idx:   ptm.p1Idx,
@@ -1356,8 +1435,12 @@ function loadFromLocalStorage() {
         if (match && match.tournamentMatchContext) {
           pendingTournamentMatch = match.tournamentMatchContext;
           const restoredT = loadTournaments().find(t => t.id === match.tournamentMatchContext.tournamentId);
-          document.getElementById('btn-live-standings').style.display =
-            (restoredT && restoredT.config.format === 'bracket') ? 'none' : '';
+          const restoredMatch = restoredT && match.tournamentMatchContext
+            ? restoredT.matches[match.tournamentMatchContext.matchIndex]
+            : null;
+          const hideLSRestore = (restoredT && restoredT.config.format === 'bracket') ||
+            (restoredT && restoredT.config.format === 'groups' && restoredMatch && restoredMatch.phase === 'bracket');
+          document.getElementById('btn-live-standings').style.display = hideLSRestore ? 'none' : '';
         }
         showScreen(SCREENS.GAME);
         renderGameScreen(match);

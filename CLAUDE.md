@@ -28,16 +28,16 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
 
 | File | Responsibility |
 |---|---|
-| `js/checkouts.js` | `CHECKOUT_TABLE` (2–170), `getCheckoutHint()`, `DOUBLE_FINISHES` set, `isDoubleAttemptScore()`, `findCheckoutPath(score, targetDouble, dartsLeft)` |
-| `js/stats.js` | Per-player stat objects, `recordVisit()`, `recordDart()`, `recordLegWin()`, `recordLegWinByLimit()`, `getFirst9Average()` |
+| `js/checkouts.js` | `CHECKOUT_TABLE` (2–170), `getCheckoutHint()`, `getAllCheckoutHints()`, `DOUBLE_FINISHES` set, `isDoubleAttemptScore()`, `closeDoubleLabel(val)`, `findCheckoutPath(score, targetDouble, dartsLeft)` |
+| `js/stats.js` | Per-player stat objects, `recordVisit()`, `recordDart()`, `recordLegWin()`, `recordLegWinByLimit()`, `getFirst9Average()`, `getMatchAverage(stats)`, `getDoublePercentage(stats)` |
 | `js/game.js` | `createMatch()`, `applyVisitScore()`, `finalizeLeg()`, `finalizeLimitLeg()`, bust/checkout logic, `getValidClosingDarts()`, `getValidOpeningDarts()`, `_achievable2Darts()` |
-| `js/players.js` | Persistent player profiles CRUD — `loadPlayers()`, `createPlayer()`, `updatePlayer()`, `renamePlayer()`, `deletePlayer()`, `renderPlayersScreen()`, `populatePlayerSuggestions()` |
-| `js/history.js` | Match history (capped at 100) — `saveMatchToHistory()`, `deleteHistoryRecord()`, `renderHistoryScreen()`, `renderHistoryDetailScreen()` |
+| `js/players.js` | Persistent player profiles CRUD — `loadPlayers()`, `createPlayer()`, `updatePlayer()`, `renamePlayer()`, `deletePlayer()`, `renderPlayersScreen()`, `populatePlayerSuggestions()`; also defines `escapeHtml(str)` — used cross-module |
+| `js/history.js` | Match history (capped at 100) — `saveMatchToHistory()`, `deleteHistoryRecord()`, `clearHistory()`, `renderHistoryScreen()`, `renderHistoryDetailScreen()` |
 | `js/board.js` | Canvas 2D dartboard (Mode C) — `initBoard()`, `_drawBoard()`, click/touch hit detection |
-| `js/ui.js` | `showScreen()`, `renderGameScreen()`, `showWhichDartDialog()`, `showBust()`, `showLastVisitToast()`, modal helpers; defines `SCREENS` constant |
-| `js/league.js` | Tournament data layer — `loadTournaments()`, `saveTournaments()`, `generateSchedule()`, `createTournament()`, `deleteTournament()`, `deleteAllTournamentsByStatus(status)`, `computeStandings()`, `computeLiveStandings()`; bracket — `nextPowerOf2()`, `computeRoundName()`, `_bracketCenterY()`, `advanceBracketWinner()`, `generateBracket(players)`, `renderBracketScreen(tournament, container?)`, `_buildBracketCard()`, `buildBracketRound()`, `buildBracketConnectorSvg()`; rendering — `renderTournamentListScreen()`, `buildTournamentCard()`, `renderTournamentViewScreen()`, `renderTournamentMatchesScreen()` |
-| `js/tournament.js` | Tournament wizard — `tournamentConfig` global, `initTournamentWizard()`, `showWizardStep()`, `_computeByeSuggestion(numPlayers)`, `_updateByeCounter(numByes)`, `renderStep4Players(savedValues)`, `_getStep4Values()`, `_initStep4DragDrop()`, `_updateStep4Datalists()`, `buildDoublesOptions()`, `validateStep4()`; all wizard step event listeners |
-| `js/app.js` | Event wiring, `startMatch()`, `submitSummaryScore()`, `submitDart()`, `localStorage` save/load; owns `undoStack` (capped at 20) |
+| `js/ui.js` | `showScreen()`, `renderGameScreen()`, `showWhichDartDialog()`, `showBust()`, `showLastVisitToast()`, `openModal(id)`, `closeModal(id)`; defines `SCREENS` constant |
+| `js/league.js` | Tournament data layer — `loadTournaments()`, `saveTournaments()`, `generateSchedule()`, `createTournament()`, `deleteTournament()`, `deleteAllTournamentsByStatus(status)`, `computeStandings()`, `computeLiveStandings()`; bracket — `nextPowerOf2()`, `computeRoundName()`, `_bracketCenterY()`, `advanceBracketWinner()`, `generateBracket(players)`, `renderBracketScreen(tournament, container?)`, `_buildBracketCard()`, `buildBracketRound()`, `buildBracketConnectorSvg()`; groups — `_buildGroups(players, numGroups, advanceCountOrArray, sequential?)`, `_generateGroupMatches()`, `_generateBracketTBD(groups, thirdPlaceMatch)`, `computeGroupStandings(tournament, gi)`, `isGroupPhaseComplete(tournament)`, `finalizeGroupPhase(tournament)`, `_advancingBg(rank, advCount)`, `_renderGroupStandingsHTML()`, `computeLiveGroupStandings()`, `renderGroupsTab(tournament)`, `renderGroupMatchesTab(tournament)`, `_buildGroupMatchCell()`; rendering — `renderTournamentListScreen()`, `buildTournamentCard()`, `renderTournamentViewScreen()`, `renderTournamentMatchesScreen()` |
+| `js/tournament.js` | Tournament wizard — `tournamentConfig` global, `initTournamentWizard()`, `showWizardStep()`, `_computeByeSuggestion(numPlayers)`, `_updateByeCounter(numByes)`, `_updateByeHint()`, `_updateByeActionBtn()`, `_assignRandomByes(players)`, `renderStep4Players(savedValues)`, `_getStep4Values()`, `_initStep4DragDrop()`, `_updateStep4Datalists()`, `buildDoublesOptions()`, `validateStep4()`, `_updateBracketThirdPlaceWrap()`; groups — `_initStep3bGroupButtons()`, `_updateStep3bGroupsInfo()`, `_updateAdvanceCountMax()`, `_updateAdvanceCountLock()`, `_updateThirdPlaceVisibility()`, `_updateAdvancePerGroupUI()`, `_rebuildPerGroupAdvanceInputs()`, `_validateStep3b()`, `_refreshGroupPreviewBody()`, `renderGroupPreviewModal()`; all wizard step event listeners |
+| `js/app.js` | Event wiring, `startMatch()`, `submitSummaryScore()`, `submitDart()`, `localStorage` save/load; owns `undoStack` (capped at 20); `_returnToTournamentTab(t, matchIndex)` — post-match tab selection |
 
 ### Key globals defined per module (all loaded into `window`)
 
@@ -72,7 +72,8 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
   stats: [playerStats, playerStats],
   playerFavorites: [null|{primaryDouble,secondaryDouble}, ...],
   dartLimitVisits: null | number,  // dartLimit/3; null = no limit
-  matchOver, winner, inputMode
+  matchOver, winner, inputMode,
+  tournamentMatchContext: null | { tournamentId, matchIndex, p1Idx, p2Idx }  // set by startTournamentMatch
 }
 ```
 
@@ -90,7 +91,7 @@ checkouts.js → stats.js → game.js → players.js → history.js → board.js
 - **Dart-by-dart / Board mode**: buffer accumulates 3 darts, auto-submits; double-attempt detection per dart
 - **Leg start alternation**: the player who starts each leg alternates from the previous leg
 - **Leg/set/match result modal** (`#modal-leg-result`): shown by `showLegResultDialog(winnerName, num, type, callback)` in `ui.js`. Has two buttons: "↩ Cofnij" (`#btn-leg-result-undo`) and "Dalej" (`#btn-next-leg`). Cofnij calls `undoLastVisit()` — closes all modals, restores pre-visit state, re-renders game screen. Disabled when `undoStack` is empty (checked at modal open time).
-- **Dart visit limit**: optional per-leg visit cap (30–54 darts, step 3) configured in setup (`#sel-dart-limit`) and tournament wizard step 3 (`#t-dart-limit`). Stored as `match.dartLimitVisits = dartLimit/3`. After every committed visit `checkLegVisitLimit()` tests if both players' `history.length >= dartLimitVisits` — if so, `#modal-dart-limit` opens asking who won. Winner awarded via `finalizeLimitLeg()` / `recordLegWinByLimit()` (no `fastestLeg` / `highestCheckout` update). Toast "Ostatnie podejście" (blue, `#bust-toast.last-visit`) shown when active player has exactly `dartLimitVisits-1` visits.
+- **Dart visit limit**: optional per-leg visit cap (30–54 darts, step 3) configured in setup (`#sel-dart-limit`) and tournament wizard step 3 (`#t-dart-limit`). Stored as `match.dartLimitVisits = dartLimit/3`. After every committed visit `checkLegVisitLimit()` tests if both players' `history.length >= dartLimitVisits` — if so, `#modal-dart-limit` opens asking who won. Winner awarded via `finalizeLimitLeg()` / `recordLegWinByLimit()` (no `fastestLeg` / `highestCheckout` update). Toast "Ostatnie podejście" shown via `showLastVisitToast()` as a separate `#last-visit-toast` element (blue) when active player has exactly `dartLimitVisits-1` visits. If bust happens on the same turn, both toasts show stacked (`#bust-toast` on top shifted up 44 px, `#last-visit-toast` below shifted down 44 px via `.stacked` CSS class).
 
 ## Screens
 
@@ -106,20 +107,21 @@ home → tournament-list → [tournament-view | tournament wizard → tournament
 
 **`screen-tournament-list`**: lists active (max 5) and finished (max 40) tournaments. "Nowy turniej" button disabled at limit. Delete single with `modal-delete-tournament`. Delete all active with `modal-delete-all-active`, delete all finished with `modal-delete-all-finished` (buttons rendered dynamically in section headers, delegated click handling). Rendered by `renderTournamentListScreen()` in `league.js`.
 
-**`screen-tournament-view`**: for liga — tab bar (Tabela + Mecze). Standings rendered by `renderTournamentViewScreen(tournament)` — sort: pts desc → legDiff desc → avg desc → seeding index asc. Tied rows get green background `#0e1a0e`. Finished tournaments show gold/silver/bronze medal colors for top 3. Matches tab rendered by `renderTournamentMatchesScreen(tournament)` — 3-col grid, unplayed sorted by longest-waiting pair, clicking unplayed opens starter modal, clicking played opens stats. For bracket — no tabs; shows `#tv-bracket` only, rendered by `renderBracketScreen(tournament)`.
+**`screen-tournament-view`**: for liga — tab bar (Tabela + Mecze). Standings rendered by `renderTournamentViewScreen(tournament)` — sort: pts desc → legDiff desc → avg desc → seeding index asc. Tied rows get green background `#0e1a0e`. Finished tournaments show gold/silver/bronze medal colors for top 3. Matches tab rendered by `renderTournamentMatchesScreen(tournament)` — 3-col grid, unplayed sorted by longest-waiting pair, clicking unplayed opens starter modal, clicking played opens stats. For bracket — no tabs; shows `#tv-bracket` only, rendered by `renderBracketScreen(tournament)`. When `config.thirdPlaceMatch` is true, the third-place match card is appended to the final column (`finalColEl`) below `bk-body`; semi-final losers are propagated in `saveTournamentMatchResult`. For groups — 3-tab bar (Grupy / Mecze gr. / Drabinka): Grupy tab shows per-group standings tables (`renderGroupsTab`); Mecze gr. tab shows **only group phase matches** sectioned by group name (`renderGroupMatchesTab`) — bracket matches not shown here; Drabinka tab shows the bracket rendered by `renderBracketScreen` — includes the third-place match card **inside the final column** (appended to `finalColEl` below `bk-body`) when `config.thirdPlaceMatch` is true; hidden together with the final column when navigating left. Niezafinalizowane mecze bye (przed `finalizeGroupPhase`) dostają klasę `tbd-card` zamiast `bye-card` w `_buildBracketCard`. Single-group format with `thirdPlaceMatch`: the third-place match in `_generateBracketTBD` gets `p1Label: 'A(advCount+1)', p2Label: 'A(advCount+2)'` (e.g. `A3`/`A4`); `finalizeGroupPhase` resolves these to real player indices from group standings. `computeRoundName` returns `'Finał'` for `numRounds === 1` (single-match bracket, e.g. 3-player groups tournament). Rematch detection in `openTournamentStarterModal` is liga-only — bracket/groups never trigger the rematch flow. Live standings update after every group match; bracket tab accessible throughout (TBD until `finalizeGroupPhase()`). Post-match navigation: after a group match → Mecze gr. tab; after a bracket match → Drabinka tab (`_returnToTournamentTab` in `app.js`). Info bar shows total played/total matches across all phases.
 
 ### Tournament wizard (`screen-tournament`)
 
-4-step wizard, state in `tournamentConfig`, steps managed by `showWizardStep(n)` in `tournament.js`:
+4-step wizard (5 steps for groups format), state in `tournamentConfig`, steps managed by `showWizardStep(n)` in `tournament.js`:
 
 | Step | Content |
 |---|---|
-| 1 | Tournament name (max 40) + number of players (3–10) |
-| 2 | Format (liga or bracket); rounds (single/double, liga only); win/loss points (liga only). Liga/bracket settings share the same vertical space via CSS grid overlay — no height jump on switch. |
+| 1 | Tournament name (max 40) + number of players (3–16) |
+| 2 | Format (liga, bracket, or groups+bracket); rounds (single/double, liga only); win/loss points (liga only). Format settings share the same vertical space via CSS grid overlay. Bracket format shows `#bracket-settings` div with hint text + `#t-bracket-third-place-match` checkbox inside `#t-bracket-third-place-wrap` — the wrap is hidden when `numPlayers < 4` (managed by `_updateBracketThirdPlaceWrap()`). |
 | 3 | Match settings — variant, sets, legs, in-mode, out-mode (no starter — asked per match) |
-| 4 | Player name inputs + 2 doubles selects each; seeding choice; BYE toggles (bracket only); "👁 Podgląd drabinki" preview button (bracket only); UTWÓRZ TURNIEJ button |
+| 3b | **Groups format only** — number of groups (valid k where `3 ≤ floor(n/k) ≤ 8`); advance count per group (global input or per-group toggle with individual inputs, limit `groupSize−1`; minimum 2 when `n === 3 && numGroups === 1`); win/loss points; optional third-place match (shown when `total >= 3` OR `k === 1 && numPlayers − total >= 2`). `_initStep3bGroupButtons()` builds group-count buttons dynamically. |
+| 4 | Player name inputs + 2 doubles selects each; seeding choice; BYE toggles (bracket/groups only); "👁 Podgląd drabinki" preview button (bracket/groups only); UTWÓRZ TURNIEJ button |
 
-`validateStep4()` enables UTWÓRZ TURNIEJ when: all name fields non-empty, no duplicates (case-insensitive), and (bracket only) `byeCount === numByes`. Duplicate fields get red border + dark background. For bracket with `numByes > 0`: a counter bar (`#t-bye-counter`) above the player list shows current vs required count; green when correct, red otherwise. BYE toggles pre-filled by `_computeByeSuggestion(n)` (interleaving formula) on fresh render; preserved from `savedValues` on drag-drop re-render. Clicking "🎲 Losuj" with 0 byes active auto-assigns `numByes` random byes. Each player input has its own `<datalist id="t-datalist-N">` managed by `_updateStep4Datalists()`. On UTWÓRZ click: reads `_getStep4Values()` (includes `bye` flag), Fisher-Yates shuffle applied if seeding=random (bye travels with player), unknown players added to `dart_players`, `createTournament(config, players)` called (strips `bye` before storage), navigates to `TOURNAMENT_VIEW`.
+`validateStep4()` enables UTWÓRZ TURNIEJ when: all name fields non-empty, no duplicates (case-insensitive), and (bracket only) `byeCount === numByes`. Duplicate fields get red border + dark background. For bracket with `numByes > 0`: a counter bar (`#t-bye-counter`) above the player list shows current vs required count; green when correct, red otherwise. Below the hint text (`#t-bye-hint`), a `#t-bye-action-btn` button toggles between "Odznacz wszystkie" (when ≥1 BYE active; clears all) and "Wylosuj wolne losy" (when 0 BYE; randomly assigns `numByes`). Managed by `_updateByeActionBtn()`, called from `_updateByeCounter()`. BYE toggles pre-filled by `_computeByeSuggestion(n)` (interleaving formula) on fresh render; preserved from `savedValues` on drag-drop re-render. Each player input has its own `<datalist id="t-datalist-N">` managed by `_updateStep4Datalists()`. On UTWÓRZ click: reads `_getStep4Values()` (includes `bye` flag), Fisher-Yates shuffle applied if seeding=random (bye travels with player), for bracket reads `#t-bracket-third-place-match` into `tournamentConfig.thirdPlaceMatch`, unknown players added to `dart_players`, `createTournament(config, players)` called (strips `bye` before storage), navigates to `TOURNAMENT_VIEW`.
 
 ### Tournament data shape (`dart_tournaments` array)
 
@@ -127,12 +129,18 @@ home → tournament-list → [tournament-view | tournament wizard → tournament
 {
   id, name, status: 'active'|'finished', createdAt,
   config: {
-    numPlayers, format,                          // format: 'liga' | 'bracket'
+    numPlayers, format,                          // format: 'liga' | 'bracket' | 'groups'
     // liga only:
     leagueRounds: 'single'|'double', winPoints, lossPoints,
     // bracket only:
     bracketSize,                                 // next power-of-2 ≥ numPlayers
+    thirdPlaceMatch: boolean,
     matchConfig,
+    // groups only:
+    groups: [{ name, playerIndices, advanceCount }],  // one entry per group
+    winPoints, lossPoints,                       // group-phase points
+    thirdPlaceMatch: boolean,
+    bracketSize,                                 // for the bracket phase
   },
   players: [{ name, primaryDouble, secondaryDouble }],  // in seeding order
   matches: [{
@@ -147,10 +155,18 @@ home → tournament-list → [tournament-view | tournament wizard → tournament
     round:  number,        // 0 = R1, 1 = R2, …
     slot:   number,        // 0-based slot within the round
     isBye:  boolean,       // bye-match: p2=null, winner=0 pre-set, never played
+    // groups format adds:
+    phase:        'group'|'bracket',
+    groupIndex:   number,            // group matches only
+    isThirdPlace: boolean,           // bracket matches only
+    p1Label:      string|null,       // seed label before finalization (e.g. 'A1', 'B2')
+    p2Label:      string|null,
   }]
 }
 ```
 `winner: 0` means `players[p1]` won; `winner: 1` means `players[p2]` won. `legs[0]` = legs won by p1, `legs[1]` = legs won by p2.
+
+Groups format: `matches[]` contains both group matches (`phase:'group'`) and bracket matches (`phase:'bracket'`). `p1Label`/`p2Label` hold seed labels (e.g. `'A1'`) until `finalizeGroupPhase()` resolves them to real `p1`/`p2` player indices after all group matches are played. For single-group format with `thirdPlaceMatch`, the third-place bracket match gets `p1Label: 'A(advCount+1)', p2Label: 'A(advCount+2)'` (e.g. `'A3'`/`'A4'`); `finalizeGroupPhase` resolves these from group standings (non-advancing positions).
 
 ### Bracket layout constants (coupled — must stay in sync)
 
@@ -185,6 +201,8 @@ All UI text is in Polish. Identifiers and code comments are in English. The orig
 ## Testing
 
 Playwright is installed (`node_modules/playwright`) but no proper E2E tests exist. `test-run.mjs` is an ad-hoc smoke test that is currently broken (see Commands note above). Manual testing: open `index.html` directly in a browser.
+
+**Debug autofill button**: a hidden 15×15 button (`#btn-debug-autofill`) sits in the top-left corner of the tournament wizard card (`index.html:623`). Clicking it fills player name fields from saved profiles. Wired in `tournament.js`. Remove before Phase 5 / release.
 
 ## CSS theme variables
 

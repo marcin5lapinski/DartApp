@@ -41,6 +41,7 @@ function nextPowerOf2(n) {
 
 function computeRoundName(roundIdx, numRounds) {
   const tables = {
+    1: ['Finał'],
     2: ['Półfinał', 'Finał'],
     3: ['Ćwierćfinał', 'Półfinał', 'Finał'],
     4: ['1/8 Finału', 'Ćwierćfinał', 'Półfinał', 'Finał'],
@@ -126,8 +127,203 @@ function generateBracket(players) {
   return matches;
 }
 
+function _buildGroups(players, numGroups, advanceCountOrArray, sequential = false) {
+  const n     = players.length;
+  const isArr = Array.isArray(advanceCountOrArray);
+  const groups = Array.from({ length: numGroups }, (_, gi) => ({
+    name: String.fromCharCode(65 + gi),
+    playerIndices: [],
+    advanceCount: isArr ? advanceCountOrArray[gi] : advanceCountOrArray,
+  }));
+  if (sequential) {
+    let idx = 0;
+    groups.forEach((g, gi) => {
+      const size = Math.floor(n / numGroups) + (gi < n % numGroups ? 1 : 0);
+      for (let j = 0; j < size; j++) g.playerIndices.push(idx++);
+    });
+  } else {
+    players.forEach((p, i) => { groups[i % numGroups].playerIndices.push(i); });
+  }
+  return groups;
+}
+
+function _generateGroupMatches(groups) {
+  const buckets = groups.map(() => []);
+  groups.forEach((g, gi) => {
+    const idxs = g.playerIndices;
+    for (let a = 0; a < idxs.length; a++) {
+      for (let b = a + 1; b < idxs.length; b++) {
+        buckets[gi].push({
+          p1: idxs[a], p2: idxs[b],
+          winner: null,
+          legs: [null, null], sets: [null, null],
+          avgs: [null, null], stats: [null, null],
+          starter: null,
+          phase: 'group',
+          groupIndex: gi,
+          isBye: false,
+        });
+      }
+    }
+  });
+  // Interleave: A#1, B#1, C#1, A#2, B#2, ...
+  const result = [];
+  const ptrs   = new Array(groups.length).fill(0);
+  let remaining = buckets.reduce((s, b) => s + b.length, 0);
+  while (remaining > 0) {
+    for (let gi = 0; gi < groups.length; gi++) {
+      if (ptrs[gi] < buckets[gi].length) {
+        result.push(buckets[gi][ptrs[gi]++]);
+        remaining--;
+      }
+    }
+  }
+  return result;
+}
+
+function _computeSnakePairs(n) {
+  if (n <= 1) return [];
+  if (n === 2) return [[0, 1]];
+  const half   = n / 2;
+  const result = [];
+  for (let i = 0; i < half / 2; i++) {
+    result.push([i, n - 1 - i]);
+    result.push([half - 1 - i, half + i]);
+  }
+  return result;
+}
+
+function _generateBracketTBD(groups, thirdPlaceMatch) {
+  const numGroups  = groups.length;
+  const advCounts  = groups.map(g => g.advanceCount);
+  const totalSeeds = advCounts.reduce((s, a) => s + a, 0);
+  const B          = nextPowerOf2(totalSeeds);
+  const numByes    = B - totalSeeds;
+  const numRounds  = Math.log2(B);
+  const r1Slots    = B / 2;
+
+  // Rank-first ordering: A1, B1, C1, A2, B2, ... filtering per-group advance limit
+  const maxAdv = Math.max(...advCounts);
+  const seedLabels = [];
+  for (let rank = 1; rank <= maxAdv; rank++) {
+    for (let gi = 0; gi < numGroups; gi++) {
+      if (rank <= advCounts[gi]) seedLabels.push(String.fromCharCode(65 + gi) + rank);
+    }
+  }
+
+  const byeSeeds  = seedLabels.slice(0, numByes);
+  const realSeeds = seedLabels.slice(numByes);
+
+  const matches = [];
+
+  if (numByes === 0) {
+    const snakePairs = _computeSnakePairs(totalSeeds);
+    for (let slot = 0; slot < r1Slots; slot++) {
+      const pair = snakePairs[slot] || [0, 1];
+      matches.push({
+        round: 0, slot, phase: 'bracket', isBye: false, isThirdPlace: false,
+        p1: null, p2: null, winner: null,
+        legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+        p1Label: seedLabels[pair[0]], p2Label: seedLabels[pair[1]],
+      });
+    }
+  } else {
+    const numReal    = totalSeeds - r1Slots;
+    const realSlotSet = new Set();
+    for (let i = 0; i < numReal; i++) {
+      realSlotSet.add(Math.floor(i * r1Slots / numReal));
+    }
+    let byePtr = 0, realPtr = 0;
+    for (let slot = 0; slot < r1Slots; slot++) {
+      if (realSlotSet.has(slot)) {
+        matches.push({
+          round: 0, slot, phase: 'bracket', isBye: false, isThirdPlace: false,
+          p1: null, p2: null, winner: null,
+          legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+          p1Label: realSeeds[realPtr]     || null,
+          p2Label: realSeeds[realPtr + 1] || null,
+        });
+        realPtr += 2;
+      } else {
+        matches.push({
+          round: 0, slot, phase: 'bracket', isBye: true, isThirdPlace: false,
+          p1: null, p2: null, winner: null,
+          legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+          p1Label: byeSeeds[byePtr] || null, p2Label: null,
+        });
+        byePtr++;
+      }
+    }
+  }
+
+  for (let r = 1; r < numRounds; r++) {
+    const slotsInRound = B / Math.pow(2, r + 1);
+    for (let slot = 0; slot < slotsInRound; slot++) {
+      matches.push({
+        round: r, slot, phase: 'bracket', isBye: false, isThirdPlace: false,
+        p1: null, p2: null, winner: null,
+        legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+        p1Label: null, p2Label: null,
+      });
+    }
+  }
+
+  if (thirdPlaceMatch) {
+    const isSingleGroup = numGroups === 1;
+    matches.push({
+      round: numRounds - 1, slot: -1, phase: 'bracket', isBye: false, isThirdPlace: true,
+      p1: null, p2: null, winner: null,
+      legs: [null,null], sets: [null,null], avgs: [null,null], stats: [null,null], starter: null,
+      p1Label: isSingleGroup ? ('A' + (advCounts[0] + 1)) : null,
+      p2Label: isSingleGroup ? ('A' + (advCounts[0] + 2)) : null,
+    });
+  }
+
+  return { bracketSize: B, matches };
+}
+
 function createTournament(config, players) {
+  if (config.format === 'groups') {
+    const groups = _buildGroups(players, config.numGroups, config.advanceCounts || config.advanceCount, config.seeding === 'ordered');
+    const { bracketSize, matches: bracketMatches } = _generateBracketTBD(
+      groups, config.thirdPlaceMatch || false
+    );
+    const tournament = {
+      id:        't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
+      name:      config.name,
+      status:    'active',
+      createdAt: Math.floor(Date.now() / 1000),
+      config: {
+        numPlayers:      config.numPlayers,
+        format:          'groups',
+        groups,
+        winPoints:       config.winPoints  !== undefined ? config.winPoints  : 3,
+        lossPoints:      config.lossPoints !== undefined ? config.lossPoints : 0,
+        thirdPlaceMatch: config.thirdPlaceMatch || false,
+        bracketSize,
+        matchConfig:     { ...config.matchConfig },
+      },
+      players: players.map(({ bye, ...rest }) => rest),
+      matches: [..._generateGroupMatches(groups), ...bracketMatches],
+    };
+    const list = loadTournaments();
+    list.push(tournament);
+    saveTournaments(list);
+    return tournament;
+  }
+
   const isBracket = config.format === 'bracket';
+  const bracketMatches = isBracket ? generateBracket(players) : null;
+  if (isBracket && config.thirdPlaceMatch) {
+    const numRounds = Math.log2(nextPowerOf2(players.length));
+    if (numRounds >= 2) {
+      bracketMatches.push({
+        round: numRounds - 1, slot: -1, isBye: false, isThirdPlace: true,
+        p1: null, p2: null, winner: null,
+        legs: [null, null], sets: [null, null], avgs: [null, null], stats: [null, null], starter: null,
+      });
+    }
+  }
   const tournament = {
     id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
     name: config.name,
@@ -137,13 +333,13 @@ function createTournament(config, players) {
       numPlayers: config.numPlayers,
       format: config.format,
       ...(isBracket
-        ? { bracketSize: nextPowerOf2(players.length) }
+        ? { bracketSize: nextPowerOf2(players.length), thirdPlaceMatch: config.thirdPlaceMatch || false }
         : { leagueRounds: config.leagueRounds, winPoints: config.winPoints, lossPoints: config.lossPoints }),
       matchConfig: { ...config.matchConfig },
     },
     players: isBracket ? players.map(({ bye, ...rest }) => rest) : players,
     matches: isBracket
-      ? generateBracket(players)
+      ? bracketMatches
       : generateSchedule(players.length, config.leagueRounds),
   };
   const list = loadTournaments();
@@ -154,6 +350,10 @@ function createTournament(config, players) {
 
 function deleteTournament(id) {
   saveTournaments(loadTournaments().filter(t => t.id !== id));
+}
+
+function deleteAllTournamentsByStatus(status) {
+  saveTournaments(loadTournaments().filter(t => t.status !== status));
 }
 
 function computeStandings(tournament) {
@@ -267,6 +467,185 @@ function computeLiveStandings(tournament, liveData) {
   return rows;
 }
 
+function computeLiveGroupStandings(tournament, groupIndex, liveData) {
+  const rows = computeGroupStandings(tournament, groupIndex);
+
+  const { p1Idx, p2Idx, legsWon, setsWon, avgs } = liveData;
+  const useSets = tournament.config.matchConfig.totalSets > 1;
+  const score0  = useSets ? setsWon[0] : legsWon[0];
+  const score1  = useSets ? setsWon[1] : legsWon[1];
+
+  const rowByIdx = new Map(rows.map(r => [r.playerIndex, r]));
+  const r1 = rowByIdx.get(p1Idx);
+  const r2 = rowByIdx.get(p2Idx);
+
+  if (r1) { r1.legsWon += legsWon[0]; r1.legsLost += legsWon[1]; }
+  if (r2) { r2.legsWon += legsWon[1]; r2.legsLost += legsWon[0]; }
+
+  if (avgs) {
+    if (avgs[0] !== null && r1) { r1.avgSum += avgs[0]; r1.avgCount++; }
+    if (avgs[1] !== null && r2) { r2.avgSum += avgs[1]; r2.avgCount++; }
+  }
+
+  if (score0 > score1 && r1 && r2) {
+    r1.W++; r1.pts += tournament.config.winPoints;
+    r2.L++; r2.pts += tournament.config.lossPoints;
+  } else if (score1 > score0 && r1 && r2) {
+    r2.W++; r2.pts += tournament.config.winPoints;
+    r1.L++; r1.pts += tournament.config.lossPoints;
+  }
+
+  // Count this in-progress match for both players
+  if (r1) r1.M++;
+  if (r2) r2.M++;
+
+  rows.sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    const aDiff = a.legsWon - a.legsLost;
+    const bDiff = b.legsWon - b.legsLost;
+    if (bDiff !== aDiff) return bDiff - aDiff;
+    const aAvg = a.avgCount ? a.avgSum / a.avgCount : 0;
+    const bAvg = b.avgCount ? b.avgSum / b.avgCount : 0;
+    if (bAvg !== aAvg) return bAvg - aAvg;
+    return a.playerIndex - b.playerIndex;
+  });
+
+  return rows;
+}
+
+function _advancingBg(rank, advCount) {
+  // Rank 1 = lightest (#1b601b), last advancing rank = darkest (#0a2d0a).
+  const t = 1 - (rank - 1) / Math.max(advCount - 1, 1);
+  const r = Math.round(0x0a + (0x1b - 0x0a) * t);
+  const g = Math.round(0x2d + (0x60 - 0x2d) * t);
+  const b = Math.round(0x0a + (0x1b - 0x0a) * t);
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function _renderGroupStandingsHTML(tournament, groupIndex, rows) {
+  const group    = tournament.config.groups[groupIndex];
+  const advCount = group.advanceCount;
+  let html = `<div class="group-section-header" style="margin-top:0">Grupa ${group.name}</div>`;
+  html += '<table class="standings-table" style="margin-bottom:0"><thead><tr>';
+  html += '<th>#</th><th class="left">Gracz</th><th>M</th><th>W</th><th>L</th><th>Legi</th><th>Avg</th><th>Pkt</th>';
+  html += '</tr></thead><tbody>';
+  rows.forEach((row, i) => {
+    const rank      = i + 1;
+    const advancing = rank <= advCount;
+    const legDiff   = row.legsWon - row.legsLost;
+    const avg       = row.avgCount ? (row.avgSum / row.avgCount).toFixed(1) : '—';
+    const legsStr   = row.M === 0 ? '—' : `${row.legsWon}‑${row.legsLost}`;
+    const legsClass = row.M === 0 ? '' : legDiff > 0 ? 'legs-pos' : legDiff < 0 ? 'legs-neg' : 'legs-even';
+    html += `<tr${advancing ? ` style="background:${_advancingBg(rank, advCount)}"` : ''}>`;
+    html += `<td class="pos-num">${rank}</td>`;
+    html += `<td class="left player-name-cell">${escapeHtml(row.name)}</td>`;
+    html += `<td>${row.M}</td><td>${row.W}</td><td>${row.L}</td>`;
+    html += `<td class="${legsClass}">${legsStr}</td>`;
+    html += `<td class="avg-cell">${avg}</td>`;
+    html += `<td class="pts-cell">${row.pts}</td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+function computeGroupStandings(tournament, groupIndex) {
+  const { players, matches, config } = tournament;
+  const group = config.groups[groupIndex];
+
+  const rows = group.playerIndices.map(pi => ({
+    playerIndex: pi,
+    name: players[pi].name,
+    M: 0, W: 0, L: 0,
+    legsWon: 0, legsLost: 0,
+    avgSum: 0, avgCount: 0,
+    pts: 0,
+  }));
+
+  const rowByIdx = new Map(rows.map(r => [r.playerIndex, r]));
+
+  for (const m of matches) {
+    if (m.phase !== 'group' || m.groupIndex !== groupIndex || m.winner === null) continue;
+    const wIdx = m.winner === 0 ? m.p1 : m.p2;
+    const lIdx = m.winner === 0 ? m.p2 : m.p1;
+    const wr = rowByIdx.get(wIdx);
+    const lr = rowByIdx.get(lIdx);
+    if (!wr || !lr) continue;
+
+    wr.M++; wr.W++; wr.pts += config.winPoints;
+    lr.M++; lr.L++; lr.pts += config.lossPoints;
+
+    const r1 = rowByIdx.get(m.p1);
+    const r2 = rowByIdx.get(m.p2);
+    if (r1) { r1.legsWon += m.legs[0] || 0; r1.legsLost += m.legs[1] || 0; }
+    if (r2) { r2.legsWon += m.legs[1] || 0; r2.legsLost += m.legs[0] || 0; }
+
+    if (m.avgs[0] !== null && r1) { r1.avgSum += m.avgs[0]; r1.avgCount++; }
+    if (m.avgs[1] !== null && r2) { r2.avgSum += m.avgs[1]; r2.avgCount++; }
+  }
+
+  rows.sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    const aDiff = a.legsWon - a.legsLost;
+    const bDiff = b.legsWon - b.legsLost;
+    if (bDiff !== aDiff) return bDiff - aDiff;
+    const aAvg = a.avgCount ? a.avgSum / a.avgCount : 0;
+    const bAvg = b.avgCount ? b.avgSum / b.avgCount : 0;
+    if (bAvg !== aAvg) return bAvg - aAvg;
+    return a.playerIndex - b.playerIndex;
+  });
+
+  return rows;
+}
+
+function isGroupPhaseComplete(tournament) {
+  return tournament.matches
+    .filter(m => m.phase === 'group')
+    .every(m => m.winner !== null);
+}
+
+function finalizeGroupPhase(tournament) {
+  const { config, matches } = tournament;
+  const numGroups = config.groups.length;
+
+  const groupStandings = config.groups.map((g, gi) => computeGroupStandings(tournament, gi));
+
+  const labelToPlayerIdx = new Map();
+  for (let gi = 0; gi < numGroups; gi++) {
+    const advCount = config.groups[gi].advanceCount;
+    for (let rank = 0; rank < advCount; rank++) {
+      const row = groupStandings[gi][rank];
+      if (!row) continue;
+      const label = String.fromCharCode(65 + gi) + (rank + 1);
+      labelToPlayerIdx.set(label, row.playerIndex);
+    }
+  }
+
+  const r1Matches = matches.filter(m => m.phase === 'bracket' && m.round === 0);
+  r1Matches.forEach(m => {
+    if (m.isBye) {
+      m.p1 = labelToPlayerIdx.get(m.p1Label) ?? null;
+      m.winner = 0;
+    } else {
+      m.p1 = labelToPlayerIdx.get(m.p1Label) ?? null;
+      m.p2 = labelToPlayerIdx.get(m.p2Label) ?? null;
+    }
+  });
+
+  r1Matches.filter(m => m.isBye).forEach(m => advanceBracketWinner(matches, m));
+
+  // Single-group format: resolve the third-place match (A3/A4) from group standings
+  const thirdPlaceM = matches.find(m => m.phase === 'bracket' && m.isThirdPlace && m.p1Label && m.p2Label);
+  if (thirdPlaceM) {
+    const standings = groupStandings[0];
+    standings.forEach((row, rank) => {
+      if (row) labelToPlayerIdx.set('A' + (rank + 1), row.playerIndex);
+    });
+    thirdPlaceM.p1 = labelToPlayerIdx.get(thirdPlaceM.p1Label) ?? null;
+    thirdPlaceM.p2 = labelToPlayerIdx.get(thirdPlaceM.p2Label) ?? null;
+  }
+}
+
 function renderTournamentListScreen() {
   const all      = loadTournaments();
   const active   = all.filter(t => t.status === 'active').sort((a, b) => b.createdAt - a.createdAt);
@@ -281,13 +660,13 @@ function renderTournamentListScreen() {
     if (active.length > 0) {
       const atLimitClass = active.length >= 5 ? ' t-list-limit--full' : '';
       body.insertAdjacentHTML('beforeend',
-        `<div class="t-list-section-label">W toku<span class="t-list-limit${atLimitClass}">${active.length} / 5</span></div>`);
+        `<div class="t-list-section-label">W toku<div class="t-list-section-right"><span class="t-list-limit${atLimitClass}">${active.length} / 5</span><button class="btn-delete-all" id="btn-delete-all-active">Usuń wszystkie</button></div></div>`);
       active.forEach(t => body.appendChild(buildTournamentCard(t)));
     }
     if (finished.length > 0) {
       const atLimitClass = finished.length >= 40 ? ' t-list-limit--full' : '';
       body.insertAdjacentHTML('beforeend',
-        `<div class="t-list-section-label">Zakończone<span class="t-list-limit${atLimitClass}">${finished.length} / 40</span></div>`);
+        `<div class="t-list-section-label">Zakończone<div class="t-list-section-right"><span class="t-list-limit${atLimitClass}">${finished.length} / 40</span><button class="btn-delete-all" id="btn-delete-all-finished">Usuń wszystkie</button></div></div>`);
       finished.forEach(t => body.appendChild(buildTournamentCard(t)));
     }
   }
@@ -305,13 +684,21 @@ function buildTournamentCard(t) {
 
   const mc    = t.config.matchConfig;
   const isBracket = t.config.format === 'bracket';
-  const meta  = (isBracket ? 'Drabinka' : 'Liga') + ' · ' + t.players.length + ' graczy · ' + mc.variant + ' · First to ' + mc.totalLegs;
-  const played = isBracket
-    ? t.matches.filter(m => !m.isBye && m.winner !== null).length
-    : t.matches.filter(m => m.winner !== null).length;
-  const total = isBracket
-    ? t.matches.filter(m => !m.isBye).length
-    : t.matches.length;
+  const isGroups = t.config.format === 'groups';
+  const formatLabel = isBracket ? 'Drabinka' : isGroups ? 'Grupy+Drabinka' : 'Liga';
+  const meta  = formatLabel + ' · ' + t.players.length + ' graczy · ' + mc.variant + ' · First to ' + mc.totalLegs;
+  let played, total;
+  if (isBracket) {
+    played = t.matches.filter(m => !m.isBye && m.winner !== null).length;
+    total  = t.matches.filter(m => !m.isBye).length;
+  } else if (isGroups) {
+    const allMatches = t.matches.filter(m => !m.isBye);
+    played = allMatches.filter(m => m.winner !== null).length;
+    total  = allMatches.length;
+  } else {
+    played = t.matches.filter(m => m.winner !== null).length;
+    total  = t.matches.length;
+  }
 
   let statusHtml;
   if (t.status === 'active') {
@@ -324,6 +711,21 @@ function buildTournamentCard(t) {
       if (finalMatch && finalMatch.winner !== null) {
         const wIdx = finalMatch.winner === 0 ? finalMatch.p1 : finalMatch.p2;
         winner = escapeHtml(t.players[wIdx].name);
+      } else {
+        winner = '&mdash;';
+      }
+    } else if (isGroups) {
+      // For groups format, find winner from the bracket final
+      const bracketMatches = t.matches.filter(m => m.phase === 'bracket');
+      if (bracketMatches.length > 0) {
+        const maxRound = Math.max(...bracketMatches.map(m => m.round));
+        const finalMatch = bracketMatches.find(m => m.round === maxRound && m.slot === 0);
+        if (finalMatch && finalMatch.winner !== null) {
+          const wIdx = finalMatch.winner === 0 ? finalMatch.p1 : finalMatch.p2;
+          winner = escapeHtml(t.players[wIdx].name);
+        } else {
+          winner = '&mdash;';
+        }
       } else {
         winner = '&mdash;';
       }
@@ -356,7 +758,7 @@ function renderBracketScreen(tournament, container) {
 
   const byRound = [];
   for (let r = 0; r < numRounds; r++) {
-    byRound.push(matches.filter(m => m.round === r).sort((a, b) => a.slot - b.slot));
+    byRound.push(matches.filter(m => m.round === r && !m.isThirdPlace).sort((a, b) => a.slot - b.slot));
   }
 
   const numR1Slots = B / 2;
@@ -385,11 +787,13 @@ function renderBracketScreen(tournament, container) {
     track.className = 'bk-track';
 
     const end = Math.min(offset + VISIBLE, numRounds);
+    let finalColEl = null;
     for (let ri = offset; ri < end; ri++) {
       const roundMatches = byRound[ri];
       // find the absolute index in tournament.matches[] of the first match in this round
       const firstIdx = matches.findIndex(m => m.round === ri && m.slot === 0);
       const col = buildBracketRound(roundMatches, ri, numRounds, players, firstIdx, CARD_H, GAP, bodyH);
+      if (ri === numRounds - 1) finalColEl = col;
       track.appendChild(col);
 
       const isLastVisible = (ri === end - 1);
@@ -398,6 +802,28 @@ function renderBracketScreen(tournament, container) {
         track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, bodyH, SVG_W, false));
       } else if (hasMoreRight) {
         track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, bodyH, Math.floor(SVG_W / 2), true));
+      }
+    }
+
+    if (config.thirdPlaceMatch && finalColEl) {
+      const thirdMatch = matches.find(m => m.isThirdPlace);
+      if (thirdMatch) {
+        const thirdIdx = matches.indexOf(thirdMatch);
+        const section = document.createElement('div');
+        section.className = 'bk-third-place-section';
+
+        const lbl = document.createElement('div');
+        lbl.className = 'bk-third-place-label';
+        lbl.textContent = 'Mecz o 3. miejsce';
+        section.appendChild(lbl);
+
+        const body = document.createElement('div');
+        body.className = 'bk-body bk-third-place-body';
+        body.style.height = CARD_H + 'px';
+        body.appendChild(_buildBracketCard(thirdMatch, thirdIdx, players, 0));
+        section.appendChild(body);
+
+        finalColEl.appendChild(section);
       }
     }
 
@@ -413,15 +839,233 @@ function renderBracketScreen(tournament, container) {
       wrap.appendChild(rBtn);
     }
 
-    container.appendChild(wrap);
+    const outer = document.createElement('div');
+    outer.className = 'bk-outer-wrap';
+    outer.appendChild(wrap);
+
+    container.appendChild(outer);
   }
 
   render();
 }
 
+function _setGroupsTab(name) {
+  const standingsEl = document.getElementById('tv-standings');
+  const matchesEl   = document.getElementById('tv-matches');
+  const bracketEl   = document.getElementById('tv-bracket');
+  standingsEl.style.display = name === 'groups'  ? '' : 'none';
+  matchesEl.style.display   = name === 'matches' ? '' : 'none';
+  bracketEl.style.display   = name === 'bracket' ? '' : 'none';
+
+  const tabTable   = document.getElementById('tv-tab-table');
+  const tabMatches = document.getElementById('tv-tab-matches');
+  const tabBracket = document.getElementById('tv-tab-bracket');
+  [tabTable, tabMatches, tabBracket].forEach(t => t && t.classList.remove('active'));
+  if (name === 'groups')  tabTable.classList.add('active');
+  if (name === 'matches') tabMatches.classList.add('active');
+  if (name === 'bracket') tabBracket.classList.add('active');
+}
+
+function renderGroupsTab(tournament) {
+  const container = document.getElementById('tv-standings');
+  container.innerHTML = '';
+
+  const wrap = document.createElement('div');
+  wrap.className = 'group-standings-wrap';
+
+  tournament.config.groups.forEach((group, gi) => {
+    const rows     = computeGroupStandings(tournament, gi);
+    const advCount = group.advanceCount;
+
+    const sectionLabel = document.createElement('div');
+    sectionLabel.className = 'group-section-header';
+    sectionLabel.textContent = 'Grupa ' + group.name;
+    wrap.appendChild(sectionLabel);
+
+    const table = document.createElement('table');
+    table.className = 'standings-table group-standings-table';
+
+    const thead = document.createElement('thead');
+    thead.innerHTML = `<tr>
+      <th>#</th><th class="left">Gracz</th>
+      <th>M</th><th>W</th><th>L</th>
+      <th>Legi</th><th>Avg</th><th>Pkt</th>
+    </tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach((row, rank0) => {
+      const rank      = rank0 + 1;
+      const advancing = rank <= advCount;
+      const legDiff   = row.legsWon - row.legsLost;
+      const avg       = row.avgCount ? (row.avgSum / row.avgCount).toFixed(1) : '&mdash;';
+      const legsStr   = row.M === 0 ? '&mdash;' : `${row.legsWon}&#8209;${row.legsLost}`;
+      const legsClass = row.M === 0 ? '' : legDiff > 0 ? 'legs-pos' : legDiff < 0 ? 'legs-neg' : 'legs-even';
+
+      const posClass  = 'pos-num';
+      const nameClass = '';
+
+      const tr = document.createElement('tr');
+      if (advancing) tr.style.background = _advancingBg(rank, advCount);
+      tr.innerHTML = `
+        <td class="${posClass}">${rank}</td>
+        <td class="left player-name-cell ${nameClass}">
+          ${escapeHtml(row.name)}
+        </td>
+        <td>${row.M}</td>
+        <td>${row.W}</td>
+        <td>${row.L}</td>
+        <td class="${legsClass}">${legsStr}</td>
+        <td class="avg-cell">${avg}</td>
+        <td class="pts-cell">${row.pts}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+  });
+
+  container.appendChild(wrap);
+}
+
+function renderGroupMatchesTab(tournament) {
+  const container     = document.getElementById('tv-matches');
+  container.innerHTML = '';
+
+  tournament.config.groups.forEach((group, gi) => {
+    const label = document.createElement('div');
+    label.className = 'tv-matches-section';
+    label.textContent = 'Grupa ' + group.name;
+    container.appendChild(label);
+
+    const grid = document.createElement('div');
+    grid.className = 'matches-grid';
+    container.appendChild(grid);
+
+    tournament.matches
+      .filter(m => m.phase === 'group' && m.groupIndex === gi)
+      .forEach(m => {
+        const globalIdx = tournament.matches.indexOf(m);
+        grid.appendChild(_buildGroupMatchCell(tournament, m, globalIdx));
+      });
+  });
+}
+
+function _buildGroupMatchCell(tournament, m, globalIdx) {
+  const cell = document.createElement('div');
+  cell.className = 'match-cell';
+
+  const numDiv = document.createElement('div');
+  numDiv.className = 'match-num-above';
+  numDiv.textContent = '#' + (globalIdx + 1);
+  cell.appendChild(numDiv);
+
+  const card = document.createElement('div');
+  card.dataset.matchIndex = globalIdx;
+
+  if (m.p1 === null || m.p2 === null) {
+    card.className = 'match-card tbd-card';
+    const pd = document.createElement('div');
+    pd.className = 'match-players';
+    pd.appendChild(_buildMatchPlayerRow(m.p1Label || '?', null, null, ''));
+    pd.appendChild(_buildMatchPlayerRow(m.p2Label || '?', null, null, ''));
+    card.appendChild(pd);
+    cell.appendChild(card);
+    return cell;
+  }
+
+  const p1Name = tournament.players[m.p1].name;
+  const p2Name = tournament.players[m.p2].name;
+
+  if (m.winner !== null) {
+    card.className = 'match-card played';
+    const useSet = m.sets && m.sets[0] !== null;
+    const w = m.winner, l = 1 - w;
+    const wPIdx  = w === 0 ? m.p1 : m.p2;
+    const lPIdx  = l === 0 ? m.p1 : m.p2;
+    const wScore = useSet ? m.sets[w]  : m.legs[w];
+    const lScore = useSet ? m.sets[l]  : m.legs[l];
+    const wAvgF  = m.avgs[w], lAvgF = m.avgs[l];
+    const wAvg   = wAvgF !== null ? wAvgF.toFixed(1) : null;
+    const lAvg   = lAvgF !== null ? lAvgF.toFixed(1) : null;
+    const wBest  = wAvgF !== null && lAvgF !== null && wAvgF > lAvgF;
+    const lBest  = wAvgF !== null && lAvgF !== null && lAvgF > wAvgF;
+    const pd = document.createElement('div');
+    pd.className = 'match-players';
+    pd.appendChild(_buildMatchPlayerRow(tournament.players[wPIdx].name, wScore, wAvg, 'winner', wBest));
+    pd.appendChild(_buildMatchPlayerRow(tournament.players[lPIdx].name, lScore, lAvg, 'loser',  lBest));
+    card.appendChild(pd);
+    card.addEventListener('click', () => openTournamentMatchStats(tournament, globalIdx));
+  } else {
+    card.className = 'match-card unplayed';
+    const pd = document.createElement('div');
+    pd.className = 'match-players';
+    pd.appendChild(_buildMatchPlayerRow(p1Name, null, null, ''));
+    pd.appendChild(_buildMatchPlayerRow(p2Name, null, null, ''));
+    card.appendChild(pd);
+    card.addEventListener('click', () => openTournamentStarterModal(tournament, globalIdx));
+  }
+
+  cell.appendChild(card);
+  return cell;
+}
+
 function renderTournamentViewScreen(tournament) {
   _activeTournament = tournament;
   const isBracket = tournament.config.format === 'bracket';
+  const isGroups  = tournament.config.format === 'groups';
+
+  const tabBracket = document.getElementById('tv-tab-bracket');
+  if (tabBracket) tabBracket.style.display = isGroups ? '' : 'none';
+  const tabTable = document.getElementById('tv-tab-table');
+  if (tabTable && !isGroups) tabTable.textContent = 'Tabela';
+
+  if (isGroups) {
+    document.getElementById('tv-title').textContent = tournament.name;
+    document.getElementById('tv-tabs').style.display = '';
+
+    if (tabTable) tabTable.textContent = 'Grupy';
+
+    const mc          = tournament.config.matchConfig;
+    const allMatches  = tournament.matches.filter(m => !m.isBye);
+    const allPlayed   = allMatches.filter(m => m.winner !== null).length;
+    const phaseLabel  = isGroupPhaseComplete(tournament) ? '● Faza pucharowa' : '● Faza grupowa';
+
+    document.getElementById('tv-info-bar').innerHTML =
+      `<span>Grupy+Drabinka &middot; ${mc.variant} &middot; First to ${mc.totalLegs}</span>` +
+      `<span>${tournament.players.length} graczy &middot; ${allPlayed}/${allMatches.length} meczów &middot; <b>${phaseLabel}</b></span>`;
+
+    ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
+      const old = document.getElementById(id);
+      if (!old) return;
+      const fresh = old.cloneNode(true);
+      old.parentNode.replaceChild(fresh, old);
+    });
+
+    const tabMatchesEl = document.getElementById('tv-tab-matches');
+    if (tabMatchesEl) {
+      tabMatchesEl.textContent = 'Mecze gr.';
+      tabMatchesEl.classList.remove('tv-tab-disabled');
+    }
+
+    document.getElementById('tv-tab-table').addEventListener('click', () => {
+      _setGroupsTab('groups');
+      renderGroupsTab(tournament);
+    });
+    document.getElementById('tv-tab-matches').addEventListener('click', () => {
+      _setGroupsTab('matches');
+      renderGroupMatchesTab(tournament);
+    });
+    document.getElementById('tv-tab-bracket').addEventListener('click', () => {
+      _setGroupsTab('bracket');
+      renderBracketScreen(tournament);
+    });
+
+    _setGroupsTab('groups');
+    renderGroupsTab(tournament);
+    return;
+  }
+
   if (isBracket) {
     document.getElementById('tv-title').textContent = tournament.name;
     document.getElementById('tv-tabs').style.display      = 'none';
@@ -438,6 +1082,31 @@ function renderTournamentViewScreen(tournament) {
     return;
   }
   // --- league: restore tabs/standings visibility ---
+
+  // Re-clone tabs to remove any stale groups handlers left from a previous groups visit
+  ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
+    const old = document.getElementById(id);
+    if (!old) return;
+    const fresh = old.cloneNode(true);
+    old.parentNode.replaceChild(fresh, old);
+  });
+  document.getElementById('tv-tab-matches').textContent = 'Mecze';
+
+  // Wire liga tab handlers
+  document.getElementById('tv-tab-table').addEventListener('click', () => {
+    document.getElementById('tv-tab-table').classList.add('active');
+    document.getElementById('tv-tab-matches').classList.remove('active');
+    document.getElementById('tv-standings').style.display = '';
+    document.getElementById('tv-matches').style.display = 'none';
+  });
+  document.getElementById('tv-tab-matches').addEventListener('click', () => {
+    document.getElementById('tv-tab-matches').classList.add('active');
+    document.getElementById('tv-tab-table').classList.remove('active');
+    document.getElementById('tv-standings').style.display = 'none';
+    document.getElementById('tv-matches').style.display = '';
+    if (_activeTournament) renderTournamentMatchesScreen(_activeTournament);
+  });
+
   document.getElementById('tv-tabs').style.display = '';
   document.getElementById('tv-bracket').style.display = 'none';
   document.getElementById('tv-title').textContent = tournament.name;
@@ -631,8 +1300,10 @@ function _buildBracketCard(m, matchIdx, players, topPx) {
   wrap.style.top = topPx + 'px';
 
   const classes = ['match-card'];
-  if (m.isBye) {
+  if (m.isBye && m.p1 !== null) {
     classes.push('bye-card');
+  } else if (m.isBye) {
+    classes.push('tbd-card');
   } else if (m.winner !== null) {
     classes.push('played');
   } else if (m.p1 === null && m.p2 === null) {
@@ -648,15 +1319,27 @@ function _buildBracketCard(m, matchIdx, players, topPx) {
   pd.className = 'match-players';
 
   if (m.isBye) {
-    // Bye: show seeded player name + "— wolny los —" placeholder
-    pd.appendChild(_buildMatchPlayerRow(players[m.p1].name, null, null, ''));
-    const byeRow = document.createElement('div');
-    byeRow.className = 'match-player-row bye-slot-row';
-    const byeSpan = document.createElement('span');
-    byeSpan.className = 'mpname';
-    byeSpan.textContent = '— wolny los —';
-    byeRow.appendChild(byeSpan);
-    pd.appendChild(byeRow);
+    if (m.p1 !== null) {
+      // Finalized: show seeded player name + "— wolny los —" placeholder
+      pd.appendChild(_buildMatchPlayerRow(players[m.p1].name, null, null, ''));
+      const byeRow = document.createElement('div');
+      byeRow.className = 'match-player-row bye-slot-row';
+      const byeSpan = document.createElement('span');
+      byeSpan.className = 'mpname';
+      byeSpan.textContent = '— wolny los —';
+      byeRow.appendChild(byeSpan);
+      pd.appendChild(byeRow);
+    } else {
+      // Not yet finalized (groups format in group phase): show TBD
+      pd.appendChild(_buildMatchPlayerRow(m.p1Label || '?', null, null, ''));
+      const byeRow = document.createElement('div');
+      byeRow.className = 'match-player-row bye-slot-row';
+      const byeSpan = document.createElement('span');
+      byeSpan.className = 'mpname';
+      byeSpan.textContent = '— bye —';
+      byeRow.appendChild(byeSpan);
+      pd.appendChild(byeRow);
+    }
   } else if (m.winner !== null) {
     // Played: show winner/loser with scores and averages
     const useSet = m.sets && m.sets[0] !== null;
@@ -673,9 +1356,8 @@ function _buildBracketCard(m, matchIdx, players, topPx) {
     pd.appendChild(_buildMatchPlayerRow(players[wPIdx].name, wScore, wAvg, 'winner', wBest));
     pd.appendChild(_buildMatchPlayerRow(players[lPIdx].name, lScore, lAvg, 'loser',  lBest));
   } else {
-    // Unplayed or partially-seeded TBD: show known names, "?" for unknown
-    const name1 = m.p1 !== null ? players[m.p1].name : '?';
-    const name2 = m.p2 !== null ? players[m.p2].name : '?';
+    const name1 = m.p1 !== null ? players[m.p1].name : (m.p1Label || '?');
+    const name2 = m.p2 !== null ? players[m.p2].name : (m.p2Label || '?');
     pd.appendChild(_buildMatchPlayerRow(name1, null, null, ''));
     pd.appendChild(_buildMatchPlayerRow(name2, null, null, ''));
   }
