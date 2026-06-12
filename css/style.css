@@ -1996,6 +1996,27 @@ html, body {
   letter-spacing: 0.01em;
 }
 
+/* Step 4: bye action button (deselect all / randomize) */
+.btn-bye-action {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-muted);
+  font-size: .85rem;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: border-color .15s, color .15s;
+}
+.btn-bye-action:hover { border-color: #555; color: var(--text); }
+.btn-bye-action:active { transform: scale(0.97); }
+.btn-bye-action--randomize {
+  border-color: var(--green);
+  color: var(--green);
+}
+.btn-bye-action--randomize:hover { border-color: #3abd6a; color: #3abd6a; }
+
 /* Step 4: bye info note */
 .bye-note {
   font-size: 0.75rem;

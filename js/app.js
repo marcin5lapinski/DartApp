@@ -800,6 +800,18 @@ function saveTournamentMatchResult(finishedMatch, ptm) {
 
   if (t.config.format === 'bracket') {
     advanceBracketWinner(t.matches, m);
+
+    const totalBracketRounds = Math.log2(t.config.bracketSize);
+    const isSemiFinal = m.round === totalBracketRounds - 2 && totalBracketRounds >= 2;
+    if (isSemiFinal && t.config.thirdPlaceMatch) {
+      const thirdMatch = t.matches.find(mx => mx.isThirdPlace);
+      if (thirdMatch) {
+        const loserIdx = m.winner === 0 ? m.p2 : m.p1;
+        if (thirdMatch.p1 === null) thirdMatch.p1 = loserIdx;
+        else if (thirdMatch.p2 === null) thirdMatch.p2 = loserIdx;
+      }
+    }
+
     if (t.matches.filter(mx => !mx.isBye).every(mx => mx.winner !== null)) {
       t.status = 'finished';
     }

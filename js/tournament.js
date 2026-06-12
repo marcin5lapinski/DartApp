@@ -9,7 +9,7 @@ function _updateByeHint() {
   const isRandom = document.querySelector('#t-seeding-group .btn-seg.active')?.dataset.seeding === 'random';
   const byeCount = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
   if (isRandom && byeCount === 0) {
-    hintEl.textContent = '✓ Wolne losy zostaną wylosowane automatycznie przy tworzeniu turnieju.';
+    hintEl.textContent = '✓ Wolne losy zostaną wylosowane automatycznie przy tworzeniu turnieju lub po naciśnięciu przycisku Losuj wolne losy.';
     hintEl.className = 'bye-hint bye-hint--auto';
   } else {
     hintEl.textContent = 'ℹ️ Aby wylosować wolne losy automatycznie — odznacz wszystkie BYE i wybierz „Losuj rozstawienie".';
@@ -61,8 +61,10 @@ function initTournamentWizard() {
   document.querySelectorAll('#wstep-2 .format-tile').forEach(t =>
     t.classList.toggle('active', t.dataset.format === 'league'));
   document.getElementById('league-settings').classList.remove('format-hidden');
-  const bracketDesc = document.getElementById('t-bracket-desc');
-  if (bracketDesc) bracketDesc.classList.add('format-hidden');
+  const bracketSettings = document.getElementById('bracket-settings');
+  if (bracketSettings) bracketSettings.classList.add('format-hidden');
+  const bracketTpCk = document.getElementById('t-bracket-third-place-match');
+  if (bracketTpCk) bracketTpCk.checked = false;
   const gs = document.getElementById('groups-settings');
   if (gs) gs.classList.add('format-hidden');
   showWizardStep(1);
@@ -173,7 +175,7 @@ document.querySelectorAll('#wstep-2 .format-tile').forEach(tile => {
     const isGroups  = tile.dataset.format === 'groups';
 
     document.getElementById('league-settings').classList.toggle('format-hidden', !isLeague);
-    document.getElementById('t-bracket-desc').classList.toggle('format-hidden', !isBracket);
+    document.getElementById('bracket-settings').classList.toggle('format-hidden', !isBracket);
     document.getElementById('groups-settings').classList.toggle('format-hidden', !isGroups);
   });
 });
@@ -344,6 +346,20 @@ function _updateByeCounter(numByes) {
     counterEl.textContent = `Wolne losy: ${count} / ${numByes} — zaznacz dokładnie ${numByes}`;
   }
   _updateByeHint();
+  _updateByeActionBtn();
+}
+
+function _updateByeActionBtn() {
+  const btn = document.getElementById('t-bye-action-btn');
+  if (!btn || btn.style.display === 'none') return;
+  const count = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
+  if (count > 0) {
+    btn.textContent = 'Odznacz wszystkie';
+    btn.className = 'btn-bye-action btn-bye-action--clear';
+  } else {
+    btn.textContent = 'Wylosuj wolne losy';
+    btn.className = 'btn-bye-action btn-bye-action--randomize';
+  }
 }
 
 function _updateStep3bGroupsInfo() {
@@ -594,6 +610,45 @@ function renderStep4Players(savedValues) {
     document.getElementById('t-players-list').before(hintEl);
   }
   hintEl.style.display = (isBracket && numByes > 0) ? '' : 'none';
+
+  // ── Bye action button (bracket only, non-zero byes) ──
+  let byeActionBtn = document.getElementById('t-bye-action-btn');
+  if (!byeActionBtn) {
+    byeActionBtn = document.createElement('button');
+    byeActionBtn.id = 't-bye-action-btn';
+    byeActionBtn.type = 'button';
+    hintEl.after(byeActionBtn);
+
+    byeActionBtn.addEventListener('click', () => {
+      const nb = nextPowerOf2(tournamentConfig.numPlayers) - tournamentConfig.numPlayers;
+      const currentCount = document.querySelectorAll('#t-players-list .bye-toggle.active').length;
+      if (currentCount > 0) {
+        document.querySelectorAll('#t-players-list .bye-toggle').forEach(t => {
+          t.classList.remove('active');
+          t.textContent = 'BYE';
+          t.closest('.player-block').classList.remove('has-bye');
+        });
+      } else {
+        const toggles = Array.from(document.querySelectorAll('#t-players-list .bye-toggle'));
+        const indices = toggles.map((_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        const chosen = new Set(indices.slice(0, nb));
+        toggles.forEach((t, i) => {
+          const active = chosen.has(i);
+          t.classList.toggle('active', active);
+          t.textContent = active ? 'BYE ✓' : 'BYE';
+          t.closest('.player-block').classList.toggle('has-bye', active);
+        });
+      }
+      _updateByeCounter(nb);
+      validateStep4();
+    });
+  }
+  byeActionBtn.style.display = (isBracket && numByes > 0) ? '' : 'none';
+  _updateByeActionBtn();
 
   // ── Group size info (groups format only, hidden when per-group toggle active) ──
   let groupInfoEl = document.getElementById('t-groups-info');
@@ -908,6 +963,11 @@ document.getElementById('btn-create-tournament').addEventListener('click', () =>
       const j = Math.floor(Math.random() * (i + 1));
       [players[i], players[j]] = [players[j], players[i]];
     }
+  }
+
+  if (tournamentConfig.format === 'bracket') {
+    tournamentConfig.thirdPlaceMatch =
+      document.getElementById('t-bracket-third-place-match')?.checked || false;
   }
 
   const tournament = createTournament(tournamentConfig, players);

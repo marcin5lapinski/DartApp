@@ -539,6 +539,24 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Mecz o 3. miejsce w drabince + przycisk wolnych losów (2026-06-12)
+
+### Nowe funkcje
+- **Mecz o 3. miejsce w formacie Drabinka**: checkbox `#t-bracket-third-place-match` w kroku 2 wizarda (w nowym `#bracket-settings` div, zastępującym `#t-bracket-desc`). Przy tworzeniu turnieju `createTournament` dołącza do `matches[]` mecz `{ isThirdPlace: true, round: numRounds-1, slot: -1 }` i zapisuje `config.thirdPlaceMatch: boolean`. `saveTournamentMatchResult` wykrywa półfinały (`m.round === totalBracketRounds - 2`) i propaguje przegranego do `thirdMatch.p1`/`p2`. Widok drabinki (`renderBracketScreen`) obsługiwał już `config.thirdPlaceMatch` — bez zmian.
+- **Przycisk „Odznacz wszystkie" / „Wylosuj wolne losy"** w kroku 4 wizarda (bracket, tylko gdy `numByes > 0`): element `#t-bye-action-btn` tworzony w `renderStep4Players` po `#t-bye-hint`. Stan przycisku aktualizuje nowa funkcja `_updateByeActionBtn()`, wywoływana z `_updateByeCounter()`. Kliknięcie przy ≥1 BYE: odznacza wszystkie toggles. Kliknięcie przy 0 BYE: losuje dokładnie `numByes` graczy (Fisher-Yates na indeksach toggles).
+
+### Zmiany wizualne
+- Nowe klasy CSS `.btn-bye-action` i `.btn-bye-action--randomize`: pełna szerokość, neutralna ramka (clear) / zielona ramka (randomize), hover + active scale.
+
+### Zmiany w plikach
+- `index.html` — `#t-bracket-desc` zastąpiony przez `#bracket-settings` (div z tekstem + `#t-bracket-third-place-match` checkbox)
+- `js/tournament.js` — nowa `_updateByeActionBtn()`; `#t-bye-action-btn` tworzony w `renderStep4Players`; `initTournamentWizard` resetuje `bracket-settings`; handler `btn-create-tournament` odczytuje `#t-bracket-third-place-match`; tekst hintu rozszerzony o „lub po naciśnięciu przycisku Losuj wolne losy"
+- `js/league.js` — `createTournament` bracket branch: dołącza `isThirdPlace` mecz, zapisuje `thirdPlaceMatch` w `config`
+- `js/app.js` — `saveTournamentMatchResult` bracket branch: propagacja przegranego półfinału do meczu o 3. miejsce
+- `css/style.css` — `.btn-bye-action`, `.btn-bye-action--randomize`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA

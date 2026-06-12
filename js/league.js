@@ -310,6 +310,17 @@ function createTournament(config, players) {
   }
 
   const isBracket = config.format === 'bracket';
+  const bracketMatches = isBracket ? generateBracket(players) : null;
+  if (isBracket && config.thirdPlaceMatch) {
+    const numRounds = Math.log2(nextPowerOf2(players.length));
+    if (numRounds >= 2) {
+      bracketMatches.push({
+        round: numRounds - 1, slot: -1, isBye: false, isThirdPlace: true,
+        p1: null, p2: null, winner: null,
+        legs: [null, null], sets: [null, null], avgs: [null, null], stats: [null, null], starter: null,
+      });
+    }
+  }
   const tournament = {
     id: 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
     name: config.name,
@@ -319,13 +330,13 @@ function createTournament(config, players) {
       numPlayers: config.numPlayers,
       format: config.format,
       ...(isBracket
-        ? { bracketSize: nextPowerOf2(players.length) }
+        ? { bracketSize: nextPowerOf2(players.length), thirdPlaceMatch: config.thirdPlaceMatch || false }
         : { leagueRounds: config.leagueRounds, winPoints: config.winPoints, lossPoints: config.lossPoints }),
       matchConfig: { ...config.matchConfig },
     },
     players: isBracket ? players.map(({ bye, ...rest }) => rest) : players,
     matches: isBracket
-      ? generateBracket(players)
+      ? bracketMatches
       : generateSchedule(players.length, config.leagueRounds),
   };
   const list = loadTournaments();
