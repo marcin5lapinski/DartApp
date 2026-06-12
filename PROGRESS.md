@@ -445,6 +445,30 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Poprawki wizarda grup + walidacja awansujących (2026-06-12)
+
+### Nowe funkcje
+- **`_validateStep3b()`** w `tournament.js`: live walidacja liczby awansujących w kroku 3b — przy każdej zmianie inputu lub toggle sprawdza przedział [1, groupSize−1]; błędne inputy dostają klasę `.input-error`; `#t-step3b-error` pokazuje per-grupowe komunikaty (np. „Grupa A: min 1, max 3 • Grupa B: min 1, max 2"); blokuje/odblokowuje `#t-next-3b`. Wywoływana przy zmianie inputów, toggleu, przycisku liczby grup, wejściu i powrocie do kroku 3b
+- **Sekwencyjne rozstawianie grup** (`seeding = 'ordered'`): `_buildGroups()` z parametrem `sequential=true` wypełnia grupy po kolei — Grupa A dostaje pierwszych N graczy, Grupa B kolejnych M itd.; aktywowane gdy `config.seeding === 'ordered'`
+- **Podgląd grup zgodny z rozstawieniem**: `_refreshGroupPreviewBody()` używa sekwencyjnego obliczania startIdx gdy `seeding === 'ordered'`, round-robin gdy `random`; odświeżany po każdym drag-and-drop
+
+### Naprawione błędy
+- **Zakładka „Mecze" zawsze wyłączona w turnieju grup**: hardkodowana klasa `tv-tab-disabled` w HTML nigdy nie była usuwana przez branch groups — dodano `classList.remove('tv-tab-disabled')` i zmianę tekstu na „Mecze gr." po `cloneNode`
+- **„Użyj kolejności" nie zachowywało kolejności drag-and-drop**: handler `t-next-3b` wywoływał `renderStep4Players()` bez `savedValues`, resetując porządek — naprawione przez odczyt aktualnego stanu DOM przed wejściem do kroku 4
+- **Tekst podpowiedzi grup w kroku 2 źle wyrównany**: `#groups-settings` był `<div>` opakowującym, więc `align-self: center` ze `.wizard-hint` nie działał — zmieniony na bezpośredni `<p>` wewnątrz `format-details-panel`
+
+### Zmiany wizualne
+- **`.btn-wizard-next:disabled`**: `opacity: 0.35; pointer-events: none` — przycisk DALEJ wyszarzony gdy walidacja nie przejdzie
+- **`.input-error` dla inputów awansujących**: czerwona ramka + glow (`box-shadow 0 0 0 2px rgba(230,57,70,.25)`) dla `#t-advance-count` i `.t-pg-inp`
+
+### Zmiany w plikach
+- `js/tournament.js` — nowe: `_validateStep3b()`; zaktualizowane: `_refreshGroupPreviewBody()` (tryb sequential/round-robin), listenery `t-advance-count input` i `t-advance-per-group-toggle change` (dodano walidację), per-group inputy (dodano `input` listener + `_validateStep3b` w `change`), `_initStep3bGroupButtons()` (wywołanie `_validateStep3b` w click i na końcu init), `t-back-4` handler (wywołanie `_validateStep3b`); min awansujących = 1, domyślna = 2
+- `js/league.js` — `_buildGroups()` nowy parametr `sequential=false` (sekwencyjne wypełnianie grup); `createTournament()` przekazuje `config.seeding === 'ordered'`
+- `css/style.css` — `.btn-wizard-next:disabled`, `.t-pg-inp.input-error`, `#t-advance-count.input-error`
+- `index.html` — `#t-advance-count`: `min="1"`, `value="2"`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
