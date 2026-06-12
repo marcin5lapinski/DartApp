@@ -520,6 +520,25 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Poprawki wizualne drabinki i grup (2026-06-12)
+
+### Naprawione błędy
+- **Kolory awansu w tabelach grup** (`_advancingBg`): poprzednia interpolacja kończyła się na `#cce8cc` (bardzo jasny zielony), przez co biały tekst stawał się nieczytelny. Przepisano na jednolitą interpolację `#1b601b` (ranga 1, najjaśniejsza) → `#0a2d0a` (ostatnie awansujące miejsce, najciemniejsza) — wszystkie odcienie pozostają ciemne i czytelne z `var(--text)`.
+- **Mecze z bye w niezafinalizowanej drabince (format grupy+drabinka)**: przed zakończeniem fazy grupowej karty bye miały inny styl (`bye-card` — jaśniejsze tło `#131318`). Zmieniono logikę w `_buildBracketCard`: gdy `m.isBye && m.p1 === null` (faza grupowa jeszcze trwa), karta dostaje klasę `tbd-card` jak pozostałe nierozegrane mecze drabinki.
+- **Pozycja meczu o 3. miejsce w drabince**: poprzednio renderowany poniżej całej drabinki jako element `.bk-outer-wrap`. Przeniesiony do wnętrza kolumny finałowej (`finalColEl.appendChild(section)`) — pojawia się bezpośrednio pod kartą finału w kolumnie „FINAŁ". Chowa się razem z kolumną gdy nawigacja przesuwa finał poza widok.
+
+### Nowe funkcje
+- **Info o składach grup w kroku 3b wizarda** (`_updateStep3bGroupsInfo`): wyświetla `#t-step3b-groups-info` z tekstem np. „Składy grup: A: 4 · B: 3 · C: 3". Odświeżane przy inicjalizacji przycisków grup i po każdym kliknięciu przycisku liczby grup.
+- **Info o składach grup w kroku 4 wizarda** (`#t-groups-info`): analogiczny element tworzony dynamicznie przez `renderStep4Players`, wyświetlany gdy format=groups i brak trybu per-group advance (`!tournamentConfig.advanceCounts`). Ukrywany gdy per-group toggle jest aktywny.
+
+### Zmiany w plikach
+- `js/league.js` — `_advancingBg`: nowa interpolacja ciemnozielona; `_buildBracketCard`: `tbd-card` dla niezafinalizowanych bye; `renderBracketScreen`: mecz o 3. miejsce dołączany do `finalColEl` zamiast `outer`
+- `js/tournament.js` — nowa `_updateStep3bGroupsInfo()`; wywołania w `_initStep3bGroupButtons()`; `renderStep4Players`: nowy `#t-groups-info` element z logiką show/hide
+- `index.html` — `<p id="t-step3b-groups-info" class="t-groups-info">` w kroku 3b
+- `css/style.css` — nowa klasa `.t-groups-info`; `margin-top: 16px` na `.bk-third-place-section`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA

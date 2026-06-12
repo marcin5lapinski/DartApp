@@ -500,12 +500,11 @@ function computeLiveGroupStandings(tournament, groupIndex, liveData) {
 }
 
 function _advancingBg(rank, advCount) {
-  if (rank === 1) return '#103110';
-  // rank 2+: linear interpolation from #203c20 toward #cce8cc
-  const t = (rank - 2) / Math.max(advCount - 1, 1);
-  const r = Math.round(0x20 + (0xcc - 0x20) * t);
-  const g = Math.round(0x3c + (0xe8 - 0x3c) * t);
-  const b = Math.round(0x20 + (0xcc - 0x20) * t);
+  // Rank 1 = lightest (#1b601b), last advancing rank = darkest (#0a2d0a).
+  const t = 1 - (rank - 1) / Math.max(advCount - 1, 1);
+  const r = Math.round(0x0a + (0x1b - 0x0a) * t);
+  const g = Math.round(0x2d + (0x60 - 0x2d) * t);
+  const b = Math.round(0x0a + (0x1b - 0x0a) * t);
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
@@ -763,11 +762,13 @@ function renderBracketScreen(tournament, container) {
     track.className = 'bk-track';
 
     const end = Math.min(offset + VISIBLE, numRounds);
+    let finalColEl = null;
     for (let ri = offset; ri < end; ri++) {
       const roundMatches = byRound[ri];
       // find the absolute index in tournament.matches[] of the first match in this round
       const firstIdx = matches.findIndex(m => m.round === ri && m.slot === 0);
       const col = buildBracketRound(roundMatches, ri, numRounds, players, firstIdx, CARD_H, GAP, bodyH);
+      if (ri === numRounds - 1) finalColEl = col;
       track.appendChild(col);
 
       const isLastVisible = (ri === end - 1);
@@ -776,6 +777,28 @@ function renderBracketScreen(tournament, container) {
         track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, bodyH, SVG_W, false));
       } else if (hasMoreRight) {
         track.appendChild(buildBracketConnectorSvg(byRound[ri].length, ri, CARD_H, GAP, LABEL_H, bodyH, Math.floor(SVG_W / 2), true));
+      }
+    }
+
+    if (config.thirdPlaceMatch && finalColEl) {
+      const thirdMatch = matches.find(m => m.isThirdPlace);
+      if (thirdMatch) {
+        const thirdIdx = matches.indexOf(thirdMatch);
+        const section = document.createElement('div');
+        section.className = 'bk-third-place-section';
+
+        const lbl = document.createElement('div');
+        lbl.className = 'bk-third-place-label';
+        lbl.textContent = 'Mecz o 3. miejsce';
+        section.appendChild(lbl);
+
+        const body = document.createElement('div');
+        body.className = 'bk-body bk-third-place-body';
+        body.style.height = CARD_H + 'px';
+        body.appendChild(_buildBracketCard(thirdMatch, thirdIdx, players, 0));
+        section.appendChild(body);
+
+        finalColEl.appendChild(section);
       }
     }
 
@@ -794,28 +817,6 @@ function renderBracketScreen(tournament, container) {
     const outer = document.createElement('div');
     outer.className = 'bk-outer-wrap';
     outer.appendChild(wrap);
-
-    if (config.thirdPlaceMatch) {
-      const thirdMatch = matches.find(m => m.isThirdPlace);
-      if (thirdMatch) {
-        const thirdIdx = matches.indexOf(thirdMatch);
-        const section = document.createElement('div');
-        section.className = 'bk-third-place-section';
-
-        const lbl = document.createElement('div');
-        lbl.className = 'bk-third-place-label';
-        lbl.textContent = 'Mecz o 3. miejsce';
-        section.appendChild(lbl);
-
-        const body = document.createElement('div');
-        body.className = 'bk-body bk-third-place-body';
-        body.style.height = CARD_H + 'px';
-        body.appendChild(_buildBracketCard(thirdMatch, thirdIdx, players, 0));
-        section.appendChild(body);
-
-        outer.appendChild(section);
-      }
-    }
 
     container.appendChild(outer);
   }
@@ -1274,8 +1275,10 @@ function _buildBracketCard(m, matchIdx, players, topPx) {
   wrap.style.top = topPx + 'px';
 
   const classes = ['match-card'];
-  if (m.isBye) {
+  if (m.isBye && m.p1 !== null) {
     classes.push('bye-card');
+  } else if (m.isBye) {
+    classes.push('tbd-card');
   } else if (m.winner !== null) {
     classes.push('played');
   } else if (m.p1 === null && m.p2 === null) {

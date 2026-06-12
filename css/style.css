@@ -1988,6 +1988,14 @@ html, body {
 }
 .player-block.has-bye .player-block-label { color: var(--accent); }
 
+/* Step 4: group size info */
+.t-groups-info {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+  letter-spacing: 0.01em;
+}
+
 /* Step 4: bye info note */
 .bye-note {
   font-size: 0.75rem;
@@ -2488,6 +2496,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  margin-top: 16px;
 }
 
 .bk-third-place-label {

@@ -346,6 +346,20 @@ function _updateByeCounter(numByes) {
   _updateByeHint();
 }
 
+function _updateStep3bGroupsInfo() {
+  const el = document.getElementById('t-step3b-groups-info');
+  if (!el) return;
+  const n = tournamentConfig.numPlayers;
+  const k = tournamentConfig.numGroups;
+  const base = Math.floor(n / k);
+  const rem  = n % k;
+  const parts = Array.from({ length: k }, (_, gi) => {
+    const size = base + (gi < rem ? 1 : 0);
+    return String.fromCharCode(65 + gi) + ': ' + size;
+  });
+  el.textContent = 'Składy grup: ' + parts.join(' · ');
+}
+
 function _initStep3bGroupButtons() {
   const n = tournamentConfig.numPlayers;
   // Valid group counts: k ≥ 1 AND floor(n/k) ≥ 3 AND max 8 players per group
@@ -377,12 +391,14 @@ function _initStep3bGroupButtons() {
       _updateAdvancePerGroupUI();
       _updateThirdPlaceVisibility();
       _validateStep3b();
+      _updateStep3bGroupsInfo();
     });
     group.appendChild(btn);
   });
 
   tournamentConfig.numGroups = defaultK;
   _updateAdvanceCountMax();
+  _updateStep3bGroupsInfo();
 
   // Restore previously saved values if returning from step 4
   const advInp = document.getElementById('t-advance-count');
@@ -578,6 +594,28 @@ function renderStep4Players(savedValues) {
     document.getElementById('t-players-list').before(hintEl);
   }
   hintEl.style.display = (isBracket && numByes > 0) ? '' : 'none';
+
+  // ── Group size info (groups format only, hidden when per-group toggle active) ──
+  let groupInfoEl = document.getElementById('t-groups-info');
+  if (!groupInfoEl) {
+    groupInfoEl = document.createElement('p');
+    groupInfoEl.id = 't-groups-info';
+    groupInfoEl.className = 't-groups-info';
+    document.getElementById('t-players-list').before(groupInfoEl);
+  }
+  if (tournamentConfig.format === 'groups' && !tournamentConfig.advanceCounts) {
+    const k    = tournamentConfig.numGroups;
+    const base = Math.floor(n / k);
+    const rem  = n % k;
+    const parts = Array.from({ length: k }, (_, gi) => {
+      const size = base + (gi < rem ? 1 : 0);
+      return String.fromCharCode(65 + gi) + ': ' + size;
+    });
+    groupInfoEl.textContent = 'Składy grup: ' + parts.join(' · ');
+    groupInfoEl.style.display = '';
+  } else {
+    groupInfoEl.style.display = 'none';
+  }
 
   // ── Player blocks ──
   const suggestedByes = savedValues
