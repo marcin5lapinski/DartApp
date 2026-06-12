@@ -1030,6 +1030,12 @@ function renderTournamentViewScreen(tournament) {
       old.parentNode.replaceChild(fresh, old);
     });
 
+    const tabMatchesEl = document.getElementById('tv-tab-matches');
+    if (tabMatchesEl) {
+      tabMatchesEl.textContent = 'Mecze gr.';
+      tabMatchesEl.classList.remove('tv-tab-disabled');
+    }
+
     document.getElementById('tv-tab-table').addEventListener('click', () => {
       _setGroupsTab('groups');
       renderGroupsTab(tournament);
@@ -1072,6 +1078,7 @@ function renderTournamentViewScreen(tournament) {
     const fresh = old.cloneNode(true);
     old.parentNode.replaceChild(fresh, old);
   });
+  document.getElementById('tv-tab-matches').textContent = 'Mecze';
 
   // Wire liga tab handlers
   document.getElementById('tv-tab-table').addEventListener('click', () => {
