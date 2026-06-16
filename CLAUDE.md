@@ -135,7 +135,14 @@ home → tournament-list → [tournament-view | tournament wizard → tournament
     // bracket only:
     bracketSize,                                 // next power-of-2 ≥ numPlayers
     thirdPlaceMatch: boolean,
-    matchConfig,
+    matchConfig: {            // shared by bracket and groups
+      variant: number,        // e.g. 501
+      totalSets: number,      // 1 = no-set format
+      totalLegs: number,
+      inMode: 'straight'|'double'|'master',
+      checkoutMode: 'straight'|'double'|'master',
+      dartLimit: null|number, // raw dart count (e.g. 36); divide by 3 → dartLimitVisits
+    },
     // groups only:
     groups: [{ name, playerIndices, advanceCount }],  // one entry per group
     winPoints, lossPoints,                       // group-phase points
@@ -191,7 +198,7 @@ Groups format: `matches[]` contains both group matches (`phase:'group'`) and bra
 - **Phase 1** ✅: X01 game screen — setup, game loop, bust, checkout, summary stats
 - **Phase 2** ✅: Player profiles, match history, interactive dartboard (Mode C)
 - **Phase 3** ✅: Round-robin tournament — home screen, wizard, tournament list, standings table, matches view, match play flow, live standings, rematch starter logic
-- **Phase 4** ✅: Single-elimination bracket — bye handling (3–10 players), bracket view with SVG connectors, vertical centering, left/right navigation, desktop zoom/centering
+- **Phase 4** ✅: Single-elimination bracket — bye handling (3–10 players), bracket view with SVG connectors, vertical centering, left/right navigation, desktop zoom/centering; dart visit limit; groups+bracket format — group wizard step (3b), per-group standings, group matches tab, bracket finalization, third-place match
 - **Phase 5**: PWA (manifest + service worker), export
 
 ## UI language
