@@ -73,13 +73,15 @@ function renderGameScreen(match) {
   }
 
   // Sync compact score bar
-  const gcbP1Name  = document.getElementById('gcb-p1-name');
-  if (gcbP1Name) {
-    gcbP1Name.textContent  = document.querySelector('#player-card-0 .player-name').textContent;
+  const gcbCard0 = document.getElementById('gcb-card-0');
+  if (gcbCard0) {
+    document.getElementById('gcb-p1-name').textContent  = document.querySelector('#player-card-0 .player-name').textContent;
     document.getElementById('gcb-p1-score').textContent = document.querySelector('#player-card-0 .player-score').textContent;
     document.getElementById('gcb-ms-result').textContent = document.getElementById('ms-result').textContent;
-    document.getElementById('gcb-p2-score').textContent = document.querySelector('#player-card-1 .player-score').textContent;
     document.getElementById('gcb-p2-name').textContent  = document.querySelector('#player-card-1 .player-name').textContent;
+    document.getElementById('gcb-p2-score').textContent = document.querySelector('#player-card-1 .player-score').textContent;
+    gcbCard0.classList.toggle('gcb-active', match.activePlayer === 0);
+    document.getElementById('gcb-card-1').classList.toggle('gcb-active', match.activePlayer === 1);
   }
 
   // Marquee for leg indicator — only animate when text overflows container
