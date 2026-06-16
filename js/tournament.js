@@ -947,13 +947,25 @@ function _initStep4DragDrop(list) {
   list.addEventListener('touchend', e => {
     if (!dragSrc) return;
     const touch = e.changedTouches[0];
-    dragSrc.style.visibility = 'hidden';
+    if (!touch) {
+      // interrupted touch — clean up safely
+      list.querySelectorAll('.player-block').forEach(b =>
+        b.classList.remove('dragging', 'drag-over'));
+      dragSrc.style.visibility = '';
+      dragSrc = null;
+      return;
+    }
+    const src = dragSrc;
+    dragSrc = null;
+    src.style.visibility = 'hidden';
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    dragSrc.style.visibility = '';
+    src.style.visibility = '';
+    list.querySelectorAll('.player-block').forEach(b =>
+      b.classList.remove('dragging', 'drag-over'));
     const target = el && el.closest('.player-block');
-    if (target && target !== dragSrc) {
+    if (target && target !== src) {
       const blocks = Array.from(list.children);
-      const fromIdx = blocks.indexOf(dragSrc);
+      const fromIdx = blocks.indexOf(src);
       const toIdx   = blocks.indexOf(target);
       if (fromIdx >= 0 && toIdx >= 0) {
         const vals = _getStep4Values();
@@ -962,9 +974,6 @@ function _initStep4DragDrop(list) {
         if (tournamentConfig && tournamentConfig.format === 'groups') _refreshGroupPreviewBody();
       }
     }
-    list.querySelectorAll('.player-block').forEach(b =>
-      b.classList.remove('dragging', 'drag-over'));
-    dragSrc = null;
   });
 
   list.addEventListener('touchcancel', () => {
