@@ -182,6 +182,9 @@
     </div>
     <div class="score-center">
       <span id="ms-result">0 : 0</span>
+      <button id="btn-toggle-quick" aria-label="Pokaż/ukryj szybki wynik">
+        Szybki wynik <span class="tq-arrow">↑</span>
+      </button>
     </div>
     <div class="player-card inactive" id="player-card-1">
       <div class="player-name">Gracz 2</div>
@@ -192,25 +195,27 @@
     </div>
   </div>
 
-  <!-- Checkout row: left buttons | hint | right buttons -->
+  <!-- Checkout row: quick buttons (collapsible) + always-visible hint -->
   <div id="checkout-row">
-    <div class="quick-scores">
-      <button class="quick-score-btn" data-val="41">41</button>
-      <button class="quick-score-btn" data-val="45">45</button>
-      <button class="quick-score-btn" data-val="60">60</button>
-      <button class="quick-score-btn" data-val="100">100</button>
-      <button class="quick-score-btn" data-val="140">140</button>
-      <button class="quick-score-btn" data-val="180">180</button>
+    <div id="quick-scores-wrap">
+      <div class="quick-scores">
+        <button class="quick-score-btn" data-val="41">41</button>
+        <button class="quick-score-btn" data-val="45">45</button>
+        <button class="quick-score-btn" data-val="60">60</button>
+        <button class="quick-score-btn" data-val="100">100</button>
+        <button class="quick-score-btn" data-val="140">140</button>
+        <button class="quick-score-btn" data-val="180">180</button>
+      </div>
+      <div class="quick-scores">
+        <button class="quick-score-btn qs-highlight" data-val="26">26</button>
+        <button class="quick-score-btn" data-val="55">55</button>
+        <button class="quick-score-btn" data-val="57">57</button>
+        <button class="quick-score-btn" data-val="85">85</button>
+        <button class="quick-score-btn" data-val="95">95</button>
+        <button class="quick-score-btn" data-val="133">133</button>
+      </div>
     </div>
     <div id="checkout-hint"><span id="checkout-hint-text"></span></div>
-    <div class="quick-scores">
-      <button class="quick-score-btn qs-highlight" data-val="26">26</button>
-      <button class="quick-score-btn" data-val="55">55</button>
-      <button class="quick-score-btn" data-val="57">57</button>
-      <button class="quick-score-btn" data-val="85">85</button>
-      <button class="quick-score-btn" data-val="95">95</button>
-      <button class="quick-score-btn" data-val="133">133</button>
-    </div>
   </div>
 
   <!-- Mode switcher -->

@@ -7,6 +7,8 @@ function showScreen(name) {
   document.getElementById('screen-' + name).classList.add('active');
   if (name === SCREENS.GAME) {
     document.querySelector('#screen-game .game-header')?.classList.remove('compact');
+    document.getElementById('quick-scores-wrap')?.classList.remove('collapsed');
+    document.getElementById('btn-toggle-quick')?.classList.remove('collapsed');
   }
 }
 

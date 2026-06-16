@@ -197,6 +197,14 @@ function setupEventListeners() {
   // Undo last player's committed visit
   document.getElementById('btn-undo-visit').addEventListener('click', undoLastVisit);
 
+  // Toggle quick-score buttons visibility
+  document.getElementById('btn-toggle-quick').addEventListener('click', () => {
+    const wrap = document.getElementById('quick-scores-wrap');
+    const btn  = document.getElementById('btn-toggle-quick');
+    const collapsed = wrap.classList.toggle('collapsed');
+    btn.classList.toggle('collapsed', collapsed);
+  });
+
   // Cancel which-dart dialog — revert the visit so the score can be re-entered
   document.getElementById('btn-which-dart-cancel').addEventListener('click', undoLastVisit);
 

@@ -311,12 +311,38 @@ html, body {
 /* Center score column between player cards */
 .score-center {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   background: var(--surface);
-  padding: 0 10px;
+  padding: 6px 10px;
   border-left: 2px solid var(--border);
   border-right: 2px solid var(--border);
+}
+
+#btn-toggle-quick {
+  padding: 3px 8px;
+  background: #0e1e2e;
+  border: 1px solid #2558a0;
+  border-radius: 5px;
+  color: #6ab4f5;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+  line-height: 1.4;
+}
+#btn-toggle-quick:active { background: #172a3e; }
+
+.tq-arrow {
+  display: inline-block;
+  transition: transform 0.28s ease;
+}
+#btn-toggle-quick.collapsed .tq-arrow {
+  transform: rotate(180deg);
 }
 
 #ms-result {
@@ -411,6 +437,15 @@ html, body {
   flex-direction: column;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+}
+
+#quick-scores-wrap {
+  overflow: hidden;
+  max-height: 110px;
+  transition: max-height 0.28s ease;
+}
+#quick-scores-wrap.collapsed {
+  max-height: 0;
 }
 
 .quick-scores {
