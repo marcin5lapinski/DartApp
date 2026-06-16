@@ -26,6 +26,7 @@ const BOARD_COLORS = {
 let _boardCanvas = null;
 let _boardCtx = null;
 let _boardR = 0; // pixel radius of the outer double ring on the canvas
+let _boardSizeDelta = 0; // cumulative px offset from default size (-100…+100)
 
 function initBoard() {
   _boardCanvas = document.getElementById('board-canvas');
@@ -41,11 +42,22 @@ function initBoard() {
 function _resizeBoard() {
   const parent = _boardCanvas.parentElement;
   const maxSize = window.innerWidth < 600 ? 340 : 320;
-  const size = Math.min(parent.clientWidth - 16, maxSize);
+  const baseSize = Math.min(parent.clientWidth - 16, maxSize);
+  const size = baseSize + _boardSizeDelta;
   _boardCanvas.width = size;
   _boardCanvas.height = size;
   _boardR = (size / 2) * 0.84;
   _boardCtx = _boardCanvas.getContext('2d');
+}
+
+function adjustBoardSize(delta) {
+  _boardSizeDelta = Math.max(-100, Math.min(100, _boardSizeDelta + delta));
+  _resizeBoard();
+  _drawBoard();
+  const plus  = document.getElementById('btn-board-plus');
+  const minus = document.getElementById('btn-board-minus');
+  if (plus)  plus.disabled  = _boardSizeDelta >= 100;
+  if (minus) minus.disabled = _boardSizeDelta <= -100;
 }
 
 function _drawBoard() {

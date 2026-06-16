@@ -205,6 +205,10 @@ function setupEventListeners() {
     btn.classList.toggle('collapsed', collapsed);
   });
 
+  // Board size controls (± 20 px, max 5 steps each way)
+  document.getElementById('btn-board-plus').addEventListener('click',  () => adjustBoardSize(+20));
+  document.getElementById('btn-board-minus').addEventListener('click', () => adjustBoardSize(-20));
+
   // Cancel which-dart dialog — revert the visit so the score can be re-entered
   document.getElementById('btn-which-dart-cancel').addEventListener('click', undoLastVisit);
 

@@ -1548,7 +1548,38 @@ html, body {
   padding: 8px 8px 4px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  position: relative;
 }
+
+#board-size-controls {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 1;
+}
+
+.btn-board-size {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: #252d2d;
+  border: 1px solid #404d4d;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.btn-board-size:active:not(:disabled) { background: #3a4646; }
+.btn-board-size:disabled { opacity: 0.3; cursor: default; }
 
 #board-canvas {
   cursor: crosshair;
