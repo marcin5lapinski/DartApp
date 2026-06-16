@@ -245,7 +245,25 @@ html, body {
   grid-template-columns: 1fr auto 1fr;
   gap: 2px;
   background: var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  overflow: hidden;
+  max-height: 220px;
+  transition: max-height 0.25s ease;
 }
+
+.players-row.compact {
+  max-height: 80px;
+}
+.players-row.compact .player-card    { padding: 8px 12px; }
+.players-row.compact .player-name    { font-size: 16px; margin-bottom: 2px; }
+.players-row.compact .player-score   { font-size: 2rem; }
+.players-row.compact #ms-result      { font-size: 1.4rem; }
+.players-row.compact .player-darts,
+.players-row.compact .player-avg,
+.players-row.compact .player-last,
+.players-row.compact .legs-won       { display: none; }
 
 .player-card {
   background: var(--surface);
