@@ -89,11 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
   populatePlayerSuggestions();
   loadFromLocalStorage();
 
-  const sentinel   = document.getElementById('game-sticky-sentinel');
-  const playersRow = document.querySelector('#screen-game .players-row');
-  if (sentinel && playersRow) {
+  const sentinel    = document.getElementById('game-sticky-sentinel');
+  const gameHeader  = document.querySelector('#screen-game .game-header');
+  if (sentinel && gameHeader) {
     new IntersectionObserver(entries => {
-      playersRow.classList.toggle('compact', !entries[0].isIntersecting);
+      gameHeader.classList.toggle('compact', !entries[0].isIntersecting);
     }, { threshold: 0 }).observe(sentinel);
   }
 });
