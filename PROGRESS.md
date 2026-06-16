@@ -596,6 +596,28 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Poprawki mobilne (2026-06-16)
+
+### Nowe funkcje
+- **Touch drag-and-drop w wizardzie krok 4**: `_initStep4DragDrop()` w `tournament.js` — dodano cztery listenery dotykowe (`touchstart`, `touchmove`, `touchend`, `touchcancel`) równolegle do istniejących mouse listenerów. `touchmove` krótko ukrywa przeciągany blok (`visibility:hidden`) i używa `document.elementFromPoint()` do detekcji celu pod palcem. `touchend` używa `e.changedTouches[0]` (nie `e.touches[0]`, które jest puste w `touchend`); zawiera null guard dla przerwanego dotyku. `.drag-handle` otrzymał `touch-action: none` w CSS.
+- **Sticky header ekranu gry + kompaktowy pasek wyniku**: `.game-header` ma `position: sticky; top: 0; z-index: 10`. `#game-compact-bar` to drugi rząd w nagłówku (3-kolumnowy grid: `#gcb-card-0`, `.gcb-center`, `#gcb-card-1`), widoczny tylko gdy nagłówek ma klasę `.compact`. Styl karty: imię nad wynikiem, wyśrodkowane; aktywny gracz z czerwoną kreską u dołu (`.gcb-active`). Synchronizacja danych w `renderGameScreen()` w `ui.js`. `IntersectionObserver` w `app.js` obserwuje `#game-sticky-sentinel` (zero-height div przed `.players-row`) i przełącza `.compact`. `showScreen()` resetuje `.compact`, `.collapsed` przy wejściu na ekran gry.
+- **Marquee dla wskaźnika lega**: `#leg-indicator` animowany przez CSS `@keyframes leg-ticker` z CSS variable `--ticker-end` ustawianą dynamicznie przez JS (`scrollWidth − clientWidth`). Animacja aktywna tylko gdy tekst przekracza szerokość kontenera `.leg-indicator-wrap`.
+- **Ukrywalne przyciski szybkiego wyniku**: `#btn-toggle-quick` w `.score-center` (pozycjonowany absolutnie przy dolnej krawędzi). `#quick-scores-wrap` opakowuje oba rzędy `.quick-scores` z animacją `max-height: 110px → 0`. `#checkout-hint` pozostaje poza wrapperem — zawsze widoczny. Strzałka w przycisku obraca się o 180° przez CSS (`.tq-arrow` + `#btn-toggle-quick.collapsed .tq-arrow`).
+- **Przyciski zmiany rozmiaru tarczy**: `#board-size-controls` (flex, górny prawy róg `.board-area`) z `#btn-board-plus` i `#btn-board-minus`. `adjustBoardSize(delta)` w `board.js` modyfikuje `_boardSizeDelta` (krok 20 px, zakres ±100 px / 5 kliknięć), odrysowuje tarczę i aktualizuje `disabled` na przyciskach. Delta persystuje w ramach sesji.
+
+### Naprawione błędy
+- Scroll snap-back na mobile w widoku meczu — root cause: `position: sticky` + `overflow: hidden` + `max-height` transition na `.players-row` powodował reflow i skakanie pozycji scrolla. Naprawione: sticky przeniesiony na `.game-header`; kompaktowy pasek jako drugi rząd nagłówka (poza normalnym flow `.players-row`).
+
+### Zmiany w plikach
+- `js/tournament.js` — `_initStep4DragDrop()`: dodano listenery `touchstart`/`touchmove`/`touchend`/`touchcancel`
+- `js/board.js` — `_boardSizeDelta`, `adjustBoardSize(delta)`, `_resizeBoard()` uwzględnia deltę
+- `js/ui.js` — `showScreen()` resetuje `.compact`/`.collapsed`; `renderGameScreen()` synchronizuje `#game-compact-bar` i aktywny gracz; marquee dla `#leg-indicator`
+- `js/app.js` — `IntersectionObserver` na `#game-sticky-sentinel`; handlery `#btn-toggle-quick`, `#btn-board-plus`, `#btn-board-minus`
+- `index.html` — `#game-compact-bar` (z `#gcb-card-0/1`, `.gcb-center`), `#game-sticky-sentinel`, `#btn-toggle-quick`, `#quick-scores-wrap`, `#board-size-controls`
+- `css/style.css` — sticky `.game-header`; style `#game-compact-bar`, `.gcb-card`, `.gcb-center`, `.gcb-name`, `.gcb-score`, `.gcb-ms`; `#leg-indicator` marquee; `#btn-toggle-quick`, `.tq-arrow`; `#quick-scores-wrap` collapse; `.board-area` + `#board-size-controls`, `.btn-board-size`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
