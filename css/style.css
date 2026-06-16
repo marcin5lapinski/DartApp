@@ -249,7 +249,7 @@ html, body {
   top: 0;
   z-index: 5;
   overflow: hidden;
-  max-height: 220px;
+  max-height: 400px; /* animation anchor — never a real content limit */
   transition: max-height 0.25s ease;
 }
 

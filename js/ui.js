@@ -5,6 +5,9 @@ const SCREENS = { HOME: 'home', SETUP: 'setup', GAME: 'game', STATS: 'stats', PL
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
+  if (name === SCREENS.GAME) {
+    document.querySelector('#screen-game .players-row')?.classList.remove('compact');
+  }
 }
 
 function renderGameScreen(match) {

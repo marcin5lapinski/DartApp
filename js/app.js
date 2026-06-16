@@ -91,9 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const sentinel   = document.getElementById('game-sticky-sentinel');
   const playersRow = document.querySelector('#screen-game .players-row');
-  new IntersectionObserver(entries => {
-    playersRow.classList.toggle('compact', !entries[0].isIntersecting);
-  }, { threshold: 0 }).observe(sentinel);
+  if (sentinel && playersRow) {
+    new IntersectionObserver(entries => {
+      playersRow.classList.toggle('compact', !entries[0].isIntersecting);
+    }, { threshold: 0 }).observe(sentinel);
+  }
 });
 
 function setupEventListeners() {
