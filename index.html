@@ -147,15 +147,31 @@
 <section id="screen-game" class="screen">
 
   <div class="game-header">
-    <button id="btn-exit-match" class="btn-exit-match">✕ Menu</button>
-    <span id="leg-indicator">Leg 1 / 3</span>
-    <div class="game-header-right">
-      <button id="btn-undo-visit" class="btn-undo-visit" disabled>↩ Cofnij turę</button>
-      <button id="btn-live-standings" class="btn-live-standings" style="display:none">📊 Tabela live</button>
+    <div class="game-header-row">
+      <button id="btn-exit-match" class="btn-exit-match">✕ Menu</button>
+      <div class="leg-indicator-wrap"><span id="leg-indicator">Leg 1 / 3</span></div>
+      <div class="game-header-right">
+        <button id="btn-undo-visit" class="btn-undo-visit" disabled>↩ Cofnij turę</button>
+        <button id="btn-live-standings" class="btn-live-standings" style="display:none">📊 Tabela live</button>
+      </div>
+    </div>
+    <div id="game-compact-bar">
+      <div class="gcb-card" id="gcb-card-0">
+        <span class="gcb-name" id="gcb-p1-name"></span>
+        <span class="gcb-score" id="gcb-p1-score"></span>
+      </div>
+      <div class="gcb-center">
+        <span class="gcb-ms" id="gcb-ms-result"></span>
+      </div>
+      <div class="gcb-card" id="gcb-card-1">
+        <span class="gcb-name" id="gcb-p2-name"></span>
+        <span class="gcb-score" id="gcb-p2-score"></span>
+      </div>
     </div>
   </div>
 
   <!-- Player score cards -->
+  <div id="game-sticky-sentinel"></div>
   <div class="players-row">
     <div class="player-card active" id="player-card-0">
       <div class="player-name">Gracz 1</div>
@@ -166,6 +182,9 @@
     </div>
     <div class="score-center">
       <span id="ms-result">0 : 0</span>
+      <button id="btn-toggle-quick" aria-label="Pokaż/ukryj szybki wynik">
+        Szybki wynik <span class="tq-arrow">↑</span>
+      </button>
     </div>
     <div class="player-card inactive" id="player-card-1">
       <div class="player-name">Gracz 2</div>
@@ -176,25 +195,27 @@
     </div>
   </div>
 
-  <!-- Checkout row: left buttons | hint | right buttons -->
+  <!-- Checkout row: quick buttons (collapsible) + always-visible hint -->
   <div id="checkout-row">
-    <div class="quick-scores">
-      <button class="quick-score-btn" data-val="41">41</button>
-      <button class="quick-score-btn" data-val="45">45</button>
-      <button class="quick-score-btn" data-val="60">60</button>
-      <button class="quick-score-btn" data-val="100">100</button>
-      <button class="quick-score-btn" data-val="140">140</button>
-      <button class="quick-score-btn" data-val="180">180</button>
+    <div id="quick-scores-wrap">
+      <div class="quick-scores">
+        <button class="quick-score-btn" data-val="41">41</button>
+        <button class="quick-score-btn" data-val="45">45</button>
+        <button class="quick-score-btn" data-val="60">60</button>
+        <button class="quick-score-btn" data-val="100">100</button>
+        <button class="quick-score-btn" data-val="140">140</button>
+        <button class="quick-score-btn" data-val="180">180</button>
+      </div>
+      <div class="quick-scores">
+        <button class="quick-score-btn qs-highlight" data-val="26">26</button>
+        <button class="quick-score-btn" data-val="55">55</button>
+        <button class="quick-score-btn" data-val="57">57</button>
+        <button class="quick-score-btn" data-val="85">85</button>
+        <button class="quick-score-btn" data-val="95">95</button>
+        <button class="quick-score-btn" data-val="133">133</button>
+      </div>
     </div>
     <div id="checkout-hint"><span id="checkout-hint-text"></span></div>
-    <div class="quick-scores">
-      <button class="quick-score-btn qs-highlight" data-val="26">26</button>
-      <button class="quick-score-btn" data-val="55">55</button>
-      <button class="quick-score-btn" data-val="57">57</button>
-      <button class="quick-score-btn" data-val="85">85</button>
-      <button class="quick-score-btn" data-val="95">95</button>
-      <button class="quick-score-btn" data-val="133">133</button>
-    </div>
   </div>
 
   <!-- Mode switcher -->
@@ -253,6 +274,10 @@
 
   <!-- Interactive board (Mode C) -->
   <div class="board-area" id="board-area" style="display:none">
+    <div id="board-size-controls">
+      <button class="btn-board-size" id="btn-board-minus">−</button>
+      <button class="btn-board-size" id="btn-board-plus">+</button>
+    </div>
     <canvas id="board-canvas"></canvas>
   </div>
 

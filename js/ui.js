@@ -5,6 +5,11 @@ const SCREENS = { HOME: 'home', SETUP: 'setup', GAME: 'game', STATS: 'stats', PL
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
+  if (name === SCREENS.GAME) {
+    document.querySelector('#screen-game .game-header')?.classList.remove('compact');
+    document.getElementById('quick-scores-wrap')?.classList.remove('collapsed');
+    document.getElementById('btn-toggle-quick')?.classList.remove('collapsed');
+  }
 }
 
 function renderGameScreen(match) {
@@ -67,6 +72,31 @@ function renderGameScreen(match) {
     const limitSuffix = match.dartLimitVisits ? ' | Limit ' + (match.dartLimitVisits * 3) + ' rzutów' : '';
     document.getElementById('leg-indicator').textContent =
       'Leg ' + match.currentLeg + ' (First to ' + match.totalLegs + ')' + limitSuffix;
+  }
+
+  // Sync compact score bar
+  const gcbCard0 = document.getElementById('gcb-card-0');
+  if (gcbCard0) {
+    document.getElementById('gcb-p1-name').textContent  = document.querySelector('#player-card-0 .player-name').textContent;
+    document.getElementById('gcb-p1-score').textContent = document.querySelector('#player-card-0 .player-score').textContent;
+    document.getElementById('gcb-ms-result').textContent = document.getElementById('ms-result').textContent;
+    document.getElementById('gcb-p2-name').textContent  = document.querySelector('#player-card-1 .player-name').textContent;
+    document.getElementById('gcb-p2-score').textContent = document.querySelector('#player-card-1 .player-score').textContent;
+    gcbCard0.classList.toggle('gcb-active', match.activePlayer === 0);
+    document.getElementById('gcb-card-1').classList.toggle('gcb-active', match.activePlayer === 1);
+  }
+
+  // Marquee for leg indicator — only animate when text overflows container
+  const indEl  = document.getElementById('leg-indicator');
+  const wrapEl = indEl && indEl.parentElement;
+  if (indEl && wrapEl) {
+    indEl.classList.remove('scrolling');
+    indEl.style.removeProperty('--ticker-end');
+    const overflow = indEl.scrollWidth - wrapEl.clientWidth;
+    if (overflow > 4) {
+      indEl.style.setProperty('--ticker-end', '-' + overflow + 'px');
+      indEl.classList.add('scrolling');
+    }
   }
 
   renderHistory(match);

@@ -88,6 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   populatePlayerSuggestions();
   loadFromLocalStorage();
+
+  const sentinel    = document.getElementById('game-sticky-sentinel');
+  const gameHeader  = document.querySelector('#screen-game .game-header');
+  if (sentinel && gameHeader) {
+    new IntersectionObserver(entries => {
+      gameHeader.classList.toggle('compact', !entries[0].isIntersecting);
+    }, { threshold: 0 }).observe(sentinel);
+  }
 });
 
 function setupEventListeners() {
@@ -188,6 +196,18 @@ function setupEventListeners() {
 
   // Undo last player's committed visit
   document.getElementById('btn-undo-visit').addEventListener('click', undoLastVisit);
+
+  // Toggle quick-score buttons visibility
+  document.getElementById('btn-toggle-quick').addEventListener('click', () => {
+    const wrap = document.getElementById('quick-scores-wrap');
+    const btn  = document.getElementById('btn-toggle-quick');
+    const collapsed = wrap.classList.toggle('collapsed');
+    btn.classList.toggle('collapsed', collapsed);
+  });
+
+  // Board size controls (± 20 px, max 5 steps each way)
+  document.getElementById('btn-board-plus').addEventListener('click',  () => adjustBoardSize(+20));
+  document.getElementById('btn-board-minus').addEventListener('click', () => adjustBoardSize(-20));
 
   // Cancel which-dart dialog — revert the visit so the score can be re-entered
   document.getElementById('btn-which-dart-cancel').addEventListener('click', undoLastVisit);

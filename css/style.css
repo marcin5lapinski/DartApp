@@ -179,13 +179,102 @@ html, body {
 
 .game-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
+  flex-direction: column;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   font-size: 0.85rem;
   color: var(--text-muted);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.game-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Leg indicator marquee */
+.leg-indicator-wrap {
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+#leg-indicator {
+  display: inline-block;
+  white-space: nowrap;
+}
+#leg-indicator.scrolling {
+  animation: leg-ticker 8s ease-in-out infinite;
+}
+@keyframes leg-ticker {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(0); }
+  85%  { transform: translateX(var(--ticker-end, 0px)); }
+  100% { transform: translateX(var(--ticker-end, 0px)); }
+}
+
+/* Compact score bar — shown inside sticky header when players-row scrolls off */
+#game-compact-bar {
+  display: none;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2px;
+  background: var(--border);
+  border-top: 2px solid var(--border);
+  height: 72px;
+}
+.game-header.compact #game-compact-bar { display: grid; }
+
+.gcb-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  padding: 6px 10px;
+  gap: 3px;
+  min-width: 0;
+}
+.gcb-card.gcb-active {
+  box-shadow: inset 0 -3px 0 var(--active-glow);
+}
+.gcb-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  padding: 0 10px;
+}
+
+.gcb-name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.gcb-score {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.gcb-ms {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .btn-exit-match {
@@ -224,10 +313,39 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   background: var(--surface);
-  padding: 0 10px;
+  padding: 0 10px 22px;
   border-left: 2px solid var(--border);
   border-right: 2px solid var(--border);
+}
+
+#btn-toggle-quick {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  background: #0e1e2e;
+  border: 1px solid #2558a0;
+  border-radius: 5px;
+  color: #6ab4f5;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
+  line-height: 1.4;
+}
+#btn-toggle-quick:active { background: #172a3e; }
+
+.tq-arrow {
+  display: inline-block;
+  transition: transform 0.28s ease;
+}
+#btn-toggle-quick.collapsed .tq-arrow {
+  transform: rotate(180deg);
 }
 
 #ms-result {
@@ -322,6 +440,15 @@ html, body {
   flex-direction: column;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+}
+
+#quick-scores-wrap {
+  overflow: hidden;
+  max-height: 110px;
+  transition: max-height 0.28s ease;
+}
+#quick-scores-wrap.collapsed {
+  max-height: 0;
 }
 
 .quick-scores {
@@ -1421,7 +1548,38 @@ html, body {
   padding: 8px 8px 4px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+  position: relative;
 }
+
+#board-size-controls {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 1;
+}
+
+.btn-board-size {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: #252d2d;
+  border: 1px solid #404d4d;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.btn-board-size:active:not(:disabled) { background: #3a4646; }
+.btn-board-size:disabled { opacity: 0.3; cursor: default; }
 
 #board-canvas {
   cursor: crosshair;
@@ -1809,6 +1967,7 @@ html, body {
   line-height: 1;
   border-radius: 3px;
   transition: color .15s;
+  touch-action: none;
 }
 .drag-handle:hover { color: #888; }
 .drag-handle:active { cursor: grabbing; }
