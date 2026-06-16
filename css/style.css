@@ -1809,6 +1809,7 @@ html, body {
   line-height: 1;
   border-radius: 3px;
   transition: color .15s;
+  touch-action: none;
 }
 .drag-handle:hover { color: #888; }
 .drag-handle:active { cursor: grabbing; }

@@ -880,6 +880,7 @@ function _initStep4DragDrop(list) {
 
   list.querySelectorAll('.player-block').forEach(b => b.setAttribute('draggable', 'true'));
 
+  // ---- Mouse / desktop drag ----
   list.addEventListener('dragstart', e => {
     if (e.target.closest('input, select')) { e.preventDefault(); return; }
     const block = e.target.closest('.player-block');
@@ -920,6 +921,56 @@ function _initStep4DragDrop(list) {
     vals.splice(toIdx, 0, vals.splice(fromIdx, 1)[0]);
     renderStep4Players(vals);
     if (tournamentConfig && tournamentConfig.format === 'groups') _refreshGroupPreviewBody();
+  });
+
+  // ---- Touch / mobile drag ----
+  list.addEventListener('touchstart', e => {
+    if (!e.target.closest('.drag-handle')) return;
+    const block = e.target.closest('.player-block');
+    if (!block) return;
+    dragSrc = block;
+    requestAnimationFrame(() => block.classList.add('dragging'));
+  }, { passive: true });
+
+  list.addEventListener('touchmove', e => {
+    if (!dragSrc) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    dragSrc.style.visibility = 'hidden';
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    dragSrc.style.visibility = '';
+    const target = el && el.closest('.player-block');
+    list.querySelectorAll('.player-block').forEach(b => b.classList.remove('drag-over'));
+    if (target && target !== dragSrc) target.classList.add('drag-over');
+  }, { passive: false });
+
+  list.addEventListener('touchend', e => {
+    if (!dragSrc) return;
+    const touch = e.changedTouches[0];
+    dragSrc.style.visibility = 'hidden';
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    dragSrc.style.visibility = '';
+    const target = el && el.closest('.player-block');
+    if (target && target !== dragSrc) {
+      const blocks = Array.from(list.children);
+      const fromIdx = blocks.indexOf(dragSrc);
+      const toIdx   = blocks.indexOf(target);
+      if (fromIdx >= 0 && toIdx >= 0) {
+        const vals = _getStep4Values();
+        vals.splice(toIdx, 0, vals.splice(fromIdx, 1)[0]);
+        renderStep4Players(vals);
+        if (tournamentConfig && tournamentConfig.format === 'groups') _refreshGroupPreviewBody();
+      }
+    }
+    list.querySelectorAll('.player-block').forEach(b =>
+      b.classList.remove('dragging', 'drag-over'));
+    dragSrc = null;
+  });
+
+  list.addEventListener('touchcancel', () => {
+    list.querySelectorAll('.player-block').forEach(b =>
+      b.classList.remove('dragging', 'drag-over'));
+    dragSrc = null;
   });
 }
 
