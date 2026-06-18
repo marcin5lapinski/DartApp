@@ -3006,18 +3006,19 @@ html, body {
   padding: 10px;
   font-size: 0.85rem;
   font-weight: 600;
-  background: transparent;
-  border: 1px solid var(--border);
+  background: var(--accent);
+  border: none;
   border-radius: 8px;
-  color: var(--text-muted);
+  color: #fff;
   cursor: pointer;
   margin-top: 6px;
   text-align: center;
   -webkit-tap-highlight-color: transparent;
-  transition: border-color .15s, color .15s;
+  transition: opacity .15s;
 }
 
-.btn-copy-phase:hover { border-color: #555; color: var(--text); }
+.btn-copy-phase:hover { opacity: 0.85; }
+.btn-copy-phase:active { transform: scale(0.97); }
 .btn-copy-phase:disabled { opacity: 0.3; cursor: default; }
 
 #t-phase-forms {
