@@ -2911,16 +2911,18 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 12px;
+  padding: 10px 12px;
   cursor: pointer;
-  background: var(--surface);
+  background: var(--surface2);
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s;
 }
 
-.phase-card-header:hover { background: #222; }
+.phase-card-header:hover { background: #2c2c2c; }
 
 .phase-arrow {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   color: var(--text-muted);
   transition: transform 0.2s;
   flex-shrink: 0;
@@ -2930,7 +2932,7 @@ html, body {
 .phase-card.expanded .phase-arrow { transform: rotate(90deg); }
 
 .phase-name {
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -2944,7 +2946,7 @@ html, body {
 
 .phase-chip {
   font-size: 0.62rem;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -2958,52 +2960,61 @@ html, body {
 }
 
 .phase-card-body {
-  padding: 10px 12px 8px;
-  background: #111;
+  padding: 12px;
+  background: var(--surface);
   border-top: 1px solid var(--border);
 }
 
 .phase-form-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
-  margin-bottom: 8px;
+  gap: 8px 12px;
+  margin-bottom: 10px;
 }
 
 .phase-form-group {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
 }
 
 .phase-form-group label {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .phase-form-group select {
-  background: var(--surface);
+  background: var(--surface2);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 5px 6px;
-  font-size: 0.78rem;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 0.88rem;
   cursor: pointer;
   width: 100%;
+  outline: none;
+  transition: border-color .2s;
 }
 
-.phase-form-group select:focus { outline: none; border-color: var(--accent); }
+.phase-form-group select:focus { border-color: var(--accent); }
+.phase-form-group select option { background: var(--surface2); }
 
 .btn-copy-phase {
   width: 100%;
-  padding: 5px;
-  font-size: 0.72rem;
+  padding: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--text-muted);
   cursor: pointer;
-  margin-top: 4px;
+  margin-top: 6px;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color .15s, color .15s;
 }
 
 .btn-copy-phase:hover { border-color: #555; color: var(--text); }
