@@ -282,6 +282,23 @@ function _generateBracketTBD(groups, thirdPlaceMatch) {
   return { bracketSize: B, matches };
 }
 
+function getMatchConfig(tournament, match) {
+  if (!tournament.config.usePhaseFormats) return tournament.config.matchConfig;
+  const pmc = tournament.config.phaseMatchConfigs || {};
+  if (match.isThirdPlace) return pmc.thirdPlace || pmc[match.round] || tournament.config.matchConfig;
+  if (match.phase === 'group') return pmc.group || tournament.config.matchConfig;
+  return pmc[match.round] !== undefined ? pmc[match.round] : tournament.config.matchConfig;
+}
+
+function _formatLabel(config) {
+  if (config.usePhaseFormats) return '<em class="custom-format-label">custom format</em>';
+  const mc = config.matchConfig;
+  const legsLabel = mc.totalSets > 1
+    ? `${mc.totalSets}S × First to ${mc.totalLegs}`
+    : `First to ${mc.totalLegs}`;
+  return `${mc.variant} · ${legsLabel}`;
+}
+
 function createTournament(config, players) {
   if (config.format === 'groups') {
     const groups = _buildGroups(players, config.numGroups, config.advanceCounts || config.advanceCount, config.seeding === 'ordered');
