@@ -1623,6 +1623,21 @@ function openFormatEditModal(tournament) {
   openModal('modal-format-edit');
 }
 
+function _phasesAllIdentical(pmc) {
+  const keys = Object.keys(pmc);
+  if (keys.length <= 1) return true;
+  const ref = pmc[keys[0]];
+  return keys.every(k => {
+    const mc = pmc[k];
+    return mc.variant      === ref.variant      &&
+           mc.totalSets    === ref.totalSets     &&
+           mc.totalLegs    === ref.totalLegs     &&
+           mc.inMode       === ref.inMode        &&
+           mc.checkoutMode === ref.checkoutMode  &&
+           (mc.dartLimit || null) === (ref.dartLimit || null);
+  });
+}
+
 function _saveFormatEdit(tournament) {
   const isLiga    = tournament.config.format === 'league';
   const container = document.getElementById('fmt-edit-content');
@@ -1638,9 +1653,17 @@ function _saveFormatEdit(tournament) {
     };
   } else {
     const phases = _getTournamentPhases(tournament);
-    tournament.config.usePhaseFormats = true;
     if (!tournament.config.phaseMatchConfigs) tournament.config.phaseMatchConfigs = {};
 
+    // Ensure locked phases have an entry so the all-identical check covers them
+    phases.forEach(phase => {
+      const key = String(phase.key);
+      if (tournament.config.phaseMatchConfigs[key] === undefined) {
+        tournament.config.phaseMatchConfigs[key] = Object.assign({}, tournament.config.matchConfig);
+      }
+    });
+
+    // Update unlocked phases from the form
     phases.forEach(phase => {
       const card = container.querySelector(`[data-phase-key="${String(phase.key)}"]`);
       if (card && !card.classList.contains('locked')) {
@@ -1648,11 +1671,12 @@ function _saveFormatEdit(tournament) {
       }
     });
 
+    // Drop usePhaseFormats when all phases are now identical (restores normal label)
+    tournament.config.usePhaseFormats = !_phasesAllIdentical(tournament.config.phaseMatchConfigs);
+
     // Keep matchConfig in sync with first phase as fallback for getMatchConfig()
     const firstKey = String(phases[0].key);
-    if (tournament.config.phaseMatchConfigs[firstKey]) {
-      tournament.config.matchConfig = Object.assign({}, tournament.config.phaseMatchConfigs[firstKey]);
-    }
+    tournament.config.matchConfig = Object.assign({}, tournament.config.phaseMatchConfigs[firstKey]);
   }
 
   // Persist
