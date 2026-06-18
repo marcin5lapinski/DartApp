@@ -705,7 +705,7 @@ function _returnToTournamentTab(t, matchIndex) {
 
 function openTournamentStarterModal(tournament, matchIndex) {
   const m  = tournament.matches[matchIndex];
-  const mc = tournament.config.matchConfig;
+  const mc = getMatchConfig(tournament, m);
   const p1Name = tournament.players[m.p1].name;
   const p2Name = tournament.players[m.p2].name;
 
@@ -755,7 +755,7 @@ function openTournamentStarterModal(tournament, matchIndex) {
 
 function startTournamentMatch(tournament, matchIndex, startingPlayer) {
   const m  = tournament.matches[matchIndex];
-  const mc = tournament.config.matchConfig;
+  const mc = getMatchConfig(tournament, m);
   const p1 = tournament.players[m.p1];
   const p2 = tournament.players[m.p2];
 
@@ -871,21 +871,22 @@ function saveTournamentMatchResult(finishedMatch, ptm) {
 function openTournamentMatchStats(tournament, matchIndex) {
   const m  = tournament.matches[matchIndex];
   if (!m.stats || m.stats[0] === null) return;
-  const mc = tournament.config.matchConfig;
+  const mc = getMatchConfig(tournament, m);
 
   const pseudo = {
-    player1:      tournament.players[m.p1].name,
-    player2:      tournament.players[m.p2].name,
-    winner:       m.winner,
-    stats:        m.stats,
-    legsWon:      m.legs,
-    setsWon:      m.sets?.[0] !== null ? m.sets : [0, 0],
-    totalSets:    mc.totalSets,
-    totalLegs:    mc.totalLegs,
-    variant:      mc.variant,
-    inMode:       mc.inMode,
-    checkoutMode: mc.checkoutMode,
-    matchOver:    true,
+    player1:       tournament.players[m.p1].name,
+    player2:       tournament.players[m.p2].name,
+    winner:        m.winner,
+    stats:         m.stats,
+    legsWon:       m.legs,
+    setsWon:       m.sets?.[0] !== null ? m.sets : [0, 0],
+    totalSets:     mc.totalSets,
+    totalLegs:     mc.totalLegs,
+    variant:       mc.variant,
+    inMode:        mc.inMode,
+    checkoutMode:  mc.checkoutMode,
+    matchOver:     true,
+    _customFormat: tournament.config.usePhaseFormats || false,
   };
 
   pendingTournamentMatch = {

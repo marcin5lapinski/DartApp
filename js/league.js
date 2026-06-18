@@ -319,6 +319,8 @@ function createTournament(config, players) {
         thirdPlaceMatch: config.thirdPlaceMatch || false,
         bracketSize,
         matchConfig:     { ...config.matchConfig },
+        usePhaseFormats:    config.usePhaseFormats || false,
+        phaseMatchConfigs:  config.usePhaseFormats ? JSON.parse(JSON.stringify(config.phaseMatchConfigs || {})) : undefined,
       },
       players: players.map(({ bye, ...rest }) => rest),
       matches: [..._generateGroupMatches(groups), ...bracketMatches],
@@ -353,6 +355,8 @@ function createTournament(config, players) {
         ? { bracketSize: nextPowerOf2(players.length), thirdPlaceMatch: config.thirdPlaceMatch || false }
         : { leagueRounds: config.leagueRounds, winPoints: config.winPoints, lossPoints: config.lossPoints }),
       matchConfig: { ...config.matchConfig },
+      usePhaseFormats:    config.usePhaseFormats || false,
+      phaseMatchConfigs:  config.usePhaseFormats ? JSON.parse(JSON.stringify(config.phaseMatchConfigs || {})) : undefined,
     },
     players: isBracket ? players.map(({ bye, ...rest }) => rest) : players,
     matches: isBracket

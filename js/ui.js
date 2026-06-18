@@ -250,19 +250,25 @@ function renderStatsScreen(match) {
   const CHECKOUT_LABELS = { double: 'Double-out', master: 'Master-out', straight: 'Straight-out' };
   const settingsEl = document.createElement('div');
   settingsEl.className = 'match-settings-info';
-  [
-    String(match.variant),
-    match.totalSets > 1
-      ? 'First to ' + match.totalSets + ' sets × ' + match.totalLegs + ' legs'
-      : 'First to ' + match.totalLegs,
-    IN_MODE_LABELS[match.inMode]  || match.inMode,
-    CHECKOUT_LABELS[match.checkoutMode] || match.checkoutMode,
-    match.dartLimitVisits ? 'Limit ' + (match.dartLimitVisits * 3) + ' rzutów' : null,
-  ].filter(Boolean).forEach(text => {
+  if (match._customFormat) {
     const span = document.createElement('span');
-    span.textContent = text;
+    span.innerHTML = '<em class="custom-format-label">custom format</em>';
     settingsEl.appendChild(span);
-  });
+  } else {
+    [
+      String(match.variant),
+      match.totalSets > 1
+        ? 'First to ' + match.totalSets + ' sets × ' + match.totalLegs + ' legs'
+        : 'First to ' + match.totalLegs,
+      IN_MODE_LABELS[match.inMode]  || match.inMode,
+      CHECKOUT_LABELS[match.checkoutMode] || match.checkoutMode,
+      match.dartLimitVisits ? 'Limit ' + (match.dartLimitVisits * 3) + ' rzutów' : null,
+    ].filter(Boolean).forEach(text => {
+      const span = document.createElement('span');
+      span.textContent = text;
+      settingsEl.appendChild(span);
+    });
+  }
 
   const winnerCol = document.createElement('div');
   winnerCol.className = 'winner-col';
