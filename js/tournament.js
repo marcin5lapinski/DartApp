@@ -67,6 +67,12 @@ function initTournamentWizard() {
   if (bracketTpCk) bracketTpCk.checked = false;
   const gs = document.getElementById('groups-settings');
   if (gs) gs.classList.add('format-hidden');
+  tournamentConfig.usePhaseFormats = false;
+  tournamentConfig.phaseMatchConfigs = null;
+  const pfCb = document.getElementById('t-use-phase-formats');
+  if (pfCb) pfCb.checked = false;
+  const pfWrap = document.getElementById('t-phase-formats-wrap');
+  if (pfWrap) pfWrap.style.display = 'none';
   showWizardStep(1);
 }
 
@@ -196,7 +202,23 @@ document.querySelectorAll('#wstep-2 .format-tile').forEach(tile => {
     document.getElementById('bracket-settings').classList.toggle('format-hidden', !isBracket);
     document.getElementById('groups-settings').classList.toggle('format-hidden', !isGroups);
     _updateBracketThirdPlaceWrap();
+
+    // Show phase-formats checkbox only for bracket/groups formats
+    const pfWrap = document.getElementById('t-phase-formats-wrap');
+    if (pfWrap) {
+      pfWrap.style.display = (isBracket || isGroups) ? '' : 'none';
+      if (!isBracket && !isGroups) {
+        tournamentConfig.usePhaseFormats = false;
+        const pfCb = document.getElementById('t-use-phase-formats');
+        if (pfCb) pfCb.checked = false;
+      }
+    }
   });
+});
+
+document.getElementById('t-use-phase-formats').addEventListener('change', function () {
+  tournamentConfig.usePhaseFormats = this.checked;
+  if (!this.checked) tournamentConfig.phaseMatchConfigs = null;
 });
 
 // ── Step 3 navigation ──

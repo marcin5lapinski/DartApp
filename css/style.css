@@ -2893,3 +2893,127 @@ html, body {
   color: #555;
   font-style: italic;
 }
+
+/* ── Per-phase match format cards ── */
+.custom-format-label {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.phase-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.phase-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  background: var(--surface);
+  user-select: none;
+}
+
+.phase-card-header:hover { background: #222; }
+
+.phase-arrow {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.phase-card.expanded .phase-arrow { transform: rotate(90deg); }
+
+.phase-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.phase-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.phase-chip {
+  font-size: 0.62rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.phase-chip.configured {
+  color: var(--text);
+  border-color: #555;
+}
+
+.phase-card-body {
+  padding: 10px 12px 8px;
+  background: #111;
+  border-top: 1px solid var(--border);
+}
+
+.phase-form-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.phase-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.phase-form-group label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.phase-form-group select {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+.phase-form-group select:focus { outline: none; border-color: var(--accent); }
+
+.btn-copy-phase {
+  width: 100%;
+  padding: 5px;
+  font-size: 0.72rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.btn-copy-phase:hover { border-color: #555; color: var(--text); }
+.btn-copy-phase:disabled { opacity: 0.3; cursor: default; }
+
+#t-phase-forms {
+  overflow-y: auto;
+  max-height: 55vh;
+}
+
+#t-phase-formats-wrap {
+  margin-top: 12px;
+}
