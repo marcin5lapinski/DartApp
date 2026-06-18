@@ -532,7 +532,7 @@ function _buildPhaseCard(phase, mc, isLast, phaseIndex, phases) {
     const open = card.classList.contains('expanded');
     card.classList.toggle('expanded', !open);
     body.style.display = open ? 'none' : 'block';
-    if (!open) _updatePhaseChips(card);
+    if (open) _updatePhaseChips(card);
   });
 
   card.appendChild(header);
