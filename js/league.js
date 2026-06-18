@@ -713,7 +713,8 @@ function buildTournamentCard(t) {
   const isBracket = t.config.format === 'bracket';
   const isGroups = t.config.format === 'groups';
   const formatLabel = isBracket ? 'Drabinka' : isGroups ? 'Grupy+Drabinka' : 'Liga';
-  const meta  = formatLabel + ' · ' + t.players.length + ' graczy · ' + mc.variant + ' · First to ' + mc.totalLegs;
+  const fmtStr = _formatLabel(t.config);
+  const meta   = formatLabel + ' · ' + t.players.length + ' graczy · ' + fmtStr;
   let played, total;
   if (isBracket) {
     played = t.matches.filter(m => !m.isBye && m.winner !== null).length;
@@ -1059,7 +1060,7 @@ function renderTournamentViewScreen(tournament) {
     const phaseLabel  = isGroupPhaseComplete(tournament) ? '● Faza pucharowa' : '● Faza grupowa';
 
     document.getElementById('tv-info-bar').innerHTML =
-      `<span>Grupy+Drabinka &middot; ${mc.variant} &middot; First to ${mc.totalLegs}</span>` +
+      `<span>Grupy+Drabinka &middot; ${_formatLabel(tournament.config)}</span>` +
       `<span>${tournament.players.length} graczy &middot; ${allPlayed}/${allMatches.length} meczów &middot; <b>${phaseLabel}</b></span>`;
 
     ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
@@ -1103,7 +1104,7 @@ function renderTournamentViewScreen(tournament) {
     const played  = tournament.matches.filter(m => !m.isBye && m.winner !== null).length;
     const total   = tournament.matches.filter(m => !m.isBye).length;
     document.getElementById('tv-info-bar').innerHTML =
-      '<span>Drabinka &middot; ' + mc.variant + ' &middot; First to ' + mc.totalLegs + ' &middot; ' + (CHECKOUT_LABELS[mc.checkoutMode] || mc.checkoutMode) + '</span>' +
+      '<span>Drabinka &middot; ' + _formatLabel(tournament.config) + '</span>' +
       '<span>' + tournament.players.length + ' graczy &middot; ' + played + '/' + total + ' meczów rozegranych</span>';
     renderBracketScreen(tournament);
     return;
@@ -1148,7 +1149,7 @@ function renderTournamentViewScreen(tournament) {
   const played = tournament.matches.filter(m => m.winner !== null).length;
   const total  = tournament.matches.length;
   document.getElementById('tv-info-bar').innerHTML =
-    `<span>${mc.variant} &middot; First to ${mc.totalLegs} &middot; ${CHECKOUT_LABELS[mc.checkoutMode] || mc.checkoutMode}</span>` +
+    `<span>${_formatLabel(tournament.config)}</span>` +
     `<span>${tournament.players.length} graczy &middot; ${roundsLabel} &middot; ${played}/${total} meczów rozegranych</span>`;
 
   const rows      = computeStandings(tournament);
