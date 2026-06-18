@@ -646,6 +646,22 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Poprawki layoutu kroku 2 wizarda (2026-06-18)
+
+### Zmiany wizualne
+- **Stały rozmiar panelu formatowego**: checkboksy „Różne formaty meczów dla każdej fazy" przeniesione z zewnątrz `.format-details-panel` do wnętrza bloków `#bracket-settings` i `#groups-settings` — usunięto osobny `#t-phase-formats-wrap` poza panelem; zmiana formatu nie powoduje już skoku wysokości kroku 2
+- **Wyrównanie tekstów hint**: `#groups-settings` zmieniony z `<p class="wizard-hint">` na `<div>` z wewnętrzną `<p class="wizard-hint">` — oba hinty (bracket i groups) zaczynają się od góry grid cell, na tej samej wysokości
+- **Dwa checkboksy obok siebie (bracket)**: „Mecz o 3. miejsce" + „Różne formaty meczów" bezpośrednio pod sobą (6px odstęp) wewnątrz `#bracket-settings`
+- **„Mecz o 3. miejsce" przeniesiony do kroku 2 (groups)**: `#t-third-place-match` usunięty z kroku 3b (`#t-third-place-wrap`) i umieszczony w `#groups-settings` kroku 2 — między hintem a checkboxem per-fazy; zmiana logiczna: user konfiguruje format turnieju zanim przejdzie do ustawień grup
+- **Kompaktowe `#league-settings`**: `margin-bottom` form-groupów zmniejszony z 16px do 8px; `margin-top` form-row z 12px do 8px — panel liga jest węższy, mniej pustej przestrzeni gdy bracket/groups aktywny
+
+### Zmiany w plikach
+- `index.html` — `#bracket-settings`: checkboks `#t-use-phase-formats` (klasa `t-use-phase-formats-cb`) wsunięty do bloku; `#groups-settings` zmieniony z `<p>` na `<div>`, zawiera hint + `#t-third-place-match` + `#t-use-phase-formats-g`; usunięto `#t-phase-formats-wrap` i `#t-third-place-wrap` ze step 3b
+- `js/tournament.js` — `initTournamentWizard()`: dodano reset `#t-third-place-match`, zastąpiono logikę `pfWrap.style.display` selektorem `.t-use-phase-formats-cb`; format tile handler: przy liga → reset obu checkboxów przez klasę, przy bracket↔groups → sync widocznego checkboxa ze stanem `tournamentConfig.usePhaseFormats`; `#t-third-place-match` change listener: zamiast `_updateAdvanceCountLock()`/`_validateStep3b()` ustawia `tournamentConfig.thirdPlaceMatch` bezpośrednio
+- `css/style.css` — usunięto `#t-phase-formats-wrap { margin-top: 12px }`; dodano `#league-settings .form-group { margin-bottom: 8px }`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
