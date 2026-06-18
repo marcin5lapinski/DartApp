@@ -1546,6 +1546,14 @@ function _buildFormatEditPhaseCard(phase, mc, locked, phaseIndex, isLast, phases
   }
 
   card.appendChild(header);
+
+  if (locked) {
+    const reason = document.createElement('p');
+    reason.className = 'fmt-locked-reason';
+    reason.textContent = 'Nie można zmienić formatu — w tej fazie zostały już rozegrane mecze.';
+    card.appendChild(reason);
+  }
+
   card.appendChild(body);
   return card;
 }
@@ -1567,14 +1575,26 @@ function _appendFmtSettingsBtn(isActive) {
 function openFormatEditModal(tournament) {
   const isLiga  = tournament.config.format === 'league';
   const container = document.getElementById('fmt-edit-content');
+  const saveBtn   = document.getElementById('btn-format-edit-save');
   container.innerHTML = '';
+  saveBtn.style.display = '';
 
   if (isLiga) {
-    const mc   = tournament.config.matchConfig;
-    const wrap = document.createElement('div');
-    wrap.className = 'fmt-edit-liga-form';
-    wrap.innerHTML = _buildPhaseFormHTML(mc);
-    container.appendChild(wrap);
+    const hasPlayed = tournament.matches.some(m => m.winner !== null);
+    if (hasPlayed) {
+      container.innerHTML =
+        '<div class="fmt-locked-notice">' +
+        '<span>🔒</span>' +
+        '<p>Nie można zmienić formatu meczów — w tym turnieju zostały już rozegrane mecze.</p>' +
+        '</div>';
+      saveBtn.style.display = 'none';
+    } else {
+      const mc   = tournament.config.matchConfig;
+      const wrap = document.createElement('div');
+      wrap.className = 'fmt-edit-liga-form';
+      wrap.innerHTML = _buildPhaseFormHTML(mc);
+      container.appendChild(wrap);
+    }
   } else {
     const phases   = _getTournamentPhases(tournament);
     const pmc      = tournament.config.phaseMatchConfigs || {};
@@ -1593,11 +1613,13 @@ function openFormatEditModal(tournament) {
     if (firstUnlocked) {
       firstUnlocked.classList.add('expanded');
       firstUnlocked.querySelector('.phase-card-body').style.display = 'block';
+    } else {
+      saveBtn.style.display = 'none';
     }
   }
 
   document.getElementById('btn-format-edit-close').onclick = () => closeModal('modal-format-edit');
-  document.getElementById('btn-format-edit-save').onclick  = () => _saveFormatEdit(tournament);
+  saveBtn.onclick = () => _saveFormatEdit(tournament);
   openModal('modal-format-edit');
 }
 
