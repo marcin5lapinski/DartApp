@@ -69,10 +69,7 @@ function initTournamentWizard() {
   if (gs) gs.classList.add('format-hidden');
   tournamentConfig.usePhaseFormats = false;
   tournamentConfig.phaseMatchConfigs = null;
-  const pfCb = document.getElementById('t-use-phase-formats');
-  if (pfCb) pfCb.checked = false;
-  const pfWrap = document.getElementById('t-phase-formats-wrap');
-  if (pfWrap) pfWrap.style.display = 'none';
+  document.querySelectorAll('.t-use-phase-formats-cb').forEach(cb => cb.checked = false);
   showWizardStep(1);
 }
 
@@ -214,22 +211,23 @@ document.querySelectorAll('#wstep-2 .format-tile').forEach(tile => {
     document.getElementById('groups-settings').classList.toggle('format-hidden', !isGroups);
     _updateBracketThirdPlaceWrap();
 
-    // Show phase-formats checkbox only for bracket/groups formats
-    const pfWrap = document.getElementById('t-phase-formats-wrap');
-    if (pfWrap) {
-      pfWrap.style.display = (isBracket || isGroups) ? '' : 'none';
-      if (!isBracket && !isGroups) {
-        tournamentConfig.usePhaseFormats = false;
-        const pfCb = document.getElementById('t-use-phase-formats');
-        if (pfCb) pfCb.checked = false;
-      }
+    if (!isBracket && !isGroups) {
+      tournamentConfig.usePhaseFormats = false;
+      tournamentConfig.phaseMatchConfigs = null;
+      document.querySelectorAll('.t-use-phase-formats-cb').forEach(cb => cb.checked = false);
+    } else {
+      const activeId = isBracket ? 't-use-phase-formats' : 't-use-phase-formats-g';
+      const activeCb = document.getElementById(activeId);
+      if (activeCb) activeCb.checked = !!tournamentConfig.usePhaseFormats;
     }
   });
 });
 
-document.getElementById('t-use-phase-formats').addEventListener('change', function () {
-  tournamentConfig.usePhaseFormats = this.checked;
-  if (!this.checked) tournamentConfig.phaseMatchConfigs = null;
+document.querySelectorAll('.t-use-phase-formats-cb').forEach(cb => {
+  cb.addEventListener('change', function () {
+    tournamentConfig.usePhaseFormats = this.checked;
+    if (!this.checked) tournamentConfig.phaseMatchConfigs = null;
+  });
 });
 
 // ── Step 3 navigation ──

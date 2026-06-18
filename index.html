@@ -697,7 +697,7 @@
             <button class="btn-seg active" data-rounds="single">Jedna runda</button>
             <button class="btn-seg" data-rounds="double">Dwie rundy</button>
           </div>
-          <div class="form-row" style="margin-top:12px">
+          <div class="form-row" style="margin-top:8px">
             <div class="form-group">
               <label for="t-win-pts">Pkt za wygraną</label>
               <input id="t-win-pts" type="number" min="0" value="2">
@@ -710,24 +710,25 @@
         </div>
 
         <div id="bracket-settings" class="format-hidden">
-          <p class="wizard-hint">Puchar — każdy mecz eliminuje przegranego. Zwycięzca finału wygrywa turniej.</p>
-          <div id="t-bracket-third-place-wrap" style="margin-top:8px">
+          <p class="wizard-hint" style="margin:0 0 8px">Puchar — każdy mecz eliminuje przegranego. Zwycięzca finału wygrywa turniej.</p>
+          <div id="t-bracket-third-place-wrap">
             <label class="wiz-check-label">
               <input type="checkbox" id="t-bracket-third-place-match"> Mecz o 3. miejsce
             </label>
           </div>
+          <label class="wiz-check-label" style="margin-top:6px">
+            <input type="checkbox" class="t-use-phase-formats-cb" id="t-use-phase-formats">
+            Różne formaty meczów dla każdej fazy
+          </label>
         </div>
 
-        <p id="groups-settings" class="wizard-hint format-hidden">
-          Liczba grup i awansujący ustalane w następnym kroku.
-        </p>
-      </div>
-
-      <div id="t-phase-formats-wrap" style="display:none; margin-top:12px;">
-        <label class="wiz-check-label">
-          <input type="checkbox" id="t-use-phase-formats">
-          Różne formaty meczów dla każdej fazy
-        </label>
+        <div id="groups-settings" class="format-hidden">
+          <p class="wizard-hint" style="margin:0 0 8px">Liczba grup i awansujący ustalane w następnym kroku.</p>
+          <label class="wiz-check-label">
+            <input type="checkbox" class="t-use-phase-formats-cb" id="t-use-phase-formats-g">
+            Różne formaty meczów dla każdej fazy
+          </label>
+        </div>
       </div>
 
       <div class="wizard-nav">

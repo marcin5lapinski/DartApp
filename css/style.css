@@ -3026,6 +3026,4 @@ html, body {
   max-height: 55vh;
 }
 
-#t-phase-formats-wrap {
-  margin-top: 12px;
-}
+#league-settings .form-group { margin-bottom: 8px; }
