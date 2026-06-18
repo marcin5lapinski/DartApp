@@ -618,6 +618,34 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Per-fazowy format meczów w turnieju (2026-06-18)
+
+### Nowe funkcje
+- **`getMatchConfig(tournament, match)`** w `league.js`: helper globalny dobierający właściwy `matchConfig` dla danego meczu — dla turniejów z `usePhaseFormats: true` zwraca config specyficzny dla fazy (`'group'`, stringified indeks rundy, `'thirdPlace'`); dla pozostałych zwraca `tournament.config.matchConfig` bez zmian. Klucze numeryczne rundbraket przechowywane jako stringi po JSON round-trip; `String(match.round)` zapewnia poprawne wyszukiwanie.
+- **`_formatLabel(config)`** w `league.js`: zwraca HTML-string z opisem formatu turnieju — `<em class="custom-format-label">custom format</em>` gdy `usePhaseFormats: true`, lub np. `'501 · First to 3'` dla standardowego formatu. Używane w karcie turnieju i pasku info `#tv-info-bar`.
+- **Checkbox „Różne formaty meczów dla każdej fazy"** (`#t-use-phase-formats`, `#t-phase-formats-wrap`) w kroku 2 wizarda: widoczny tylko dla formatów Drabinka i Grupy+Drabinka. Ustawia `tournamentConfig.usePhaseFormats`. Ukrywany i resetowany przy zmianie formatu na ligę lub ponownym otwarciu wizarda.
+- **Karty per-fazy w kroku 3 wizarda** (`#t-phase-forms`): gdy `usePhaseFormats: true`, zamiast `#t-single-match-form` wyświetlana lista zwijanych kart. Każda karta = jedna faza (faza grupowa → rundy drabinki → mecz o 3. miejsce). Karta zawiera: nagłówek z nazwą fazy i 3 chipami (wariant, legi/sety, wyjście) aktualizowanymi przy zwijaniu; pełny formularz (wariant, sety, legi, wejście, wyjście, limit rzutów); przycisk „Kopiuj dla kolejnych faz →" (brak dla ostatniej fazy). Pierwsza karta auto-rozwinięta przy renderowaniu.
+- **`tournament.config.usePhaseFormats`** i **`tournament.config.phaseMatchConfigs`**: nowe pola zapisywane do `dart_tournaments`. `phaseMatchConfigs` — obiekt z kluczami `'group'`, `'0'`–`'N'` (rundy drabinki jako stringi), `'thirdPlace'`; każda wartość to pełny obiekt `matchConfig`.
+- **„custom format" w wyświetlaniu**: karta turnieju i pasek info `#tv-info-bar` (we wszystkich 3 gałęziach: liga, drabinka, grupy) pokazują kursywne „custom format" gdy `usePhaseFormats: true`. Post-match stats screen pokazuje „custom format" zamiast szczegółów gdy `match._customFormat`.
+- **Swap kroków 3 i 3b w formacie groups**: krok 3b (konfiguracja grup) pojawia się teraz przed krokiem 3 (ustawienia meczu) — konieczne, by `_getWizardPhases()` w kroku 3 znał liczbę grup i awansujących.
+
+### Naprawione błędy
+- **Klucze numeryczne w `phaseMatchConfigs` po JSON round-trip**: `JSON.stringify`/`parse` zamienia klucze liczbowe (`0`, `1`, …) na stringi — lookup `pmc[match.round]` zawsze chybiał. Naprawione przez `pmc[String(match.round)]` w `getMatchConfig`.
+- **Chipy aktualizowane przy rozwijaniu zamiast przy zwijaniu**: warunek `if (!open)` zastąpiony `if (open)` — chipy odświeżają wartości gdy użytkownik zwija kartę po edycji.
+
+### Zmiany wizualne
+- Nowe klasy CSS: `.phase-card`, `.phase-card-header`, `.phase-card-body`, `.phase-form-fields`, `.phase-form-group`, `.phase-chip`, `.phase-chip.configured`, `.phase-arrow`, `.btn-copy-phase`, `.custom-format-label`. Styl spójny z resztą wizarda: selekty z `var(--surface2)`, padding `9px 10px`, `font-size: 0.88rem`; labele uppercase z `letter-spacing: 0.5px`; przycisk kopiowania z czerwonym tłem `var(--accent)`.
+
+### Zmiany w plikach
+- `js/league.js` — nowe `getMatchConfig(tournament, match)`, `_formatLabel(config)`; `createTournament()` zapisuje `usePhaseFormats`/`phaseMatchConfigs`; `buildTournamentCard()` i `renderTournamentViewScreen()` (3 gałęzie) używają `_formatLabel()`
+- `js/tournament.js` — nowe: `_legsChipLabel()`, `_checkoutChipLabel()`, `_readPhaseCardConfig()`, `_writePhaseCardConfig()`, `_updatePhaseChips()`, `_buildPhaseFormHTML()`, `_getWizardPhases()`, `_buildPhaseCard()`, `_renderPhaseMatchForms()`; `showWizardStep()` przełącza widoczność `#t-single-match-form`/`#t-phase-forms` przy kroku 3; handler `t-next-3` czyta konfigy per-fazy lub pojedynczy formularz; `initTournamentWizard()` resetuje nowe pola; swap kroków 3↔3b dla groups format
+- `js/app.js` — `startTournamentMatch()`, `openTournamentStarterModal()`, `openTournamentMatchStats()`: zastąpiono `tournament.config.matchConfig` przez `getMatchConfig(tournament, m)`; `pseudo` object w `openTournamentMatchStats` otrzymuje pole `_customFormat`
+- `js/ui.js` — `renderStatsScreen()`: gdy `match._customFormat` wyświetla „custom format" zamiast szczegółów formatu
+- `index.html` — `#t-phase-formats-wrap` + checkbox w kroku 2; `#t-single-match-form` owijający istniejący formularz + `#t-phase-forms` w kroku 3
+- `css/style.css` — blok styli kart per-fazowych (~120 linii)
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
