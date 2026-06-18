@@ -628,7 +628,7 @@
   <div class="secondary-header">
     <button id="btn-back-from-tournament-view" class="btn-back">&#8592; Turnieje</button>
     <h2 id="tv-title">Turniej</h2>
-    <span></span>
+    <button id="btn-tv-format-settings" class="btn-back" style="display:none">⚙</button>
   </div>
   <div class="tv-tabs" id="tv-tabs">
     <button class="tv-tab active" id="tv-tab-table">Tabela</button>
@@ -931,6 +931,16 @@
     </p>
     <div id="group-preview-body"></div>
   </div>
+</div>
+
+<!-- Format edit modal -->
+<div class="modal modal-format-edit" id="modal-format-edit">
+  <div class="fmt-edit-header">
+    <span>Formaty meczów</span>
+    <button class="modal-close-x" id="btn-format-edit-close">✕</button>
+  </div>
+  <div id="fmt-edit-content"></div>
+  <button id="btn-format-edit-save" class="btn-save-format">Zapisz zmiany</button>
 </div>
 
 <!-- Scripts (order matters) -->
