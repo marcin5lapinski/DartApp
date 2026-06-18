@@ -1490,3 +1490,58 @@ function _isPhaseHasPlayedMatches(tournament, phaseKey) {
     return m.phase === 'bracket' && m.round === phaseKey;
   });
 }
+
+function _buildFormatEditPhaseCard(phase, mc, locked, phaseIndex, isLast, phases) {
+  const card = document.createElement('div');
+  card.className = 'phase-card' + (locked ? ' locked' : '');
+  card.dataset.phaseKey = String(phase.key);
+
+  const header = document.createElement('div');
+  header.className = 'phase-card-header';
+  header.innerHTML = `
+    <span class="phase-arrow">${locked ? '' : '&#9658;'}</span>
+    <span class="phase-name">${phase.name}${locked ? ' 🔒' : ''}</span>
+    <span class="phase-chips">
+      <span class="phase-chip configured">${mc.variant}</span>
+      <span class="phase-chip configured">${_legsChipLabel(mc)}</span>
+      <span class="phase-chip configured">${_checkoutChipLabel(mc.checkoutMode)}</span>
+    </span>`;
+
+  const body = document.createElement('div');
+  body.className = 'phase-card-body';
+  body.style.display = 'none';
+  body.innerHTML = _buildPhaseFormHTML(mc);
+
+  if (!locked && !isLast) {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-copy-phase';
+    copyBtn.textContent = 'Kopiuj dla kolejnych faz →';
+    copyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const cfg = _readPhaseCardConfig(card);
+      for (let i = phaseIndex + 1; i < phases.length; i++) {
+        const t = document.querySelector(
+          `#fmt-edit-content [data-phase-key="${String(phases[i].key)}"]`
+        );
+        if (t && !t.classList.contains('locked')) {
+          _writePhaseCardConfig(t, cfg);
+          _updatePhaseChips(t);
+        }
+      }
+    });
+    body.appendChild(copyBtn);
+  }
+
+  if (!locked) {
+    header.addEventListener('click', () => {
+      const open = card.classList.contains('expanded');
+      card.classList.toggle('expanded', !open);
+      body.style.display = open ? 'none' : 'block';
+      if (open) _updatePhaseChips(card);
+    });
+  }
+
+  card.appendChild(header);
+  card.appendChild(body);
+  return card;
+}
