@@ -65,6 +65,8 @@ function initTournamentWizard() {
   if (bracketSettings) bracketSettings.classList.add('format-hidden');
   const bracketTpCk = document.getElementById('t-bracket-third-place-match');
   if (bracketTpCk) bracketTpCk.checked = false;
+  const groupsTpCk = document.getElementById('t-third-place-match');
+  if (groupsTpCk) groupsTpCk.checked = false;
   const gs = document.getElementById('groups-settings');
   if (gs) gs.classList.add('format-hidden');
   tournamentConfig.usePhaseFormats = false;
@@ -283,9 +285,8 @@ document.getElementById('t-advance-count').addEventListener('input', () => {
   _validateStep3b();
 });
 
-document.getElementById('t-third-place-match').addEventListener('change', () => {
-  _updateAdvanceCountLock();
-  _validateStep3b();
+document.getElementById('t-third-place-match').addEventListener('change', function () {
+  tournamentConfig.thirdPlaceMatch = this.checked;
 });
 
 document.getElementById('t-next-3b').addEventListener('click', () => {

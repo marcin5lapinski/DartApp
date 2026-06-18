@@ -725,6 +725,9 @@
         <div id="groups-settings" class="format-hidden">
           <p class="wizard-hint" style="margin:0 0 8px">Liczba grup i awansujący ustalane w następnym kroku.</p>
           <label class="wiz-check-label">
+            <input type="checkbox" id="t-third-place-match"> Mecz o 3. miejsce
+          </label>
+          <label class="wiz-check-label" style="margin-top:6px">
             <input type="checkbox" class="t-use-phase-formats-cb" id="t-use-phase-formats-g">
             Różne formaty meczów dla każdej fazy
           </label>
@@ -873,12 +876,6 @@
           <label for="t-group-loss-pts">Pkt za przegraną</label>
           <input id="t-group-loss-pts" type="number" min="0" value="0" style="text-align:center">
         </div>
-      </div>
-
-      <div id="t-third-place-wrap" style="margin-top:10px;display:none">
-        <label class="wiz-check-label">
-          <input type="checkbox" id="t-third-place-match"> Mecz o 3. miejsce
-        </label>
       </div>
 
       <span id="t-step3b-error" class="t-error" hidden></span>
