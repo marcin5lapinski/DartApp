@@ -285,9 +285,9 @@ function _generateBracketTBD(groups, thirdPlaceMatch) {
 function getMatchConfig(tournament, match) {
   if (!tournament.config.usePhaseFormats) return tournament.config.matchConfig;
   const pmc = tournament.config.phaseMatchConfigs || {};
-  if (match.isThirdPlace) return pmc.thirdPlace || pmc[match.round] || tournament.config.matchConfig;
+  if (match.isThirdPlace) return pmc.thirdPlace || pmc[String(match.round)] || tournament.config.matchConfig;
   if (match.phase === 'group') return pmc.group || tournament.config.matchConfig;
-  return pmc[match.round] !== undefined ? pmc[match.round] : tournament.config.matchConfig;
+  return pmc[String(match.round)] !== undefined ? pmc[String(match.round)] : tournament.config.matchConfig;
 }
 
 function _formatLabel(config) {
