@@ -510,6 +510,10 @@ function computeLiveGroupStandings(tournament, groupIndex, liveData) {
     return a.playerIndex - b.playerIndex;
   });
 
+  rows.forEach(row => {
+    row._live = row.playerIndex === p1Idx || row.playerIndex === p2Idx;
+  });
+
   return rows;
 }
 
@@ -527,7 +531,7 @@ function _renderGroupStandingsHTML(tournament, groupIndex, rows) {
   const advCount = group.advanceCount;
   let html = `<div class="group-section-header" style="margin-top:0">Grupa ${group.name}</div>`;
   html += '<table class="standings-table" style="margin-bottom:0"><thead><tr>';
-  html += '<th>#</th><th class="left">Gracz</th><th>M</th><th>W</th><th>L</th><th>Legi</th><th>Avg</th><th>Pkt</th>';
+  html += '<th>#</th><th class="left">Gracz</th><th class="live-col"></th><th>M</th><th>W</th><th>L</th><th>Legi</th><th>Avg</th><th>Pkt</th>';
   html += '</tr></thead><tbody>';
   rows.forEach((row, i) => {
     const rank      = i + 1;
@@ -536,9 +540,11 @@ function _renderGroupStandingsHTML(tournament, groupIndex, rows) {
     const avg       = row.avgCount ? (row.avgSum / row.avgCount).toFixed(1) : '—';
     const legsStr   = row.M === 0 ? '—' : `${row.legsWon}‑${row.legsLost}`;
     const legsClass = row.M === 0 ? '' : legDiff > 0 ? 'legs-pos' : legDiff < 0 ? 'legs-neg' : 'legs-even';
+    const badge     = row._live ? '<span class="live-badge">LIVE</span>' : '';
     html += `<tr${advancing ? ` style="background:${_advancingBg(rank, advCount)}"` : ''}>`;
     html += `<td class="pos-num">${rank}</td>`;
     html += `<td class="left player-name-cell">${escapeHtml(row.name)}</td>`;
+    html += `<td class="live-col">${badge}</td>`;
     html += `<td>${row.M}</td><td>${row.W}</td><td>${row.L}</td>`;
     html += `<td class="${legsClass}">${legsStr}</td>`;
     html += `<td class="avg-cell">${avg}</td>`;
