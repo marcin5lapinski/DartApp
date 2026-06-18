@@ -740,91 +740,94 @@
     <div class="wizard-step" id="wstep-3">
       <div class="wizard-title">🎯 Nowy turniej</div>
       <div class="step-indicator">Krok 3 z 5</div>
-      <div class="form-row">
+      <div id="t-single-match-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="t-variant">Wariant</label>
+            <select id="t-variant">
+              <option value="101">101</option>
+              <option value="201">201</option>
+              <option value="301">301</option>
+              <option value="401">401</option>
+              <option value="501" selected>501</option>
+              <option value="601">601</option>
+              <option value="701">701</option>
+              <option value="801">801</option>
+              <option value="901">901</option>
+              <option value="1001">1001</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="t-sets">Liczba setów</label>
+            <select id="t-sets">
+              <option value="1" selected>1 set</option>
+              <option value="2">2 sety</option>
+              <option value="3">3 sety</option>
+              <option value="4">4 sety</option>
+              <option value="5">5 setów</option>
+              <option value="6">6 setów</option>
+              <option value="7">7 setów</option>
+              <option value="8">8 setów</option>
+              <option value="9">9 setów</option>
+              <option value="10">10 setów</option>
+            </select>
+          </div>
+        </div>
         <div class="form-group">
-          <label for="t-variant">Wariant</label>
-          <select id="t-variant">
-            <option value="101">101</option>
-            <option value="201">201</option>
-            <option value="301">301</option>
-            <option value="401">401</option>
-            <option value="501" selected>501</option>
-            <option value="601">601</option>
-            <option value="701">701</option>
-            <option value="801">801</option>
-            <option value="901">901</option>
-            <option value="1001">1001</option>
+          <label for="t-legs" id="t-lbl-legs">Liczba legów</label>
+          <select id="t-legs">
+            <option value="1">First to 1</option>
+            <option value="2">First to 2</option>
+            <option value="3" selected>First to 3</option>
+            <option value="4">First to 4</option>
+            <option value="5">First to 5</option>
+            <option value="6">First to 6</option>
+            <option value="7">First to 7</option>
+            <option value="8">First to 8</option>
+            <option value="9">First to 9</option>
+            <option value="10">First to 10</option>
+            <option value="11">First to 11</option>
+            <option value="12">First to 12</option>
+            <option value="13">First to 13</option>
+            <option value="14">First to 14</option>
+            <option value="15">First to 15</option>
+            <option value="16">First to 16</option>
           </select>
         </div>
         <div class="form-group">
-          <label for="t-sets">Liczba setów</label>
-          <select id="t-sets">
-            <option value="1" selected>1 set</option>
-            <option value="2">2 sety</option>
-            <option value="3">3 sety</option>
-            <option value="4">4 sety</option>
-            <option value="5">5 setów</option>
-            <option value="6">6 setów</option>
-            <option value="7">7 setów</option>
-            <option value="8">8 setów</option>
-            <option value="9">9 setów</option>
-            <option value="10">10 setów</option>
+          <label for="t-in-mode">Tryb wejścia</label>
+          <select id="t-in-mode">
+            <option value="straight" selected>Straight-in (domyślny)</option>
+            <option value="double">Double-in</option>
+            <option value="master">Master-in</option>
           </select>
         </div>
-      </div>
-      <div class="form-group">
-        <label for="t-legs" id="t-lbl-legs">Liczba legów</label>
-        <select id="t-legs">
-          <option value="1">First to 1</option>
-          <option value="2">First to 2</option>
-          <option value="3" selected>First to 3</option>
-          <option value="4">First to 4</option>
-          <option value="5">First to 5</option>
-          <option value="6">First to 6</option>
-          <option value="7">First to 7</option>
-          <option value="8">First to 8</option>
-          <option value="9">First to 9</option>
-          <option value="10">First to 10</option>
-          <option value="11">First to 11</option>
-          <option value="12">First to 12</option>
-          <option value="13">First to 13</option>
-          <option value="14">First to 14</option>
-          <option value="15">First to 15</option>
-          <option value="16">First to 16</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="t-in-mode">Tryb wejścia</label>
-        <select id="t-in-mode">
-          <option value="straight" selected>Straight-in (domyślny)</option>
-          <option value="double">Double-in</option>
-          <option value="master">Master-in</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="t-checkout">Tryb wyjścia</label>
-        <select id="t-checkout">
-          <option value="double" selected>Double-out (domyślny)</option>
-          <option value="master">Master-out</option>
-          <option value="straight">Straight-out</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label for="t-checkout">Tryb wyjścia</label>
+          <select id="t-checkout">
+            <option value="double" selected>Double-out (domyślny)</option>
+            <option value="master">Master-out</option>
+            <option value="straight">Straight-out</option>
+          </select>
+        </div>
 
-      <div class="form-group">
-        <label for="t-dart-limit">Limit rzutów w legu</label>
-        <select id="t-dart-limit">
-          <option value="">Bez limitu</option>
-          <option value="30">30 rzutów</option>
-          <option value="33">33 rzuty</option>
-          <option value="36">36 rzutów</option>
-          <option value="39">39 rzutów</option>
-          <option value="42">42 rzuty</option>
-          <option value="45">45 rzutów</option>
-          <option value="48">48 rzutów</option>
-          <option value="51">51 rzutów</option>
-          <option value="54">54 rzuty</option>
-        </select>
+        <div class="form-group">
+          <label for="t-dart-limit">Limit rzutów w legu</label>
+          <select id="t-dart-limit">
+            <option value="">Bez limitu</option>
+            <option value="30">30 rzutów</option>
+            <option value="33">33 rzuty</option>
+            <option value="36">36 rzutów</option>
+            <option value="39">39 rzutów</option>
+            <option value="42">42 rzuty</option>
+            <option value="45">45 rzutów</option>
+            <option value="48">48 rzutów</option>
+            <option value="51">51 rzutów</option>
+            <option value="54">54 rzuty</option>
+          </select>
+        </div>
       </div>
+      <div id="t-phase-forms" style="display:none;"></div>
 
       <div class="wizard-nav">
         <button id="t-back-3" class="btn-wizard-back">&#8592; Wstecz</button>

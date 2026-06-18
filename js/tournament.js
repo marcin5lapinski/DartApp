@@ -101,6 +101,17 @@ function showWizardStep(n) {
   });
 
   if (n === 2) _updateBracketThirdPlaceWrap();
+
+  if (n === 3) {
+    const usePF = !!(tournamentConfig && tournamentConfig.usePhaseFormats);
+    const singleForm = document.getElementById('t-single-match-form');
+    const phaseForms = document.getElementById('t-phase-forms');
+    if (singleForm) singleForm.style.display = usePF ? 'none' : '';
+    if (phaseForms) {
+      phaseForms.style.display = usePF ? '' : 'none';
+      if (usePF) _renderPhaseMatchForms();
+    }
+  }
 }
 
 function _updateBracketThirdPlaceWrap() {
@@ -232,14 +243,26 @@ document.getElementById('t-back-3').addEventListener('click', () => {
 });
 
 document.getElementById('t-next-3').addEventListener('click', () => {
-  tournamentConfig.matchConfig = {
-    variant:      parseInt(document.getElementById('t-variant').value),
-    totalSets:    parseInt(document.getElementById('t-sets').value),
-    totalLegs:    parseInt(document.getElementById('t-legs').value),
-    inMode:       document.getElementById('t-in-mode').value,
-    checkoutMode: document.getElementById('t-checkout').value,
-    dartLimit:    parseInt(document.getElementById('t-dart-limit').value) || null,
-  };
+  if (tournamentConfig.usePhaseFormats) {
+    const phases         = _getWizardPhases();
+    const phaseMatchConfigs = {};
+    phases.forEach(phase => {
+      const card = document.querySelector(`[data-phase-key="${String(phase.key)}"]`);
+      phaseMatchConfigs[phase.key] = _readPhaseCardConfig(card);
+    });
+    tournamentConfig.phaseMatchConfigs = phaseMatchConfigs;
+    // keep matchConfig in sync with first phase as fallback
+    tournamentConfig.matchConfig = phaseMatchConfigs[phases[0].key];
+  } else {
+    tournamentConfig.matchConfig = {
+      variant:      parseInt(document.getElementById('t-variant').value),
+      totalSets:    parseInt(document.getElementById('t-sets').value),
+      totalLegs:    parseInt(document.getElementById('t-legs').value),
+      inMode:       document.getElementById('t-in-mode').value,
+      checkoutMode: document.getElementById('t-checkout').value,
+      dartLimit:    parseInt(document.getElementById('t-dart-limit').value) || null,
+    };
+  }
   const existingBlocks = document.querySelectorAll('#t-players-list .player-block').length;
   const savedStep4 = existingBlocks === tournamentConfig.numPlayers ? _getStep4Values() : null;
   renderStep4Players(savedStep4);
@@ -343,6 +366,203 @@ document.querySelectorAll('#t-seeding-group .btn-seg').forEach(btn => {
     validateStep4();
   });
 });
+
+// ── Step 3: Phase match form helpers ──
+function _legsChipLabel(mc) {
+  return mc.totalSets > 1
+    ? mc.totalSets + 'S×FT' + mc.totalLegs
+    : 'First to ' + mc.totalLegs;
+}
+
+function _checkoutChipLabel(mode) {
+  return mode === 'double' ? 'Double out' : mode === 'master' ? 'Master out' : 'Straight out';
+}
+
+function _readPhaseCardConfig(card) {
+  return {
+    variant:      parseInt(card.querySelector('.ps-variant').value),
+    totalSets:    parseInt(card.querySelector('.ps-sets').value),
+    totalLegs:    parseInt(card.querySelector('.ps-legs').value),
+    inMode:       card.querySelector('.ps-in').value,
+    checkoutMode: card.querySelector('.ps-out').value,
+    dartLimit:    parseInt(card.querySelector('.ps-limit').value) || null,
+  };
+}
+
+function _writePhaseCardConfig(card, mc) {
+  card.querySelector('.ps-variant').value = mc.variant;
+  card.querySelector('.ps-sets').value    = mc.totalSets;
+  card.querySelector('.ps-legs').value    = mc.totalLegs;
+  card.querySelector('.ps-in').value      = mc.inMode;
+  card.querySelector('.ps-out').value     = mc.checkoutMode;
+  card.querySelector('.ps-limit').value   = mc.dartLimit || 0;
+}
+
+function _updatePhaseChips(card) {
+  const mc    = _readPhaseCardConfig(card);
+  const chips = card.querySelectorAll('.phase-chip');
+  chips[0].textContent = mc.variant;
+  chips[1].textContent = _legsChipLabel(mc);
+  chips[2].textContent = _checkoutChipLabel(mc.checkoutMode);
+  chips.forEach(c => c.classList.add('configured'));
+}
+
+function _buildPhaseFormHTML(mc) {
+  const vOpts = [101,201,301,401,501,601,701,801,901,1001]
+    .map(v => `<option value="${v}"${v===mc.variant?' selected':''}>${v}</option>`).join('');
+  const sOpts = Array.from({length:10},(_,i)=>i+1)
+    .map(v => `<option value="${v}"${v===mc.totalSets?' selected':''}>${v===1?'1 set':v+' sety'}</option>`).join('');
+  const lOpts = Array.from({length:16},(_,i)=>i+1)
+    .map(v => `<option value="${v}"${v===mc.totalLegs?' selected':''}>${v===1?'First to 1':'First to '+v}</option>`).join('');
+  const inOpts = [
+    {v:'straight',l:'Straight-in'},
+    {v:'double',  l:'Double-in'},
+    {v:'master',  l:'Master-in'},
+  ].map(m => `<option value="${m.v}"${m.v===mc.inMode?' selected':''}>${m.l}</option>`).join('');
+  const outOpts = [
+    {v:'double',  l:'Double-out'},
+    {v:'master',  l:'Master-out'},
+    {v:'straight',l:'Straight-out'},
+  ].map(m => `<option value="${m.v}"${m.v===mc.checkoutMode?' selected':''}>${m.l}</option>`).join('');
+  const limOpts = [0,30,33,36,39,42,45,48,51,54]
+    .map(v => `<option value="${v}"${v===(mc.dartLimit||0)?' selected':''}>${v===0?'Bez limitu':v+' rzutów'}</option>`).join('');
+
+  return `<div class="phase-form-fields">
+    <div class="phase-form-group">
+      <label>Wariant</label>
+      <select class="ps-variant">${vOpts}</select>
+    </div>
+    <div class="phase-form-group">
+      <label>Liczba setów</label>
+      <select class="ps-sets">${sOpts}</select>
+    </div>
+    <div class="phase-form-group">
+      <label class="ps-lbl-legs">Liczba legów</label>
+      <select class="ps-legs">${lOpts}</select>
+    </div>
+    <div class="phase-form-group">
+      <label>Wejście</label>
+      <select class="ps-in">${inOpts}</select>
+    </div>
+    <div class="phase-form-group">
+      <label>Wyjście</label>
+      <select class="ps-out">${outOpts}</select>
+    </div>
+    <div class="phase-form-group">
+      <label>Limit rzutów</label>
+      <select class="ps-limit">${limOpts}</select>
+    </div>
+  </div>`;
+}
+
+function _getWizardPhases() {
+  const fmt    = tournamentConfig.format;
+  const phases = [];
+  let bracketSeeds;
+
+  if (fmt === 'groups') {
+    phases.push({ key: 'group', name: 'Faza grupowa' });
+    bracketSeeds = tournamentConfig.advanceCounts
+      ? tournamentConfig.advanceCounts.reduce((s, c) => s + c, 0)
+      : (tournamentConfig.numGroups || 2) * (tournamentConfig.advanceCount || 2);
+  } else {
+    bracketSeeds = tournamentConfig.numPlayers || 4;
+  }
+
+  const bSize     = nextPowerOf2(bracketSeeds);
+  const numRounds = Math.log2(bSize);
+  for (let r = 0; r < numRounds; r++) {
+    phases.push({ key: r, name: computeRoundName(r, numRounds) });
+  }
+  if (tournamentConfig.thirdPlaceMatch) {
+    phases.push({ key: 'thirdPlace', name: 'Mecz o 3. miejsce' });
+  }
+  return phases;
+}
+
+function _buildPhaseCard(phase, mc, isLast, phaseIndex, phases) {
+  const card = document.createElement('div');
+  card.className = 'phase-card';
+  card.dataset.phaseKey = String(phase.key);
+
+  const alreadySet = !!(tournamentConfig.phaseMatchConfigs &&
+    tournamentConfig.phaseMatchConfigs[phase.key] !== undefined);
+  const chipCls = alreadySet ? 'phase-chip configured' : 'phase-chip';
+
+  const header = document.createElement('div');
+  header.className = 'phase-card-header';
+  header.innerHTML = `
+    <span class="phase-arrow">&#9658;</span>
+    <span class="phase-name">${phase.name}</span>
+    <span class="phase-chips">
+      <span class="${chipCls}">${mc.variant}</span>
+      <span class="${chipCls}">${_legsChipLabel(mc)}</span>
+      <span class="${chipCls}">${_checkoutChipLabel(mc.checkoutMode)}</span>
+    </span>`;
+
+  const body = document.createElement('div');
+  body.className = 'phase-card-body';
+  body.style.display = 'none';
+  body.innerHTML = _buildPhaseFormHTML(mc);
+
+  // dynamic legs label
+  const setsEl    = body.querySelector('.ps-sets');
+  const legsLblEl = body.querySelector('.ps-lbl-legs');
+  setsEl.addEventListener('change', () => {
+    legsLblEl.textContent = parseInt(setsEl.value) > 1 ? 'Legi na seta' : 'Liczba legów';
+  });
+
+  if (!isLast) {
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'btn-copy-phase';
+    copyBtn.textContent = 'Kopiuj dla kolejnych faz →';
+    copyBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      const cfg = _readPhaseCardConfig(card);
+      for (let i = phaseIndex + 1; i < phases.length; i++) {
+        const t = document.querySelector(`[data-phase-key="${String(phases[i].key)}"]`);
+        if (t) { _writePhaseCardConfig(t, cfg); _updatePhaseChips(t); }
+      }
+    });
+    body.appendChild(copyBtn);
+  }
+
+  header.addEventListener('click', () => {
+    const open = card.classList.contains('expanded');
+    card.classList.toggle('expanded', !open);
+    body.style.display = open ? 'none' : 'block';
+    if (!open) _updatePhaseChips(card);
+  });
+
+  card.appendChild(header);
+  card.appendChild(body);
+  return card;
+}
+
+function _renderPhaseMatchForms() {
+  const container = document.getElementById('t-phase-forms');
+  container.innerHTML = '';
+  const phases   = _getWizardPhases();
+  const defaults = tournamentConfig.matchConfig || {
+    variant: 501, totalSets: 1, totalLegs: 3,
+    inMode: 'straight', checkoutMode: 'double', dartLimit: null,
+  };
+
+  phases.forEach((phase, index) => {
+    const isLast = index === phases.length - 1;
+    const mc     = (tournamentConfig.phaseMatchConfigs &&
+                    tournamentConfig.phaseMatchConfigs[phase.key] !== undefined)
+      ? tournamentConfig.phaseMatchConfigs[phase.key]
+      : defaults;
+    const card = _buildPhaseCard(phase, mc, isLast, index, phases);
+    if (index === 0) {
+      card.classList.add('expanded');
+      card.querySelector('.phase-card-body').style.display = 'block';
+    }
+    container.appendChild(card);
+  });
+}
 
 // ── Step 4: build player blocks dynamically ──
 function buildDoublesOptions(placeholder) {
