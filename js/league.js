@@ -1565,7 +1565,7 @@ function _appendFmtSettingsBtn(isActive) {
 }
 
 function openFormatEditModal(tournament) {
-  const isLiga  = tournament.config.format === 'liga';
+  const isLiga  = tournament.config.format === 'league';
   const container = document.getElementById('fmt-edit-content');
   container.innerHTML = '';
 
@@ -1602,7 +1602,7 @@ function openFormatEditModal(tournament) {
 }
 
 function _saveFormatEdit(tournament) {
-  const isLiga    = tournament.config.format === 'liga';
+  const isLiga    = tournament.config.format === 'league';
   const container = document.getElementById('fmt-edit-content');
 
   if (isLiga) {
@@ -1648,7 +1648,7 @@ function _saveFormatEdit(tournament) {
     if (firstSpan) {
       const fmt   = tournament.config.format;
       const label = _formatLabel(tournament.config);
-      if (fmt === 'liga')    firstSpan.innerHTML = label;
+      if (fmt === 'league')  firstSpan.innerHTML = label;
       if (fmt === 'bracket') firstSpan.innerHTML = 'Drabinka &middot; ' + label;
       if (fmt === 'groups')  firstSpan.innerHTML = 'Grupy+Drabinka &middot; ' + label;
       _appendFmtSettingsBtn(true);
