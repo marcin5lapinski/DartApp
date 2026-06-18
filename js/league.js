@@ -1061,9 +1061,9 @@ function renderTournamentViewScreen(tournament) {
     const phaseLabel  = isGroupPhaseComplete(tournament) ? '● Faza pucharowa' : '● Faza grupowa';
 
     document.getElementById('tv-info-bar').innerHTML =
-      `<span>Grupy+Drabinka &middot; ${_formatLabel(tournament.config)}${_fmtSettingsBtnHTML(tournament.status === 'active')}</span>` +
+      `<span>Grupy+Drabinka &middot; ${_formatLabel(tournament.config)}</span>` +
       `<span>${tournament.players.length} graczy &middot; ${allPlayed}/${allMatches.length} meczów &middot; <b>${phaseLabel}</b></span>`;
-    _wireFmtSettingsBtn();
+    _appendFmtSettingsBtn(tournament.status === 'active');
 
     ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
       const old = document.getElementById(id);
@@ -1106,9 +1106,9 @@ function renderTournamentViewScreen(tournament) {
     const played  = tournament.matches.filter(m => !m.isBye && m.winner !== null).length;
     const total   = tournament.matches.filter(m => !m.isBye).length;
     document.getElementById('tv-info-bar').innerHTML =
-      '<span>Drabinka &middot; ' + _formatLabel(tournament.config) + _fmtSettingsBtnHTML(tournament.status === 'active') + '</span>' +
+      '<span>Drabinka &middot; ' + _formatLabel(tournament.config) + '</span>' +
       '<span>' + tournament.players.length + ' graczy &middot; ' + played + '/' + total + ' meczów rozegranych</span>';
-    _wireFmtSettingsBtn();
+    _appendFmtSettingsBtn(tournament.status === 'active');
     renderBracketScreen(tournament);
     return;
   }
@@ -1152,9 +1152,9 @@ function renderTournamentViewScreen(tournament) {
   const played = tournament.matches.filter(m => m.winner !== null).length;
   const total  = tournament.matches.length;
   document.getElementById('tv-info-bar').innerHTML =
-    `<span>${_formatLabel(tournament.config)}${_fmtSettingsBtnHTML(tournament.status === 'active')}</span>` +
+    `<span>${_formatLabel(tournament.config)}</span>` +
     `<span>${tournament.players.length} graczy &middot; ${roundsLabel} &middot; ${played}/${total} meczów rozegranych</span>`;
-  _wireFmtSettingsBtn();
+  _appendFmtSettingsBtn(tournament.status === 'active');
 
   const rows      = computeStandings(tournament);
   const finished  = tournament.status === 'finished' ||
@@ -1550,15 +1550,18 @@ function _buildFormatEditPhaseCard(phase, mc, locked, phaseIndex, isLast, phases
   return card;
 }
 
-function _fmtSettingsBtnHTML(isActive) {
-  return isActive
-    ? '<button id="btn-tv-format-settings" class="btn-fmt-settings">⚙</button>'
-    : '';
-}
-
-function _wireFmtSettingsBtn() {
-  const btn = document.getElementById('btn-tv-format-settings');
-  if (btn) btn.addEventListener('click', () => openFormatEditModal(_activeTournament));
+function _appendFmtSettingsBtn(isActive) {
+  const infoBar = document.getElementById('tv-info-bar');
+  if (!infoBar) return;
+  const existing = document.getElementById('btn-tv-format-settings');
+  if (existing) existing.remove();
+  if (!isActive) return;
+  const btn = document.createElement('button');
+  btn.id = 'btn-tv-format-settings';
+  btn.className = 'btn-fmt-settings';
+  btn.textContent = '⚙';
+  btn.addEventListener('click', () => openFormatEditModal(_activeTournament));
+  infoBar.appendChild(btn);
 }
 
 function openFormatEditModal(tournament) {
@@ -1643,13 +1646,12 @@ function _saveFormatEdit(tournament) {
   if (infoBar) {
     const firstSpan = infoBar.querySelector('span');
     if (firstSpan) {
-      const fmt    = tournament.config.format;
-      const label  = _formatLabel(tournament.config);
-      const fmtBtn = _fmtSettingsBtnHTML(true);
-      if (fmt === 'liga')    firstSpan.innerHTML = label + fmtBtn;
-      if (fmt === 'bracket') firstSpan.innerHTML = 'Drabinka &middot; ' + label + fmtBtn;
-      if (fmt === 'groups')  firstSpan.innerHTML = 'Grupy+Drabinka &middot; ' + label + fmtBtn;
-      _wireFmtSettingsBtn();
+      const fmt   = tournament.config.format;
+      const label = _formatLabel(tournament.config);
+      if (fmt === 'liga')    firstSpan.innerHTML = label;
+      if (fmt === 'bracket') firstSpan.innerHTML = 'Drabinka &middot; ' + label;
+      if (fmt === 'groups')  firstSpan.innerHTML = 'Grupy+Drabinka &middot; ' + label;
+      _appendFmtSettingsBtn(true);
     }
   }
 

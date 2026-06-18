@@ -2365,6 +2365,7 @@ html, body {
   max-width: 600px;
   width: 100%;
   margin: 0 auto;
+  position: relative;
 }
 
 /* Standings container */
@@ -3088,16 +3089,20 @@ html, body {
 .btn-save-format:active { transform: scale(0.97); }
 
 .btn-fmt-settings {
-  background: none;
-  border: none;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
   color: var(--text-muted);
-  font-size: 1.05rem;
-  padding: 0 0 0 6px;
-  cursor: pointer;
-  vertical-align: middle;
+  font-size: 1.65rem;
   line-height: 1;
+  padding: 2px 6px;
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: color .15s;
+  transition: color .15s, border-color .15s;
 }
-.btn-fmt-settings:hover  { color: var(--text); }
+.btn-fmt-settings:hover  { color: var(--text); border-color: #555; }
 .btn-fmt-settings:active { color: var(--accent); }
