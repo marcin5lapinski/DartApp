@@ -1457,3 +1457,36 @@ function buildBracketConnectorSvg(numLeft, round, CARD_H, GAP, LABEL_H, bodyH, S
 
   return svg;
 }
+
+// ── Format Edit Modal ──────────────────────────────────────────────────────
+
+function _getTournamentPhases(tournament) {
+  const { config } = tournament;
+  const phases = [];
+
+  if (config.format === 'groups') {
+    phases.push({ key: 'group', name: 'Faza grupowa' });
+  }
+
+  if (config.format === 'bracket' || config.format === 'groups') {
+    const bSize     = config.bracketSize;
+    const numRounds = Math.log2(bSize);
+    for (let r = 0; r < numRounds; r++) {
+      phases.push({ key: r, name: computeRoundName(r, numRounds) });
+    }
+    if (config.thirdPlaceMatch) {
+      phases.push({ key: 'thirdPlace', name: 'Mecz o 3. miejsce' });
+    }
+  }
+
+  return phases;
+}
+
+function _isPhaseHasPlayedMatches(tournament, phaseKey) {
+  return tournament.matches.some(m => {
+    if (m.isBye || m.winner === null) return false;
+    if (phaseKey === 'group')      return m.phase === 'group';
+    if (phaseKey === 'thirdPlace') return !!m.isThirdPlace;
+    return m.phase === 'bracket' && m.round === phaseKey;
+  });
+}
