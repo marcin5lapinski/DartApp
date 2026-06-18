@@ -78,7 +78,7 @@ function showWizardStep(n) {
   el.style.display = 'flex';
 
   const isGroups   = tournamentConfig && tournamentConfig.format === 'groups';
-  const stepOrder  = isGroups ? [1, 2, 3, '3b', 4] : [1, 2, 3, 4];
+  const stepOrder  = isGroups ? [1, 2, '3b', 3, 4] : [1, 2, 3, 4];
   const visualPos  = stepOrder.indexOf(n) + 1;  // 1-based
   const totalSteps = stepOrder.length;
 
@@ -165,7 +165,12 @@ document.getElementById('t-next-2').addEventListener('click', () => {
   tournamentConfig.leagueRounds = activeRounds ? activeRounds.dataset.rounds : 'single';
   tournamentConfig.winPoints  = Math.max(0, parseInt(document.getElementById('t-win-pts').value)  || 0);
   tournamentConfig.lossPoints = Math.max(0, parseInt(document.getElementById('t-loss-pts').value) || 0);
-  showWizardStep(3);
+  if (tournamentConfig.format === 'groups') {
+    _initStep3bGroupButtons();
+    showWizardStep('3b');
+  } else {
+    showWizardStep(3);
+  }
 });
 
 // ── Step 2: rounds segmented buttons ──
@@ -196,7 +201,12 @@ document.querySelectorAll('#wstep-2 .format-tile').forEach(tile => {
 
 // ── Step 3 navigation ──
 document.getElementById('t-back-3').addEventListener('click', () => {
-  showWizardStep(2);
+  if (tournamentConfig.format === 'groups') {
+    showWizardStep('3b');
+    _validateStep3b();
+  } else {
+    showWizardStep(2);
+  }
 });
 
 document.getElementById('t-next-3').addEventListener('click', () => {
@@ -208,18 +218,15 @@ document.getElementById('t-next-3').addEventListener('click', () => {
     checkoutMode: document.getElementById('t-checkout').value,
     dartLimit:    parseInt(document.getElementById('t-dart-limit').value) || null,
   };
-  if (tournamentConfig.format === 'groups') {
-    _initStep3bGroupButtons();
-    showWizardStep('3b');
-  } else {
-    renderStep4Players();
-    showWizardStep(4);
-  }
+  const existingBlocks = document.querySelectorAll('#t-players-list .player-block').length;
+  const savedStep4 = existingBlocks === tournamentConfig.numPlayers ? _getStep4Values() : null;
+  renderStep4Players(savedStep4);
+  showWizardStep(4);
 });
 
 // ── Step 3b navigation ──
 document.getElementById('t-back-3b').addEventListener('click', () => {
-  showWizardStep(3);
+  showWizardStep(2);
 });
 
 document.getElementById('t-advance-per-group-toggle').addEventListener('change', () => {
@@ -290,11 +297,7 @@ document.getElementById('t-next-3b').addEventListener('click', () => {
   tournamentConfig.lossPoints       = Math.max(0, parseInt(document.getElementById('t-group-loss-pts').value) || 0);
   tournamentConfig.thirdPlaceMatch  = document.getElementById('t-third-place-match').checked;
 
-  // Preserve any player data the user already entered in step 4
-  const existingBlocks = document.querySelectorAll('#t-players-list .player-block').length;
-  const savedStep4 = existingBlocks === tournamentConfig.numPlayers ? _getStep4Values() : null;
-  renderStep4Players(savedStep4);
-  showWizardStep(4);
+  showWizardStep(3);
 });
 
 // ── Step 3: dynamic legs label ──
@@ -305,12 +308,7 @@ document.getElementById('t-sets').addEventListener('change', () => {
 
 // ── Step 4 navigation ──
 document.getElementById('t-back-4').addEventListener('click', () => {
-  if (tournamentConfig.format === 'groups') {
-    showWizardStep('3b');
-    _validateStep3b();
-  } else {
-    showWizardStep(3);
-  }
+  showWizardStep(3);
 });
 
 // ── Step 4: seeding segmented buttons ──
