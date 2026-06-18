@@ -662,6 +662,35 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Edycja formatu meczów w trakcie turnieju (2026-06-18)
+
+### Nowe funkcje
+- **Przycisk ⚙ w info barze**: `_appendFmtSettingsBtn(isActive)` w `league.js` — tworzy `#btn-tv-format-settings` (klasa `.btn-fmt-settings`) i dołącza go do `#tv-info-bar` jako `position: absolute; right`; wywoływany po każdym renderowaniu info bara; widoczny tylko gdy turniej ma status `'active'`
+- **`openFormatEditModal(tournament)`**: otwiera `#modal-format-edit` z formularzem edycji formatów; liga → jeden formularz (klasa `.fmt-edit-liga-form`) lub komunikat blokady jeśli rozegrano mecze; bracket/groups → karty faz (jak w wizardzie krok 3 z `usePhaseFormats`); po otwarciu automatycznie expanduje pierwszą odblokowaną kartę
+- **`_getTournamentPhases(tournament)`** — zwraca `[{key, name}]` faz turnieju (group → rundy bracket → thirdPlace); dla ligi zwraca `[]`
+- **`_isPhaseHasPlayedMatches(tournament, phaseKey)`** — `true` jeśli w danej fazie rozegrano ≥1 mecz (pomija bye)
+- **`_buildFormatEditPhaseCard(phase, mc, locked, phaseIndex, isLast, phases)`** — buduje kartę fazy do modala (analogia do `_buildPhaseCard` z wizarda); zablokowane karty mają klasę `.locked`, ikonę 🔒 w nagłówku, tekst wyjaśnienia `.fmt-locked-reason` i nie można ich rozwinąć
+- **`_phasesAllIdentical(pmc)`** — porównuje wszystkie wpisy w `phaseMatchConfigs`; `true` gdy variant/totalSets/totalLegs/inMode/checkoutMode/dartLimit są identyczne dla wszystkich faz
+- **`_saveFormatEdit(tournament)`** — odczytuje formularz/karty, aktualizuje `tournament.config`, persystuje do `localStorage`; dla bracket/groups uzupełnia brakujące wpisy zablokowanych faz, potem: jeśli wszystkie fazy identyczne → `usePhaseFormats = false` (etykieta wraca do normalnej); aktualizuje pierwszy `<span>` info bara i wywołuje `_appendFmtSettingsBtn`
+
+### Naprawione błędy
+- **Liga modal pusty**: format kafelka ligi to `data-format="league"`, więc turnieje ligi mają `config.format === 'league'` — trzy miejsca w `openFormatEditModal`, `_saveFormatEdit` i aktualizacji info bara porównywały z `'liga'`; wszystkie poprawione na `'league'`
+- **"custom format" nie znikało**: po powrocie do jednolitych ustawień dla wszystkich faz `usePhaseFormats` pozostawało `true`; teraz `_saveFormatEdit` sprawdza `_phasesAllIdentical` i ustawia `usePhaseFormats = false` gdy wszystkie fazy są takie same
+
+### Zmiany wizualne
+- Przycisk ⚙ (`font-size: 1.65rem`, border, background) po prawej stronie `#tv-info-bar` — widoczny tylko dla aktywnych turniejów bracket i groups+bracket
+- Modal `#modal-format-edit` (max-width 420px, scroll) z nagłówkiem sticky i przyciskiem „Zapisz zmiany"
+- Zablokowane fazy: nagłówek przyciemniony (opacity 0.5) + drobna linia kursywą `.fmt-locked-reason` z wyjaśnieniem
+- Liga z rozegranymi meczami: zamiast formularza pojawia się box `.fmt-locked-notice` z 🔒 i komunikatem; przycisk „Zapisz" ukryty
+- Bracket/groups gdzie wszystkie fazy zablokowane: przycisk „Zapisz" ukryty
+
+### Zmiany w plikach
+- `js/league.js` — dodano 7 funkcji: `_getTournamentPhases`, `_isPhaseHasPlayedMatches`, `_buildFormatEditPhaseCard`, `_appendFmtSettingsBtn`, `openFormatEditModal`, `_phasesAllIdentical`, `_saveFormatEdit`; wywołania `_appendFmtSettingsBtn` w każdym miejscu ustawiającym `#tv-info-bar.innerHTML` w `renderTournamentViewScreen`
+- `index.html` — dodano modal `#modal-format-edit` (header sticky + `#fmt-edit-content` + `#btn-format-edit-save`)
+- `css/style.css` — style dla `.modal-format-edit`, `.fmt-edit-header`, `#fmt-edit-content`, `.fmt-edit-liga-form`, `.phase-card.locked`, `.btn-save-format`, `.btn-fmt-settings`, `.fmt-locked-notice`, `.fmt-locked-reason`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
