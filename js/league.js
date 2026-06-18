@@ -1041,14 +1041,6 @@ function _buildGroupMatchCell(tournament, m, globalIdx) {
 function renderTournamentViewScreen(tournament) {
   _activeTournament = tournament;
 
-  const _fmtBtn = document.getElementById('btn-tv-format-settings');
-  if (_fmtBtn) {
-    _fmtBtn.style.display = tournament.status === 'active' ? '' : 'none';
-    const _newFmtBtn = _fmtBtn.cloneNode(true);
-    _fmtBtn.parentNode.replaceChild(_newFmtBtn, _fmtBtn);
-    document.getElementById('btn-tv-format-settings').addEventListener('click', () => openFormatEditModal(_activeTournament));
-  }
-
   const isBracket = tournament.config.format === 'bracket';
   const isGroups  = tournament.config.format === 'groups';
 
@@ -1069,8 +1061,9 @@ function renderTournamentViewScreen(tournament) {
     const phaseLabel  = isGroupPhaseComplete(tournament) ? '● Faza pucharowa' : '● Faza grupowa';
 
     document.getElementById('tv-info-bar').innerHTML =
-      `<span>Grupy+Drabinka &middot; ${_formatLabel(tournament.config)}</span>` +
+      `<span>Grupy+Drabinka &middot; ${_formatLabel(tournament.config)}${_fmtSettingsBtnHTML(tournament.status === 'active')}</span>` +
       `<span>${tournament.players.length} graczy &middot; ${allPlayed}/${allMatches.length} meczów &middot; <b>${phaseLabel}</b></span>`;
+    _wireFmtSettingsBtn();
 
     ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
       const old = document.getElementById(id);
@@ -1113,8 +1106,9 @@ function renderTournamentViewScreen(tournament) {
     const played  = tournament.matches.filter(m => !m.isBye && m.winner !== null).length;
     const total   = tournament.matches.filter(m => !m.isBye).length;
     document.getElementById('tv-info-bar').innerHTML =
-      '<span>Drabinka &middot; ' + _formatLabel(tournament.config) + '</span>' +
+      '<span>Drabinka &middot; ' + _formatLabel(tournament.config) + _fmtSettingsBtnHTML(tournament.status === 'active') + '</span>' +
       '<span>' + tournament.players.length + ' graczy &middot; ' + played + '/' + total + ' meczów rozegranych</span>';
+    _wireFmtSettingsBtn();
     renderBracketScreen(tournament);
     return;
   }
@@ -1158,8 +1152,9 @@ function renderTournamentViewScreen(tournament) {
   const played = tournament.matches.filter(m => m.winner !== null).length;
   const total  = tournament.matches.length;
   document.getElementById('tv-info-bar').innerHTML =
-    `<span>${_formatLabel(tournament.config)}</span>` +
+    `<span>${_formatLabel(tournament.config)}${_fmtSettingsBtnHTML(tournament.status === 'active')}</span>` +
     `<span>${tournament.players.length} graczy &middot; ${roundsLabel} &middot; ${played}/${total} meczów rozegranych</span>`;
+  _wireFmtSettingsBtn();
 
   const rows      = computeStandings(tournament);
   const finished  = tournament.status === 'finished' ||
@@ -1555,6 +1550,17 @@ function _buildFormatEditPhaseCard(phase, mc, locked, phaseIndex, isLast, phases
   return card;
 }
 
+function _fmtSettingsBtnHTML(isActive) {
+  return isActive
+    ? '<button id="btn-tv-format-settings" class="btn-fmt-settings">⚙</button>'
+    : '';
+}
+
+function _wireFmtSettingsBtn() {
+  const btn = document.getElementById('btn-tv-format-settings');
+  if (btn) btn.addEventListener('click', () => openFormatEditModal(_activeTournament));
+}
+
 function openFormatEditModal(tournament) {
   const isLiga  = tournament.config.format === 'liga';
   const container = document.getElementById('fmt-edit-content');
@@ -1637,11 +1643,13 @@ function _saveFormatEdit(tournament) {
   if (infoBar) {
     const firstSpan = infoBar.querySelector('span');
     if (firstSpan) {
-      const fmt   = tournament.config.format;
-      const label = _formatLabel(tournament.config);
-      if (fmt === 'liga')    firstSpan.innerHTML = label;
-      if (fmt === 'bracket') firstSpan.innerHTML = 'Drabinka &middot; ' + label;
-      if (fmt === 'groups')  firstSpan.innerHTML = 'Grupy+Drabinka &middot; ' + label;
+      const fmt    = tournament.config.format;
+      const label  = _formatLabel(tournament.config);
+      const fmtBtn = _fmtSettingsBtnHTML(true);
+      if (fmt === 'liga')    firstSpan.innerHTML = label + fmtBtn;
+      if (fmt === 'bracket') firstSpan.innerHTML = 'Drabinka &middot; ' + label + fmtBtn;
+      if (fmt === 'groups')  firstSpan.innerHTML = 'Grupy+Drabinka &middot; ' + label + fmtBtn;
+      _wireFmtSettingsBtn();
     }
   }
 

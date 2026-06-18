@@ -3086,3 +3086,18 @@ html, body {
   transition: opacity .15s;
 }
 .btn-save-format:active { transform: scale(0.97); }
+
+.btn-fmt-settings {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  padding: 0 0 0 6px;
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .15s;
+}
+.btn-fmt-settings:hover  { color: var(--text); }
+.btn-fmt-settings:active { color: var(--accent); }
