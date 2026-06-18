@@ -1040,6 +1040,15 @@ function _buildGroupMatchCell(tournament, m, globalIdx) {
 
 function renderTournamentViewScreen(tournament) {
   _activeTournament = tournament;
+
+  const _fmtBtn = document.getElementById('btn-tv-format-settings');
+  if (_fmtBtn) {
+    _fmtBtn.style.display = tournament.status === 'active' ? '' : 'none';
+    const _newFmtBtn = _fmtBtn.cloneNode(true);
+    _fmtBtn.parentNode.replaceChild(_newFmtBtn, _fmtBtn);
+    document.getElementById('btn-tv-format-settings').addEventListener('click', () => openFormatEditModal(_activeTournament));
+  }
+
   const isBracket = tournament.config.format === 'bracket';
   const isGroups  = tournament.config.format === 'groups';
 
@@ -1544,4 +1553,97 @@ function _buildFormatEditPhaseCard(phase, mc, locked, phaseIndex, isLast, phases
   card.appendChild(header);
   card.appendChild(body);
   return card;
+}
+
+function openFormatEditModal(tournament) {
+  const isLiga  = tournament.config.format === 'liga';
+  const container = document.getElementById('fmt-edit-content');
+  container.innerHTML = '';
+
+  if (isLiga) {
+    const mc   = tournament.config.matchConfig;
+    const wrap = document.createElement('div');
+    wrap.className = 'fmt-edit-liga-form';
+    wrap.innerHTML = _buildPhaseFormHTML(mc);
+    container.appendChild(wrap);
+  } else {
+    const phases   = _getTournamentPhases(tournament);
+    const pmc      = tournament.config.phaseMatchConfigs || {};
+    const fallback = tournament.config.matchConfig;
+
+    phases.forEach((phase, index) => {
+      const key    = String(phase.key);
+      const mc     = pmc[key] !== undefined ? Object.assign({}, pmc[key]) : Object.assign({}, fallback);
+      const locked = _isPhaseHasPlayedMatches(tournament, phase.key);
+      const isLast = index === phases.length - 1;
+      const card   = _buildFormatEditPhaseCard(phase, mc, locked, index, isLast, phases);
+      container.appendChild(card);
+    });
+
+    const firstUnlocked = container.querySelector('.phase-card:not(.locked)');
+    if (firstUnlocked) {
+      firstUnlocked.classList.add('expanded');
+      firstUnlocked.querySelector('.phase-card-body').style.display = 'block';
+    }
+  }
+
+  document.getElementById('btn-format-edit-close').onclick = () => closeModal('modal-format-edit');
+  document.getElementById('btn-format-edit-save').onclick  = () => _saveFormatEdit(tournament);
+  openModal('modal-format-edit');
+}
+
+function _saveFormatEdit(tournament) {
+  const isLiga    = tournament.config.format === 'liga';
+  const container = document.getElementById('fmt-edit-content');
+
+  if (isLiga) {
+    tournament.config.matchConfig = {
+      variant:      parseInt(container.querySelector('.ps-variant').value),
+      totalSets:    parseInt(container.querySelector('.ps-sets').value),
+      totalLegs:    parseInt(container.querySelector('.ps-legs').value),
+      inMode:       container.querySelector('.ps-in').value,
+      checkoutMode: container.querySelector('.ps-out').value,
+      dartLimit:    parseInt(container.querySelector('.ps-limit').value) || null,
+    };
+  } else {
+    const phases = _getTournamentPhases(tournament);
+    tournament.config.usePhaseFormats = true;
+    if (!tournament.config.phaseMatchConfigs) tournament.config.phaseMatchConfigs = {};
+
+    phases.forEach(phase => {
+      const card = container.querySelector(`[data-phase-key="${String(phase.key)}"]`);
+      if (card && !card.classList.contains('locked')) {
+        tournament.config.phaseMatchConfigs[String(phase.key)] = _readPhaseCardConfig(card);
+      }
+    });
+
+    // Keep matchConfig in sync with first phase as fallback for getMatchConfig()
+    const firstKey = String(phases[0].key);
+    if (tournament.config.phaseMatchConfigs[firstKey]) {
+      tournament.config.matchConfig = Object.assign({}, tournament.config.phaseMatchConfigs[firstKey]);
+    }
+  }
+
+  // Persist
+  const list   = loadTournaments();
+  const stored = list.find(t => t.id === tournament.id);
+  if (stored) {
+    stored.config = tournament.config;
+    saveTournaments(list);
+  }
+
+  // Update first <span> of info bar to reflect new format label
+  const infoBar = document.getElementById('tv-info-bar');
+  if (infoBar) {
+    const firstSpan = infoBar.querySelector('span');
+    if (firstSpan) {
+      const fmt   = tournament.config.format;
+      const label = _formatLabel(tournament.config);
+      if (fmt === 'liga')    firstSpan.innerHTML = label;
+      if (fmt === 'bracket') firstSpan.innerHTML = 'Drabinka &middot; ' + label;
+      if (fmt === 'groups')  firstSpan.innerHTML = 'Grupy+Drabinka &middot; ' + label;
+    }
+  }
+
+  closeModal('modal-format-edit');
 }
