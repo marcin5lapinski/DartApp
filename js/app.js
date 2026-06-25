@@ -1043,9 +1043,8 @@ function submitQuickScore(val) {
 
   if (result.bust) {
     recordVisit(match.stats[pIdx], 0, 3);
-    if (isDoubleAttemptScore(remainingBefore)) {
-      recordSummaryDoubleAttempts(match.stats[pIdx], 3);
-    }
+    const da = summaryDoubleAttemptCount(remainingBefore, val, true);
+    if (da > 0) recordSummaryDoubleAttempts(match.stats[pIdx], da);
     showBust();
     saveToLocalStorage();
     switchPlayer(match);
@@ -1067,9 +1066,8 @@ function submitQuickScore(val) {
     return;
   }
 
-  if (isDoubleAttemptScore(remainingBefore)) {
-    recordSummaryDoubleAttempts(match.stats[pIdx], 3);
-  }
+  const da = summaryDoubleAttemptCount(remainingBefore, val, false);
+  if (da > 0) recordSummaryDoubleAttempts(match.stats[pIdx], da);
   switchPlayer(match);
   renderGameScreen(match);
   saveToLocalStorage();
@@ -1086,9 +1084,8 @@ function applySummaryScore(pIdx, val) {
 
   if (result.bust) {
     recordVisit(match.stats[pIdx], 0, 3);
-    if (isDoubleAttemptScore(remainingBefore)) {
-      recordSummaryDoubleAttempts(match.stats[pIdx], 3);
-    }
+    const da = summaryDoubleAttemptCount(remainingBefore, val, true);
+    if (da > 0) recordSummaryDoubleAttempts(match.stats[pIdx], da);
     showBust();
     saveToLocalStorage();
     switchPlayer(match);
@@ -1110,9 +1107,8 @@ function applySummaryScore(pIdx, val) {
     return;
   }
 
-  if (isDoubleAttemptScore(remainingBefore)) {
-    recordSummaryDoubleAttempts(match.stats[pIdx], 3);
-  }
+  const da = summaryDoubleAttemptCount(remainingBefore, val, false);
+  if (da > 0) recordSummaryDoubleAttempts(match.stats[pIdx], da);
   switchPlayer(match);
   renderGameScreen(match);
   saveToLocalStorage();
