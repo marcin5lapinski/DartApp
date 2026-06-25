@@ -191,6 +191,16 @@ function isDoubleAttemptScore(remaining) {
   return DOUBLE_FINISHES.has(remaining);
 }
 
+// Returns how many double attempts to record in summary mode for a non-checkout visit.
+// Branch 1: remaining is a direct double (DOUBLE_FINISHES) → bust=1, normal=3
+// Branch 2: remaining ≤50 but needs setup dart → bust=1, normal=2
+// Branch 3: remaining >50, player left a direct double (remaining−visitScore ∈ DOUBLE_FINISHES) → 2; else 0
+function summaryDoubleAttemptCount(remaining, visitScore, isBust) {
+  if (DOUBLE_FINISHES.has(remaining)) return isBust ? 1 : 3;
+  if (remaining <= 50)               return isBust ? 1 : 2;
+  return DOUBLE_FINISHES.has(remaining - visitScore) ? 2 : 0;
+}
+
 // --- Favorite-double checkout path finder ---
 
 // All valid setup dart values (non-closing), ordered best to worst.
