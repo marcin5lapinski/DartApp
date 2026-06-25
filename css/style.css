@@ -3126,3 +3126,85 @@ html, body {
 }
 .btn-fmt-settings:hover  { color: var(--text); border-color: #555; }
 .btn-fmt-settings:active { color: var(--accent); }
+
+/* ===== TOURNAMENT STATS MODAL ===== */
+.modal-tournament-stats {
+  max-width: 420px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  padding: 0;
+}
+
+.ts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.ts-header > span {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Stats icon button in info bar */
+.btn-stats {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 3px 6px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .15s, border-color .15s;
+}
+.btn-stats:hover  { color: var(--text); border-color: #555; }
+.btn-stats:active { color: var(--accent); }
+
+/* Player accordion rows */
+.ts-player-row { border-bottom: 1px solid var(--border); }
+
+.ts-player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+.ts-player-header:active { background: #222; }
+
+.ts-chevron {
+  color: var(--text-muted);
+  font-style: normal;
+  transition: transform 0.2s;
+}
+.ts-player-row.ts-expanded .ts-chevron { transform: rotate(90deg); }
+
+.ts-stats-body {
+  display: none;
+  padding: 0 16px 12px;
+  background: #111;
+}
+.ts-player-row.ts-expanded .ts-stats-body { display: block; }
+
+.ts-no-matches {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 8px 0;
+}
