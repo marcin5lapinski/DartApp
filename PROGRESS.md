@@ -691,6 +691,51 @@ Otwierać `index.html` bezpośrednio w przeglądarce. Dane w `localStorage`.
 
 ---
 
+## Poprawka liczenia prób double w trybie summary (2026-06-25)
+
+### Naprawione błędy
+- **Błędna liczba prób double w summary mode**: przed poprawką zawsze zliczano 3 próby jeśli `remaining` było bezpośrednim double (`DOUBLE_FINISHES`), niezależnie od tego czy gracz potrzebował darta setupowego; teraz `summaryDoubleAttemptCount(remaining, visitScore, isBust)` zwraca właściwą wartość: bust=1, setup≤50=2, extended (remaining>50 i po wizycie zostaje direct double)=2, pozostałe=0
+
+### Architektura
+- **`summaryDoubleAttemptCount(remaining, visitScore, isBust)`** w `checkouts.js` — helper dla trybu summary; trzy gałęzie: (1) `remaining ∈ DOUBLE_FINISHES` → bust=1, normalna=3; (2) `remaining ≤50` ale potrzeba setupu → bust=1, normalna=2; (3) `remaining>50` i `remaining−visitScore ∈ DOUBLE_FINISHES` → 2, else 0
+
+### Zmiany w plikach
+- `js/checkouts.js` — dodano `summaryDoubleAttemptCount(remaining, visitScore, isBust)`
+- `js/app.js` — `submitSummaryScore()` i `submitDart()` (dwa miejsca każda) używają `summaryDoubleAttemptCount` zamiast `isDoubleAttemptScore` + stałe 3
+
+---
+
+## Statystyki graczy i rekordy turnieju (2026-06-25)
+
+### Nowe funkcje
+- **`computeTournamentPlayerStats(tournament)`** w `league.js` — agreguje statystyki z wszystkich rozegranych meczów dla każdego gracza: suma legów wygranych, prób/trafień double, checkoutów; średnia arytmetyczna `getMatchAverage` (tylko mecze z ≥1 wizytą); średnia z `getFirst9Average` (tylko wartości >0); sumuje `stats.legs[]` z właściwą przypisaniem strony meczu (si=0→m.p1, si=1→m.p2)
+- **`openTournamentStatsModal(tournament)`** w `league.js` — buduje modal `#modal-tournament-stats` z akordeoni per-gracz; każdy wiersz zawiera imię + stats-chipsy (avg, nogi, double%); po rozwinięciu pokazuje tabelę ze średnią meczu, śr. pierwszych 9, legami, skutecznością i najwyższym checkoutem; zawsze wczytuje świeże dane z `loadTournaments()` przy otwarciu
+- **`computeTournamentRecords(tournament)`** w `league.js` — iteruje wszystkie rozegrane mecze (non-bye, winner≠null), wyodrębnia 6 rekordów: najwyższa śr. meczu, najwyższa śr. legu, najwyższa śr. pierwszych 9, najszybszy leg (min darts), najwyższy checkout, najlepsza skuteczność double (per match, min 1 próba); typy zwracane: `{value, players}`, dla doublePercent `players` to `[{name, hits, attempts}]`; obsługa remisów (tie = append do `players[]`)
+- **`openTournamentRecordsModal(tournament)`** w `league.js` — buduje modal `#modal-tournament-records` z tabelą 3-kolumnową (etykieta | wartość bold | gracz(e)); wiersze z `value===null` pomijane; double% format: `XX.X% (hits/attempts)` na gracza; zawsze wczytuje świeże dane z `loadTournaments()` przy otwarciu
+
+### Naprawione błędy
+- **Nierówne odstępy przycisków w info barze**: emoji (📊, 👑) renderują się szerzej niż ⚙ (unicode symbol) — poprawiono krok pozycjonowania: 40px po ⚙, 52px po emoji; aktywny: ⚙ right=12, 📊 right=52, 👑 right=104; zakończony: 📊 right=12, 👑 right=64
+- **Stare referencje w zamknięciach przycisków**: `openTournamentStatsModal(tournament)` i `openTournamentRecordsModal(tournament)` zamykały się nad parametrem `tournament` z czasu tworzenia przycisków; zmieniono na `_activeTournament` (odczyt w chwili kliknięcia)
+- **Rekordy/statystyki nieaktualne po meczu**: nawet po poprawce closure'ów modal mógł pokazywać stare dane; naprawiono przez `loadTournaments().find(t => t.id === tournament.id)` przy każdym otwarciu modalu — gwarancja świeżych danych z localStorage niezależnie od stanu `_activeTournament`
+- **Błędna etykieta nagłówka modalu statystyk**: nagłówek „Statystyki turnieju" zmieniony na „Statystyki graczy"
+
+### Zmiany wizualne
+- Przycisk 📊 (`#btn-tv-stats`, klasa `.btn-stats`) — zawsze widoczny w info barze (aktywny i zakończony turniej)
+- Przycisk 👑 (`#btn-tv-records`, klasa `.btn-records`) — zawsze widoczny po lewej stronie 📊
+- Modal `#modal-tournament-stats`: sticky header „Statystyki graczy", akordeony per-gracz (`.ts-player-row`/`.ts-player-detail`)
+- Modal `#modal-tournament-records`: sticky header „Rekordy turnieju", tabela `.tr-table` z klasą `.tr-players` dla kolumny graczy
+
+### Architektura
+- **`_appendInfoBarBtns(isActive, tournament)`** zastąpił `_appendFmtSettingsBtn(isActive)` — obsługuje teraz 3 przyciski (⚙/📊/👑), buduje je z tablicy definicji i ustawia `style.right` według zmiennego kroku; usuwa `#btn-tv-format-settings`, `#btn-tv-stats`, `#btn-tv-records` przed ponownym renderem
+- Oba modale otwierające (`openTournamentStatsModal`, `openTournamentRecordsModal`) wczytują świeże dane z localStorage zamiast polegać na przekazanym argumencie `tournament` — wzorzec defensywny dla danych zmienianych przez `saveTournamentMatchResult`
+
+### Zmiany w plikach
+- `js/league.js` — dodano `computeTournamentPlayerStats`, `openTournamentStatsModal`, `computeTournamentRecords`, `openTournamentRecordsModal`; zastąpiono `_appendFmtSettingsBtn` przez `_appendInfoBarBtns`
+- `index.html` — dodano modal `#modal-tournament-stats` (header + `#ts-player-list`) i modal `#modal-tournament-records` (header + `#tr-records-body`)
+- `css/style.css` — style dla `.modal-tournament-stats`, `.ts-header`, `.ts-player-row`, `.ts-player-detail`, `.btn-stats`, `.modal-tournament-records`, `.tr-header`, `.tr-table`, `.tr-players`, `.btn-records`
+
+---
+
 ## Co jest do zrobienia
 
 ### Faza 2 — zarządzanie graczami i historia ✅ UKOŃCZONA
