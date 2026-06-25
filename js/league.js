@@ -1650,6 +1650,65 @@ function openTournamentStatsModal(tournament) {
   openModal('modal-tournament-stats');
 }
 
+function computeTournamentRecords(tournament) {
+  const rec = {
+    matchAvg:        { value: null, players: [] },
+    legAvg:          { value: null, players: [] },
+    first9Avg:       { value: null, players: [] },
+    fastestLeg:      { value: null, players: [] },
+    highestCheckout: { value: null, players: [] },
+    doublePercent:   { value: null, players: [] },
+  };
+
+  function updateRec(entry, val, name, isBetter) {
+    if (val === null || val === undefined) return;
+    if (entry.value === null || isBetter(val, entry.value)) {
+      entry.value = val; entry.players = [name];
+    } else if (val === entry.value) {
+      entry.players.push(name);
+    }
+  }
+
+  const played = tournament.matches.filter(m => !m.isBye && m.winner !== null);
+
+  for (const m of played) {
+    for (let si = 0; si < 2; si++) {
+      const s = m.stats[si];
+      if (!s) continue;
+      const pi = si === 0 ? m.p1 : m.p2;
+      const name = tournament.players[pi]?.name;
+      if (!name) continue;
+
+      // Per-match records
+      updateRec(rec.matchAvg,  getMatchAverage(s), name, (a, b) => a > b);
+      const f9 = getFirst9Average(s);
+      if (f9 > 0) updateRec(rec.first9Avg, f9, name, (a, b) => a > b);
+
+      // Double percent — special structure, handled inline
+      if (s.doubleAttempts > 0) {
+        const pct = s.doubleHits / s.doubleAttempts * 100;
+        if (rec.doublePercent.value === null || pct > rec.doublePercent.value) {
+          rec.doublePercent.value = pct;
+          rec.doublePercent.players = [{ name, hits: s.doubleHits, attempts: s.doubleAttempts }];
+        } else if (pct === rec.doublePercent.value) {
+          rec.doublePercent.players.push({ name, hits: s.doubleHits, attempts: s.doubleAttempts });
+        }
+      }
+
+      // Per-leg records
+      for (const leg of s.legs) {
+        updateRec(rec.legAvg,     leg.average,     name, (a, b) => a > b);
+        updateRec(rec.fastestLeg, leg.dartsThrown, name, (a, b) => a < b);
+        if (leg.checkout !== null) {
+          updateRec(rec.highestCheckout, leg.checkout, name, (a, b) => a > b);
+        }
+      }
+    }
+  }
+
+  return rec;
+}
+
 function _appendInfoBarBtns(isActive, tournament) {
   const infoBar = document.getElementById('tv-info-bar');
   if (!infoBar) return;
