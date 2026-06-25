@@ -3163,9 +3163,9 @@ html, body {
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-muted);
-  font-size: 1.1rem;
+  font-size: 1.65rem;
   line-height: 1;
-  padding: 3px 6px;
+  padding: 2px 6px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: color .15s, border-color .15s;
@@ -3197,11 +3197,16 @@ html, body {
 .ts-player-row.ts-expanded .ts-chevron { transform: rotate(90deg); }
 
 .ts-stats-body {
-  display: none;
-  padding: 0 16px 12px;
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 16px;
   background: #111;
+  transition: max-height 0.28s ease, padding 0.28s ease;
 }
-.ts-player-row.ts-expanded .ts-stats-body { display: block; }
+.ts-player-row.ts-expanded .ts-stats-body {
+  max-height: 300px;
+  padding: 0 16px 12px;
+}
 
 .ts-no-matches {
   color: var(--text-muted);
