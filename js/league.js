@@ -1600,7 +1600,8 @@ function computeTournamentPlayerStats(tournament) {
 }
 
 function openTournamentStatsModal(tournament) {
-  const playerStats = computeTournamentPlayerStats(tournament);
+  const fresh = loadTournaments().find(t => t.id === tournament.id) || tournament;
+  const playerStats = computeTournamentPlayerStats(fresh);
   const list = document.getElementById('ts-player-list');
   list.innerHTML = '';
 
@@ -1710,7 +1711,8 @@ function computeTournamentRecords(tournament) {
 }
 
 function openTournamentRecordsModal(tournament) {
-  const rec = computeTournamentRecords(tournament);
+  const fresh = loadTournaments().find(t => t.id === tournament.id) || tournament;
+  const rec = computeTournamentRecords(fresh);
   const body = document.getElementById('tr-records-body');
 
   function renderPlayers(entry, isDouble) {
