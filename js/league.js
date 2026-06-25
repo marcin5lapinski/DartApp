@@ -1709,31 +1709,66 @@ function computeTournamentRecords(tournament) {
   return rec;
 }
 
+function openTournamentRecordsModal(tournament) {
+  const rec = computeTournamentRecords(tournament);
+  const body = document.getElementById('tr-records-body');
+
+  function renderPlayers(entry, isDouble) {
+    if (isDouble) {
+      return entry.players.map(x => `${escapeHtml(x.name)} (${x.hits}/${x.attempts})`).join(', ');
+    }
+    return entry.players.map(escapeHtml).join(', ');
+  }
+
+  const rows = [
+    { label: 'Najwyższa średnia meczu',   entry: rec.matchAvg,        fmt: v => v.toFixed(2),       isDouble: false },
+    { label: 'Najwyższa średnia legu',     entry: rec.legAvg,          fmt: v => v.toFixed(2),       isDouble: false },
+    { label: 'Najwyższa śr. pierwszych 9', entry: rec.first9Avg,       fmt: v => v.toFixed(2),       isDouble: false },
+    { label: 'Najszybszy leg',             entry: rec.fastestLeg,      fmt: v => v + ' lotek',       isDouble: false },
+    { label: 'Najwyższy checkout',         entry: rec.highestCheckout, fmt: v => String(v),          isDouble: false },
+    { label: 'Skuteczność double',         entry: rec.doublePercent,   fmt: v => v.toFixed(1) + '%', isDouble: true  },
+  ];
+
+  let html = '<table class="stats-table tr-table"><tbody>';
+  for (const row of rows) {
+    if (row.entry.value === null) continue;
+    html += `<tr>
+      <td>${row.label}</td>
+      <td><strong>${row.fmt(row.entry.value)}</strong></td>
+      <td class="tr-players">${renderPlayers(row.entry, row.isDouble)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  body.innerHTML = html;
+
+  document.getElementById('btn-tournament-records-close').onclick =
+    () => closeModal('modal-tournament-records');
+  openModal('modal-tournament-records');
+}
+
 function _appendInfoBarBtns(isActive, tournament) {
   const infoBar = document.getElementById('tv-info-bar');
   if (!infoBar) return;
 
   document.getElementById('btn-tv-format-settings')?.remove();
   document.getElementById('btn-tv-stats')?.remove();
+  document.getElementById('btn-tv-records')?.remove();
 
-  // Stats button — always visible (active and finished)
-  const statsBtn = document.createElement('button');
-  statsBtn.id        = 'btn-tv-stats';
-  statsBtn.className = 'btn-stats';
-  statsBtn.textContent = '📊';
-  // When gear is also shown, shift left to avoid overlap
-  if (isActive) statsBtn.style.right = '52px';
-  statsBtn.addEventListener('click', () => openTournamentStatsModal(tournament));
-  infoBar.appendChild(statsBtn);
+  // Build button list rightmost-first; each gets right: 12 + i*40 px
+  const btns = [];
+  if (isActive) btns.push({ id: 'btn-tv-format-settings', cls: 'btn-fmt-settings', text: '⚙',  fn: () => openFormatEditModal(_activeTournament)       });
+  btns.push(             { id: 'btn-tv-stats',             cls: 'btn-stats',        text: '📊', fn: () => openTournamentStatsModal(tournament)           });
+  btns.push(             { id: 'btn-tv-records',           cls: 'btn-records',      text: '👑', fn: () => openTournamentRecordsModal(tournament)         });
 
-  // Gear button — active tournaments only
-  if (!isActive) return;
-  const fmtBtn = document.createElement('button');
-  fmtBtn.id        = 'btn-tv-format-settings';
-  fmtBtn.className = 'btn-fmt-settings';
-  fmtBtn.textContent = '⚙';
-  fmtBtn.addEventListener('click', () => openFormatEditModal(_activeTournament));
-  infoBar.appendChild(fmtBtn);
+  btns.forEach((def, i) => {
+    const btn = document.createElement('button');
+    btn.id          = def.id;
+    btn.className   = def.cls;
+    btn.textContent = def.text;
+    btn.style.right = (12 + i * 40) + 'px';
+    btn.addEventListener('click', def.fn);
+    infoBar.appendChild(btn);
+  });
 }
 
 function openFormatEditModal(tournament) {
