@@ -1754,20 +1754,23 @@ function _appendInfoBarBtns(isActive, tournament) {
   document.getElementById('btn-tv-stats')?.remove();
   document.getElementById('btn-tv-records')?.remove();
 
-  // Build button list rightmost-first; each gets right: 12 + i*40 px
+  // Build button list rightmost-first.
+  // ⚙ is a narrow symbol; emoji (📊, 👑) render wider — use a larger step after emoji.
   const btns = [];
   if (isActive) btns.push({ id: 'btn-tv-format-settings', cls: 'btn-fmt-settings', text: '⚙',  fn: () => openFormatEditModal(_activeTournament)       });
   btns.push(             { id: 'btn-tv-stats',             cls: 'btn-stats',        text: '📊', fn: () => openTournamentStatsModal(tournament)           });
   btns.push(             { id: 'btn-tv-records',           cls: 'btn-records',      text: '👑', fn: () => openTournamentRecordsModal(tournament)         });
 
-  btns.forEach((def, i) => {
+  let right = 12;
+  btns.forEach(def => {
     const btn = document.createElement('button');
     btn.id          = def.id;
     btn.className   = def.cls;
     btn.textContent = def.text;
-    btn.style.right = (12 + i * 40) + 'px';
+    btn.style.right = right + 'px';
     btn.addEventListener('click', def.fn);
     infoBar.appendChild(btn);
+    right += (def.id === 'btn-tv-format-settings') ? 40 : 48;
   });
 }
 
