@@ -1758,8 +1758,8 @@ function _appendInfoBarBtns(isActive, tournament) {
   // ⚙ is a narrow symbol; emoji (📊, 👑) render wider — use a larger step after emoji.
   const btns = [];
   if (isActive) btns.push({ id: 'btn-tv-format-settings', cls: 'btn-fmt-settings', text: '⚙',  fn: () => openFormatEditModal(_activeTournament)       });
-  btns.push(             { id: 'btn-tv-stats',             cls: 'btn-stats',        text: '📊', fn: () => openTournamentStatsModal(tournament)           });
-  btns.push(             { id: 'btn-tv-records',           cls: 'btn-records',      text: '👑', fn: () => openTournamentRecordsModal(tournament)         });
+  btns.push(             { id: 'btn-tv-stats',             cls: 'btn-stats',        text: '📊', fn: () => openTournamentStatsModal(_activeTournament)    });
+  btns.push(             { id: 'btn-tv-records',           cls: 'btn-records',      text: '👑', fn: () => openTournamentRecordsModal(_activeTournament)    });
 
   let right = 12;
   btns.forEach(def => {
