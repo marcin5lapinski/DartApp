@@ -1558,6 +1558,47 @@ function _buildFormatEditPhaseCard(phase, mc, locked, phaseIndex, isLast, phases
   return card;
 }
 
+function computeTournamentPlayerStats(tournament) {
+  return tournament.players.map((player, playerIndex) => {
+    const played = tournament.matches.filter(m =>
+      !m.isBye && m.winner !== null &&
+      (m.p1 === playerIndex || m.p2 === playerIndex)
+    );
+
+    const matchCount = played.length;
+    let avg3Sum = 0, first9Sum = 0, legsWon = 0;
+    let highestCheckout = 0, fastestLeg = null;
+    let doubleAttempts = 0, doubleHits = 0;
+
+    for (const m of played) {
+      const si = m.p1 === playerIndex ? 0 : 1;
+      const s  = m.stats[si];
+      if (!s) continue;
+      avg3Sum        += getMatchAverage(s);
+      first9Sum      += getFirst9Average(s);
+      legsWon        += s.legsWon;
+      if (s.highestCheckout > highestCheckout) highestCheckout = s.highestCheckout;
+      if (s.fastestLeg !== null) {
+        fastestLeg = fastestLeg === null ? s.fastestLeg : Math.min(fastestLeg, s.fastestLeg);
+      }
+      doubleAttempts += s.doubleAttempts;
+      doubleHits     += s.doubleHits;
+    }
+
+    return {
+      name:            player.name,
+      matchCount,
+      avg3:            matchCount > 0 ? avg3Sum  / matchCount : 0,
+      first9Avg:       matchCount > 0 ? first9Sum / matchCount : 0,
+      legsWon,
+      highestCheckout,
+      fastestLeg,
+      doubleAttempts,
+      doubleHits,
+    };
+  });
+}
+
 function _appendFmtSettingsBtn(isActive) {
   const infoBar = document.getElementById('tv-info-bar');
   if (!infoBar) return;
