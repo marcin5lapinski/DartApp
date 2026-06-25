@@ -1063,7 +1063,7 @@ function renderTournamentViewScreen(tournament) {
     document.getElementById('tv-info-bar').innerHTML =
       `<span>Grupy+Drabinka &middot; ${_formatLabel(tournament.config)}</span>` +
       `<span>${tournament.players.length} graczy &middot; ${allPlayed}/${allMatches.length} meczów &middot; <b>${phaseLabel}</b></span>`;
-    _appendFmtSettingsBtn(tournament.status === 'active');
+    _appendInfoBarBtns(tournament.status === 'active', tournament);
 
     ['tv-tab-table', 'tv-tab-matches', 'tv-tab-bracket'].forEach(id => {
       const old = document.getElementById(id);
@@ -1108,7 +1108,7 @@ function renderTournamentViewScreen(tournament) {
     document.getElementById('tv-info-bar').innerHTML =
       '<span>Drabinka &middot; ' + _formatLabel(tournament.config) + '</span>' +
       '<span>' + tournament.players.length + ' graczy &middot; ' + played + '/' + total + ' meczów rozegranych</span>';
-    _appendFmtSettingsBtn(tournament.status === 'active');
+    _appendInfoBarBtns(tournament.status === 'active', tournament);
     renderBracketScreen(tournament);
     return;
   }
@@ -1154,7 +1154,7 @@ function renderTournamentViewScreen(tournament) {
   document.getElementById('tv-info-bar').innerHTML =
     `<span>${_formatLabel(tournament.config)}</span>` +
     `<span>${tournament.players.length} graczy &middot; ${roundsLabel} &middot; ${played}/${total} meczów rozegranych</span>`;
-  _appendFmtSettingsBtn(tournament.status === 'active');
+  _appendInfoBarBtns(tournament.status === 'active', tournament);
 
   const rows      = computeStandings(tournament);
   const finished  = tournament.status === 'finished' ||
@@ -1599,18 +1599,82 @@ function computeTournamentPlayerStats(tournament) {
   });
 }
 
-function _appendFmtSettingsBtn(isActive) {
+function openTournamentStatsModal(tournament) {
+  const playerStats = computeTournamentPlayerStats(tournament);
+  const list = document.getElementById('ts-player-list');
+  list.innerHTML = '';
+
+  playerStats.forEach(ps => {
+    const row = document.createElement('div');
+    row.className = 'ts-player-row';
+
+    const header = document.createElement('div');
+    header.className = 'ts-player-header';
+    header.innerHTML = `<span>${escapeHtml(ps.name)}</span><i class="ts-chevron">&#9654;</i>`;
+    header.addEventListener('click', () => row.classList.toggle('ts-expanded'));
+
+    const body = document.createElement('div');
+    body.className = 'ts-stats-body';
+
+    if (ps.matchCount === 0) {
+      body.innerHTML = '<p class="ts-no-matches">Brak rozegranych meczów</p>';
+    } else {
+      const dblPct = ps.doubleAttempts > 0
+        ? (ps.doubleHits / ps.doubleAttempts * 100).toFixed(1) + '%'
+        : null;
+      const rows = [
+        `<tr><td>Mecze rozegrane</td><td><strong>${ps.matchCount}</strong></td></tr>`,
+        `<tr><td>Legi wygrane</td><td><strong>${ps.legsWon}</strong></td></tr>`,
+        `<tr><td>Średnia 3-lotek</td><td><strong>${ps.avg3.toFixed(2)}</strong></td></tr>`,
+        `<tr><td>Średnia pierwszych 9</td><td><strong>${ps.first9Avg.toFixed(2)}</strong></td></tr>`,
+        ps.highestCheckout > 0
+          ? `<tr><td>Najwyższe zamknięcie</td><td><strong>${ps.highestCheckout}</strong></td></tr>`
+          : '',
+        ps.fastestLeg !== null
+          ? `<tr><td>Najszybszy leg</td><td><strong>${ps.fastestLeg} lotek</strong></td></tr>`
+          : '',
+        dblPct !== null
+          ? `<tr><td>Trafione double</td><td><strong>${dblPct} (${ps.doubleHits}/${ps.doubleAttempts})</strong></td></tr>`
+          : '',
+      ].join('');
+      body.innerHTML = `<table class="stats-table">${rows}</table>`;
+    }
+
+    row.appendChild(header);
+    row.appendChild(body);
+    list.appendChild(row);
+  });
+
+  document.getElementById('btn-tournament-stats-close').onclick =
+    () => closeModal('modal-tournament-stats');
+  openModal('modal-tournament-stats');
+}
+
+function _appendInfoBarBtns(isActive, tournament) {
   const infoBar = document.getElementById('tv-info-bar');
   if (!infoBar) return;
-  const existing = document.getElementById('btn-tv-format-settings');
-  if (existing) existing.remove();
+
+  document.getElementById('btn-tv-format-settings')?.remove();
+  document.getElementById('btn-tv-stats')?.remove();
+
+  // Stats button — always visible (active and finished)
+  const statsBtn = document.createElement('button');
+  statsBtn.id        = 'btn-tv-stats';
+  statsBtn.className = 'btn-stats';
+  statsBtn.textContent = '📊';
+  // When gear is also shown, shift left to avoid overlap
+  if (isActive) statsBtn.style.right = '52px';
+  statsBtn.addEventListener('click', () => openTournamentStatsModal(tournament));
+  infoBar.appendChild(statsBtn);
+
+  // Gear button — active tournaments only
   if (!isActive) return;
-  const btn = document.createElement('button');
-  btn.id = 'btn-tv-format-settings';
-  btn.className = 'btn-fmt-settings';
-  btn.textContent = '⚙';
-  btn.addEventListener('click', () => openFormatEditModal(_activeTournament));
-  infoBar.appendChild(btn);
+  const fmtBtn = document.createElement('button');
+  fmtBtn.id        = 'btn-tv-format-settings';
+  fmtBtn.className = 'btn-fmt-settings';
+  fmtBtn.textContent = '⚙';
+  fmtBtn.addEventListener('click', () => openFormatEditModal(_activeTournament));
+  infoBar.appendChild(fmtBtn);
 }
 
 function openFormatEditModal(tournament) {
@@ -1738,7 +1802,7 @@ function _saveFormatEdit(tournament) {
       if (fmt === 'league')  firstSpan.innerHTML = label;
       if (fmt === 'bracket') firstSpan.innerHTML = 'Drabinka &middot; ' + label;
       if (fmt === 'groups')  firstSpan.innerHTML = 'Grupy+Drabinka &middot; ' + label;
-      _appendFmtSettingsBtn(true);
+      _appendInfoBarBtns(true, _activeTournament);
     }
   }
 
