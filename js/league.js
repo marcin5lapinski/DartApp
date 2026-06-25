@@ -1770,7 +1770,7 @@ function _appendInfoBarBtns(isActive, tournament) {
     btn.style.right = right + 'px';
     btn.addEventListener('click', def.fn);
     infoBar.appendChild(btn);
-    right += (def.id === 'btn-tv-format-settings') ? 40 : 48;
+    right += (def.id === 'btn-tv-format-settings') ? 40 : 52;
   });
 }
 
